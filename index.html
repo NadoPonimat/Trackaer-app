@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Трекер</title>
+<style>
+  :root{
+    --bg:#0E0708;
+    --surface:#17090B;
+    --surface-2:#1F0D10;
+    --line:#3A1A1D;
+    --accent:#E02826;
+    --text:#F2E9E6;
+    --muted:#9A7B7C;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;height:100%}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    font-size:16px;
+    line-height:1.45;
+    display:flex;
+    flex-direction:column;
+    overscroll-behavior:none;
+  }
+
+  header{
+    padding:calc(env(safe-area-inset-top) + 14px) 16px 12px;
+    border-bottom:1px solid var(--line);
+    background:var(--surface);
+  }
+  .crumbs{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px;min-height:19px}
+  .crumbs button{
+    background:none;border:none;padding:0;color:var(--muted);
+    font:inherit;font-size:13px;cursor:pointer;
+  }
+  .crumbs .sep{opacity:.5}
+  h1{margin:2px 0 0;font-size:24px;font-weight:650;letter-spacing:-.01em}
+
+  main{flex:1;overflow-y:auto;padding:8px 12px 96px}
+
+  .row{
+    display:flex;align-items:center;gap:12px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:14px 12px;
+    margin-bottom:8px;
+  }
+  .row:active{background:var(--surface-2)}
+  .row .body{flex:1;min-width:0;cursor:pointer}
+  .row .name{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .row .meta{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+  .row .chev{color:var(--muted);font-size:20px;line-height:1}
+  .dot{
+    width:8px;height:8px;border-radius:50%;
+    background:var(--accent);flex:none;
+  }
+  .dot.note{background:var(--line)}
+
+  .more{
+    background:none;border:none;color:var(--muted);
+    font-size:20px;padding:4px 6px;cursor:pointer;line-height:1;
+  }
+
+  .empty{
+    text-align:center;color:var(--muted);
+    padding:56px 24px;font-size:15px;
+  }
+
+  .fab{
+    position:fixed;right:18px;
+    bottom:calc(env(safe-area-inset-bottom) + 22px);
+    height:56px;padding:0 22px;
+    border:none;border-radius:28px;
+    background:var(--accent);color:#fff;
+    font:inherit;font-size:16px;font-weight:600;
+    box-shadow:0 6px 20px rgba(224,40,38,.35);
+    cursor:pointer;
+  }
+  .fab:active{transform:translateY(1px)}
+
+  .sheet-bg{
+    position:fixed;inset:0;background:rgba(0,0,0,.65);
+    display:none;align-items:flex-end;z-index:20;
+  }
+  .sheet-bg.open{display:flex}
+  .sheet{
+    width:100%;background:var(--surface);
+    border-top:1px solid var(--line);
+    border-radius:16px 16px 0 0;
+    padding:20px 16px calc(env(safe-area-inset-bottom) + 20px);
+  }
+  .sheet h2{margin:0 0 14px;font-size:17px;font-weight:600}
+  .sheet input{
+    width:100%;padding:13px 12px;
+    background:var(--bg);color:var(--text);
+    border:1px solid var(--line);border-radius:var(--radius);
+    font:inherit;margin-bottom:12px;
+  }
+  .sheet input:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  .kinds{display:flex;gap:8px;margin-bottom:16px}
+  .kinds button{
+    flex:1;padding:12px;border-radius:var(--radius);
+    background:var(--bg);color:var(--muted);
+    border:1px solid var(--line);font:inherit;cursor:pointer;
+  }
+  .kinds button[aria-pressed="true"]{
+    border-color:var(--accent);color:var(--text);
+  }
+  .sheet .actions{display:flex;gap:8px}
+  .sheet .actions button{
+    flex:1;padding:14px;border-radius:var(--radius);
+    font:inherit;font-weight:600;border:1px solid var(--line);
+    background:var(--bg);color:var(--text);cursor:pointer;
+  }
+  .sheet .actions .primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .sheet .actions .danger{color:var(--accent)}
+
+  .menu button{
+    display:block;width:100%;text-align:left;
+    padding:15px 12px;margin-bottom:8px;
+    background:var(--bg);color:var(--text);
+    border:1px solid var(--line);border-radius:var(--radius);
+    font:inherit;cursor:pointer;
+  }
+  .menu button.danger{color:var(--accent)}
+
+  .toast{
+    position:fixed;left:50%;transform:translateX(-50%);
+    bottom:calc(env(safe-area-inset-bottom) + 92px);
+    background:var(--surface-2);border:1px solid var(--line);
+    color:var(--text);padding:11px 16px;border-radius:var(--radius);
+    font-size:14px;opacity:0;pointer-events:none;transition:opacity .18s;z-index:30;
+  }
+  .toast.show{opacity:1}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header>
+  <nav class="crumbs" id="crumbs"></nav>
+  <h1 id="title">Трекер</h1>
+</header>
+
+<main id="list"></main>
+
+<button class="fab" id="add">Добавить</button>
+
+<div class="sheet-bg" id="editBg">
+  <div class="sheet">
+    <h2 id="editTitle">Новая категория</h2>
+    <input id="editName" placeholder="Название" autocomplete="off">
+    <div class="kinds" id="kinds">
+      <button data-kind="category" aria-pressed="true">Категория</button>
+      <button data-kind="entry" aria-pressed="false">Запись</button>
+    </div>
+    <div class="actions">
+      <button id="editCancel">Отмена</button>
+      <button id="editSave" class="primary">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet-bg" id="menuBg">
+  <div class="sheet menu">
+    <h2 id="menuTitle"></h2>
+    <button id="menuRename">Переименовать</button>
+    <button id="menuDelete" class="danger">Удалить</button>
+    <div class="actions"><button id="menuCancel">Отмена</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------------------------------------------------------------
+   Хранилище. На телефоне — SQLite, в браузере — localStorage,
+   чтобы можно было проверять интерфейс без сборки APK.
+----------------------------------------------------------------*/
+const DB = 'tracker';
+
+const SchemaSQL = `
+CREATE TABLE IF NOT EXISTS node (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  parent_id INTEGER,
+  name TEXT NOT NULL,
+  kind TEXT NOT NULL DEFAULT 'category',
+  sort INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_node_parent ON node(parent_id);
+CREATE TABLE IF NOT EXISTS link (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  from_id INTEGER NOT NULL,
+  to_id INTEGER NOT NULL,
+  kind TEXT NOT NULL DEFAULT 'leads_to'
+);
+CREATE INDEX IF NOT EXISTS idx_link_from ON link(from_id);
+CREATE INDEX IF NOT EXISTS idx_link_to ON link(to_id);
+`;
+
+const SqliteRepo = {
+  async init(){
+    const S = window.Capacitor.Plugins.CapacitorSQLite;
+    this.S = S;
+    await S.createConnection({database:DB, version:1, encrypted:false,
+                              mode:'no-encryption', readonly:false});
+    await S.open({database:DB, readonly:false});
+    await S.execute({database:DB, statements:SchemaSQL, transaction:true});
+  },
+  async all(statement, values=[]){
+    const r = await this.S.query({database:DB, statement, values});
+    return r.values || [];
+  },
+  async run(statement, values=[]){
+    const r = await this.S.run({database:DB, statement, values, transaction:true});
+    return r.changes ? r.changes.lastId : null;
+  }
+};
+
+const MemoryRepo = {
+  async init(){
+    this.data = JSON.parse(localStorage.getItem(DB) || '{"node":[],"link":[],"seq":0}');
+  },
+  save(){ localStorage.setItem(DB, JSON.stringify(this.data)); },
+  async all(statement, values=[]){
+    if(statement.includes('parent_id IS NULL'))
+      return this.data.node.filter(n => n.parent_id === null)
+                           .sort((a,b)=>a.sort-b.sort || a.id-b.id);
+    if(statement.includes('parent_id = ?'))
+      return this.data.node.filter(n => n.parent_id === values[0])
+                           .sort((a,b)=>a.sort-b.sort || a.id-b.id);
+    if(statement.includes('WHERE id = ?'))
+      return this.data.node.filter(n => n.id === values[0]);
+    if(statement.includes('COUNT'))
+      return [{n: this.data.node.filter(x => x.parent_id === values[0]).length}];
+    return [];
+  },
+  async run(statement, values=[]){
+    if(statement.startsWith('INSERT INTO node')){
+      const id = ++this.data.seq;
+      this.data.node.push({id, parent_id:values[0], name:values[1],
+                           kind:values[2], sort:values[3], created_at:values[4]});
+      this.save(); return id;
+    }
+    if(statement.startsWith('UPDATE node')){
+      const n = this.data.node.find(x => x.id === values[1]);
+      if(n) n.name = values[0];
+      this.save(); return null;
+    }
+    if(statement.startsWith('DELETE FROM node')){
+      this.data.node = this.data.node.filter(x => x.id !== values[0]);
+      this.save(); return null;
+    }
+    return null;
+  }
+};
+
+let repo;
+
+async function openDatabase(){
+  const native = window.Capacitor && window.Capacitor.isNativePlatform
+              && window.Capacitor.isNativePlatform();
+  if(native){
+    repo = SqliteRepo;
+    await repo.init();
+  } else {
+    repo = MemoryRepo;
+    await repo.init();
+  }
+  const roots = await repo.all('SELECT * FROM node WHERE parent_id IS NULL');
+  if(roots.length === 0){
+    await addNode(null, 'Развитие', 'category');
+    await addNode(null, 'Финансы', 'category');
+  }
+}
+
+/* ------------------------------ данные ------------------------ */
+
+function addNode(parentId, name, kind){
+  return repo.run(
+    'INSERT INTO node (parent_id, name, kind, sort, created_at) VALUES (?,?,?,?,?)',
+    [parentId, name, kind, Date.now(), new Date().toISOString()]
+  );
+}
+
+function children(parentId){
+  return parentId === null
+    ? repo.all('SELECT * FROM node WHERE parent_id IS NULL ORDER BY sort, id')
+    : repo.all('SELECT * FROM node WHERE parent_id = ? ORDER BY sort, id', [parentId]);
+}
+
+function renameNode(id, name){
+  return repo.run('UPDATE node SET name = ? WHERE id = ?', [name, id]);
+}
+
+/* Удаляем вместе со всем, что лежит внутри. */
+async function deleteNode(id){
+  for(const kid of await children(id)) await deleteNode(kid.id);
+  await repo.run('DELETE FROM node WHERE id = ?', [id]);
+}
+
+async function countChildren(id){
+  const r = await repo.all('SELECT COUNT(*) AS n FROM node WHERE parent_id = ?', [id]);
+  return r.length ? (r[0].n ?? r[0]['COUNT(*)'] ?? 0) : 0;
+}
+
+/* ------------------------------ экран -------------------------- */
+
+let path = [];                       // [{id, name}] — где мы сейчас
+const current = () => path.length ? path[path.length-1].id : null;
+
+const $ = id => document.getElementById(id);
+
+function toast(text){
+  const t = $('toast');
+  t.textContent = text;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+async function render(){
+  $('title').textContent = path.length ? path[path.length-1].name : 'Трекер';
+
+  const crumbs = $('crumbs');
+  crumbs.innerHTML = '';
+  if(path.length){
+    const home = document.createElement('button');
+    home.textContent = 'Все разделы';
+    home.onclick = () => { path = []; render(); };
+    crumbs.appendChild(home);
+    path.slice(0, -1).forEach((p, i) => {
+      const sep = document.createElement('span');
+      sep.className = 'sep'; sep.textContent = '/';
+      crumbs.appendChild(sep);
+      const b = document.createElement('button');
+      b.textContent = p.name;
+      b.onclick = () => { path = path.slice(0, i+1); render(); };
+      crumbs.appendChild(b);
+    });
+  }
+
+  const list = $('list');
+  list.innerHTML = '';
+  const items = await children(current());
+
+  if(items.length === 0){
+    const e = document.createElement('div');
+    e.className = 'empty';
+    e.textContent = 'Пока пусто. Нажми «Добавить», чтобы создать первую категорию.';
+    list.appendChild(e);
+    return;
+  }
+
+  for(const item of items){
+    const row = document.createElement('div');
+    row.className = 'row';
+
+    const dot = document.createElement('span');
+    dot.className = 'dot' + (item.kind === 'entry' ? ' note' : '');
+    row.appendChild(dot);
+
+    const body = document.createElement('div');
+    body.className = 'body';
+    const name = document.createElement('span');
+    name.className = 'name';
+    name.textContent = item.name;
+    body.appendChild(name);
+
+    if(item.kind === 'category'){
+      const n = await countChildren(item.id);
+      const meta = document.createElement('span');
+      meta.className = 'meta';
+      meta.textContent = n === 0 ? 'пусто' : n + ' внутри';
+      body.appendChild(meta);
+      body.onclick = () => { path.push({id:item.id, name:item.name}); render(); };
+    } else {
+      body.onclick = () => openMenu(item);
+    }
+    row.appendChild(body);
+
+    if(item.kind === 'category'){
+      const chev = document.createElement('span');
+      chev.className = 'chev';
+      chev.textContent = '›';
+      row.appendChild(chev);
+    }
+
+    const more = document.createElement('button');
+    more.className = 'more';
+    more.textContent = '⋯';
+    more.setAttribute('aria-label', 'Действия: ' + item.name);
+    more.onclick = e => { e.stopPropagation(); openMenu(item); };
+    row.appendChild(more);
+
+    list.appendChild(row);
+  }
+}
+
+/* ------------------------- добавить / изменить ------------------ */
+
+let editState = {mode:'add', kind:'category', node:null};
+
+function openEditor(mode, node){
+  editState = {mode, kind: node ? node.kind : 'category', node: node || null};
+  $('editTitle').textContent = mode === 'add' ? 'Новое' : 'Переименовать';
+  $('editName').value = node ? node.name : '';
+  $('kinds').style.display = mode === 'add' ? 'flex' : 'none';
+  syncKinds();
+  $('editBg').classList.add('open');
+  setTimeout(() => $('editName').focus(), 50);
+}
+
+function closeEditor(){ $('editBg').classList.remove('open'); }
+
+function syncKinds(){
+  [...$('kinds').children].forEach(b =>
+    b.setAttribute('aria-pressed', String(b.dataset.kind === editState.kind)));
+}
+
+[...$('kinds').children].forEach(b => {
+  b.onclick = () => { editState.kind = b.dataset.kind; syncKinds(); };
+});
+
+$('add').onclick = () => openEditor('add', null);
+$('editCancel').onclick = closeEditor;
+
+$('editSave').onclick = async () => {
+  const name = $('editName').value.trim();
+  if(!name){ toast('Введи название'); return; }
+  if(editState.mode === 'add'){
+    await addNode(current(), name, editState.kind);
+    toast('Добавлено');
+  } else {
+    await renameNode(editState.node.id, name);
+    toast('Переименовано');
+  }
+  closeEditor();
+  render();
+};
+
+$('editName').addEventListener('keydown', e => {
+  if(e.key === 'Enter') $('editSave').click();
+});
+
+/* --------------------------- меню строки ------------------------ */
+
+let menuNode = null;
+
+function openMenu(node){
+  menuNode = node;
+  $('menuTitle').textContent = node.name;
+  $('menuBg').classList.add('open');
+}
+function closeMenu(){ $('menuBg').classList.remove('open'); }
+
+$('menuCancel').onclick = closeMenu;
+$('menuRename').onclick = () => { closeMenu(); openEditor('rename', menuNode); };
+$('menuDelete').onclick = async () => {
+  const n = await countChildren(menuNode.id);
+  const ok = n > 0
+    ? confirm('Внутри «' + menuNode.name + '» есть записи. Удалить вместе с содержимым?')
+    : true;
+  if(!ok) return;
+  await deleteNode(menuNode.id);
+  closeMenu();
+  toast('Удалено');
+  render();
+};
+
+[$('editBg'), $('menuBg')].forEach(bg => {
+  bg.onclick = e => { if(e.target === bg) bg.classList.remove('open'); };
+});
+
+/* аппаратная кнопка «назад» поднимает на уровень выше */
+document.addEventListener('DOMContentLoaded', () => {
+  if(window.Capacitor && window.Capacitor.Plugins.App){
+    window.Capacitor.Plugins.App.addListener('backButton', () => {
+      if($('editBg').classList.contains('open')) return closeEditor();
+      if($('menuBg').classList.contains('open')) return closeMenu();
+      if(path.length){ path.pop(); render(); return; }
+      window.Capacitor.Plugins.App.exitApp();
+    });
+  }
+});
+
+/* ------------------------------ старт --------------------------- */
+
+(async () => {
+  try{
+    await openDatabase();
+    await render();
+  }catch(err){
+    document.getElementById('list').innerHTML =
+      '<div class="empty">База не открылась: ' + err.message + '</div>';
+  }
+})();
+</script>
+</body>
+</html>
