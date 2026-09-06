@@ -1,0 +1,11 @@
+{
+  "appId": "kz.proamgfit.tracker",
+  "appName": "Трекер",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}
