@@ -11,6 +11,7 @@
     --surface-2:#1F0D10;
     --line:#3A1A1D;
     --accent:#E02826;
+    --income:#3FA96B;
     --text:#F2E9E6;
     --muted:#9A7B7C;
     --radius:10px;
@@ -34,6 +35,15 @@
   h1{margin:2px 0 0;font-size:24px;font-weight:650;letter-spacing:-.01em}
   .total{font-size:13px;color:var(--muted);margin-top:4px}
   .total b{color:var(--text);font-weight:600}
+  .total .in{color:var(--income)}
+  .total .out{color:var(--accent)}
+
+  .months{display:flex;align-items:center;gap:12px;margin-top:10px}
+  .months button{
+    background:var(--bg);border:1px solid var(--line);color:var(--text);
+    width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer;line-height:1;
+  }
+  .months span{font-size:14px;flex:1;text-align:center}
 
   main{flex:1;overflow-y:auto;padding:8px 12px 96px}
 
@@ -49,6 +59,9 @@
   .row .meta{display:block;font-size:12px;color:var(--muted);margin-top:3px}
   .late{color:var(--accent)}
   .chev{color:var(--muted);font-size:20px;line-height:1}
+  .sum{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+  .sum.in{color:var(--income)}
+  .sum.out{color:var(--text)}
 
   .check{
     width:26px;height:26px;flex:none;border-radius:7px;
@@ -58,6 +71,7 @@
   }
   .check[aria-pressed="true"]{border-color:var(--accent)}
   .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none;margin:0 9px}
+  .dot.money{background:var(--income)}
 
   .bar{height:3px;background:var(--line);border-radius:2px;margin-top:6px;overflow:hidden}
   .bar i{display:block;height:100%;background:var(--accent);border-radius:2px}
@@ -96,12 +110,12 @@
   }
   input:focus{outline:2px solid var(--accent);outline-offset:-1px}
   .hint{font-size:12px;color:var(--muted);margin-top:5px}
-  .kinds{display:flex;gap:8px;margin-bottom:14px}
-  .kinds button{
+  .seg{display:flex;gap:8px;margin-bottom:14px}
+  .seg button{
     flex:1;padding:12px;border-radius:var(--radius);background:var(--bg);
     color:var(--muted);border:1px solid var(--line);font:inherit;cursor:pointer;
   }
-  .kinds button[aria-pressed="true"]{border-color:var(--accent);color:var(--text)}
+  .seg button[aria-pressed="true"]{border-color:var(--accent);color:var(--text)}
   .actions{display:flex;gap:8px;margin-top:4px}
   .actions button{
     flex:1;padding:14px;border-radius:var(--radius);font:inherit;font-weight:600;
@@ -132,6 +146,11 @@
   <nav class="crumbs" id="crumbs"></nav>
   <h1 id="title">Трекер</h1>
   <div class="total" id="total"></div>
+  <div class="months" id="months" style="display:none">
+    <button id="prevMonth" aria-label="Предыдущий месяц">‹</button>
+    <span id="monthLabel"></span>
+    <button id="nextMonth" aria-label="Следующий месяц">›</button>
+  </div>
 </header>
 
 <main id="list"></main>
@@ -142,7 +161,7 @@
   <div class="sheet">
     <h2 id="editTitle">Новое</h2>
 
-    <div class="kinds" id="kinds">
+    <div class="seg" id="kinds">
       <button data-kind="category" aria-pressed="true">Категория</button>
       <button data-kind="entry" aria-pressed="false">Запись</button>
     </div>
@@ -152,14 +171,23 @@
       <input id="fName" autocomplete="off">
     </div>
 
+    <!-- категория -->
     <div id="catFields">
-      <div class="field">
+      <div id="modeWrap">
+        <label>Тип категории</label>
+        <div class="seg" id="modes">
+          <button data-mode="plain" aria-pressed="true">Обычная</button>
+          <button data-mode="money" aria-pressed="false">Финансовая</button>
+        </div>
+      </div>
+      <div class="field" id="unitWrap">
         <label for="fUnit">Единица измерения</label>
         <input id="fUnit" autocomplete="off" placeholder="повторы, часы, партии">
         <div class="hint" id="unitHint"></div>
       </div>
     </div>
 
+    <!-- обычная запись -->
     <div id="entryFields">
       <div class="two">
         <div class="field">
@@ -179,6 +207,24 @@
         <label for="fUnitOwn">Своя единица</label>
         <input id="fUnitOwn" autocomplete="off">
         <div class="hint" id="unitOwnHint"></div>
+      </div>
+    </div>
+
+    <!-- денежная запись -->
+    <div id="moneyFields">
+      <div class="seg" id="dirs">
+        <button data-dir="-1" aria-pressed="true">Расход</button>
+        <button data-dir="1" aria-pressed="false">Доход</button>
+      </div>
+      <div class="two">
+        <div class="field">
+          <label for="fAmount">Сумма</label>
+          <input id="fAmount" type="number" inputmode="decimal">
+        </div>
+        <div class="field">
+          <label for="fDate">Дата</label>
+          <input id="fDate" type="date">
+        </div>
       </div>
     </div>
 
@@ -217,9 +263,7 @@
 
 <script>
 /* =====================================================================
-   Хранилище. На телефоне SQLite, в браузере localStorage —
-   чтобы можно было проверять интерфейс без сборки APK.
-   Обе реализации дают одни и те же методы.
+   Хранилище: на телефоне SQLite, в браузере localStorage.
 ====================================================================== */
 const DB = 'tracker';
 
@@ -229,11 +273,15 @@ CREATE TABLE IF NOT EXISTS node (
   parent_id INTEGER,
   name TEXT NOT NULL,
   kind TEXT NOT NULL DEFAULT 'category',
+  mode TEXT,
   unit TEXT,
   plan REAL,
   fact REAL,
   deadline TEXT,
   done INTEGER NOT NULL DEFAULT 0,
+  amount REAL,
+  op_date TEXT,
+  direction INTEGER,
   sort INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL
 );
@@ -248,16 +296,21 @@ CREATE INDEX IF NOT EXISTS idx_link_from ON link(from_id);
 CREATE INDEX IF NOT EXISTS idx_link_to ON link(to_id);
 `;
 
-/* колонок не было в первой версии — добавляем по одной, молча */
+/* колонки, добавленные в поздних версиях */
 const NEW_COLUMNS = [
   "ALTER TABLE node ADD COLUMN unit TEXT",
   "ALTER TABLE node ADD COLUMN plan REAL",
   "ALTER TABLE node ADD COLUMN fact REAL",
   "ALTER TABLE node ADD COLUMN deadline TEXT",
-  "ALTER TABLE node ADD COLUMN done INTEGER NOT NULL DEFAULT 0"
+  "ALTER TABLE node ADD COLUMN done INTEGER NOT NULL DEFAULT 0",
+  "ALTER TABLE node ADD COLUMN mode TEXT",
+  "ALTER TABLE node ADD COLUMN amount REAL",
+  "ALTER TABLE node ADD COLUMN op_date TEXT",
+  "ALTER TABLE node ADD COLUMN direction INTEGER"
 ];
 
-const FIELDS = ['parent_id','name','kind','unit','plan','fact','deadline','done','sort','created_at'];
+const FIELDS = ['parent_id','name','kind','mode','unit','plan','fact','deadline','done',
+                'amount','op_date','direction','sort','created_at'];
 
 const SqliteRepo = {
   async init(){
@@ -279,10 +332,6 @@ const SqliteRepo = {
     const r = await this.S.query({database:DB, statement:st,
                                   values: parentId === null ? [] : [parentId]});
     return r.values || [];
-  },
-  async get(id){
-    const r = await this.S.query({database:DB, statement:'SELECT * FROM node WHERE id = ?', values:[id]});
-    return (r.values || [])[0] || null;
   },
   async insert(obj){
     const st = 'INSERT INTO node (' + FIELDS.join(',') + ') VALUES (' +
@@ -311,7 +360,6 @@ const MemoryRepo = {
     return this.d.node.filter(n => n.parent_id === parentId)
                       .sort((a,b) => a.sort - b.sort || a.id - b.id);
   },
-  async get(id){ return this.d.node.find(n => n.id === id) || null; },
   async insert(obj){
     const id = ++this.d.seq;
     const row = {id};
@@ -339,24 +387,19 @@ async function openDatabase(){
   const roots = await repo.listChildren(null);
   if(roots.length === 0){
     await createNode(null, {name:'Развитие', kind:'category'});
-    await createNode(null, {name:'Финансы',  kind:'category'});
+    await createNode(null, {name:'Финансы',  kind:'category', mode:'money'});
   }
 }
 
 /* ------------------------------ данные ------------------------- */
 
-function createNode(parentId, data){
+function createNode(parentId, d){
   return repo.insert({
-    parent_id: parentId,
-    name: data.name,
-    kind: data.kind,
-    unit: data.unit ?? null,
-    plan: data.plan ?? null,
-    fact: data.fact ?? null,
-    deadline: data.deadline ?? null,
-    done: 0,
-    sort: Date.now(),
-    created_at: new Date().toISOString()
+    parent_id:parentId, name:d.name, kind:d.kind,
+    mode:d.mode ?? null, unit:d.unit ?? null,
+    plan:d.plan ?? null, fact:d.fact ?? null, deadline:d.deadline ?? null, done:0,
+    amount:d.amount ?? null, op_date:d.op_date ?? null, direction:d.direction ?? null,
+    sort:Date.now(), created_at:new Date().toISOString()
   });
 }
 
@@ -365,32 +408,50 @@ async function deleteNode(id){
   await repo.remove(id);
 }
 
-/* Итог по категории: записи на любой глубине внутри.
-   Те, у кого своя единица, в сумму не идут — считаются отдельно. */
+/* итог обычной категории */
 async function aggregate(id){
-  let plan = 0, fact = 0, count = 0, done = 0, own = 0;
+  let plan = 0, fact = 0, count = 0, done = 0;
   for(const kid of await repo.listChildren(id)){
     if(kid.kind === 'entry'){
       count++;
       if(kid.done) done++;
-      if(kid.unit) own++;
-      else { plan += Number(kid.plan) || 0; fact += Number(kid.fact) || 0; }
+      if(!kid.unit){ plan += Number(kid.plan) || 0; fact += Number(kid.fact) || 0; }
     } else {
       const a = await aggregate(kid.id);
-      plan += a.plan; fact += a.fact; count += a.count; done += a.done; own += a.own;
+      plan += a.plan; fact += a.fact; count += a.count; done += a.done;
     }
   }
-  return {plan, fact, count, done, own};
+  return {plan, fact, count, done};
+}
+
+/* итог финансовой категории за месяц ym = 'YYYY-MM' */
+async function aggregateMoney(id, ym){
+  let income = 0, expense = 0, count = 0;
+  for(const kid of await repo.listChildren(id)){
+    if(kid.kind === 'entry'){
+      if(!kid.op_date || !kid.op_date.startsWith(ym)) continue;
+      count++;
+      const v = Number(kid.amount) || 0;
+      if(Number(kid.direction) > 0) income += v; else expense += v;
+    } else {
+      const a = await aggregateMoney(kid.id, ym);
+      income += a.income; expense += a.expense; count += a.count;
+    }
+  }
+  return {income, expense, count};
 }
 
 /* ------------------------------ экран -------------------------- */
 
-let path = [];
+let path = [];                                  // [{id,name,unit,mode}]
+let month = new Date();                         // выбранный месяц
+
 const current = () => path.length ? path[path.length-1].id : null;
 const currentUnit = () => {
   for(let i = path.length - 1; i >= 0; i--) if(path[i].unit) return path[i].unit;
   return '';
 };
+const isMoney = () => path.some(p => p.mode === 'money');
 
 const $ = id => document.getElementById(id);
 const num = v => (v === null || v === undefined || v === '') ? null : Number(v);
@@ -398,6 +459,11 @@ const fmt = v => {
   const n = Number(v) || 0;
   return Number.isInteger(n) ? String(n) : n.toFixed(1).replace('.', ',');
 };
+const money = v => (Number(v) || 0).toLocaleString('ru-RU', {maximumFractionDigits:0});
+const ymOf = d => d.toISOString().slice(0,7);
+const today = () => new Date().toISOString().slice(0,10);
+const MONTHS = ['январь','февраль','март','апрель','май','июнь',
+                'июль','август','сентябрь','октябрь','ноябрь','декабрь'];
 
 function toast(text){
   const t = $('toast');
@@ -409,8 +475,11 @@ function toast(text){
 
 function overdue(item){
   if(!item.deadline || item.done) return false;
-  return item.deadline < new Date().toISOString().slice(0,10);
+  return item.deadline < today();
 }
+
+$('prevMonth').onclick = () => { month.setMonth(month.getMonth() - 1); render(); };
+$('nextMonth').onclick = () => { month.setMonth(month.getMonth() + 1); render(); };
 
 async function render(){
   $('title').textContent = path.length ? path[path.length-1].name : 'Трекер';
@@ -433,26 +502,49 @@ async function render(){
     });
   }
 
+  const moneyView = isMoney();
+  const ym = ymOf(month);
+  $('months').style.display = moneyView ? 'flex' : 'none';
+  $('monthLabel').textContent = MONTHS[month.getMonth()] + ' ' + month.getFullYear();
+
   const totalEl = $('total');
-  if(path.length){
+  totalEl.innerHTML = '';
+  if(path.length && moneyView){
+    const a = await aggregateMoney(current(), ym);
+    if(a.count){
+      const net = a.income - a.expense;
+      totalEl.innerHTML =
+        'Доход <b class="in">' + money(a.income) + '</b> · ' +
+        'Расход <b class="out">' + money(a.expense) + '</b> · ' +
+        'Итог <b>' + (net >= 0 ? '+' : '−') + money(Math.abs(net)) + '</b>';
+    } else {
+      totalEl.textContent = 'В этом месяце операций нет';
+    }
+  } else if(path.length){
     const a = await aggregate(current());
     const unit = currentUnit();
-    totalEl.innerHTML = a.count === 0 ? '' :
-      'Выполнено <b>' + a.done + '</b> из <b>' + a.count + '</b>' +
-      (a.plan ? ' · <b>' + fmt(a.fact) + '</b> из <b>' + fmt(a.plan) + '</b>' +
-                (unit ? ' ' + unit : '') : '');
-  } else {
-    totalEl.innerHTML = '';
+    if(a.count)
+      totalEl.innerHTML =
+        'Выполнено <b>' + a.done + '</b> из <b>' + a.count + '</b>' +
+        (a.plan ? ' · <b>' + fmt(a.fact) + '</b> из <b>' + fmt(a.plan) + '</b>' +
+                  (unit ? ' ' + unit : '') : '');
   }
 
   const list = $('list');
   list.innerHTML = '';
-  const items = await repo.listChildren(current());
+  let items = await repo.listChildren(current());
+
+  /* в финансовом разделе операции показываем только за выбранный месяц */
+  if(moneyView)
+    items = items.filter(n => n.kind === 'category' ||
+                              (n.op_date && n.op_date.startsWith(ym)));
 
   if(items.length === 0){
     const e = document.createElement('div');
     e.className = 'empty';
-    e.textContent = 'Пока пусто. Нажми «Добавить», чтобы создать первую категорию.';
+    e.textContent = moneyView
+      ? 'За этот месяц записей нет.'
+      : 'Пока пусто. Нажми «Добавить», чтобы создать первую категорию.';
     list.appendChild(e);
     return;
   }
@@ -460,8 +552,10 @@ async function render(){
   for(const item of items){
     const row = document.createElement('div');
     row.className = 'row' + (item.done ? ' done' : '');
+    const itemMoney = moneyView || item.mode === 'money';
 
-    if(item.kind === 'entry'){
+    /* левый маркер */
+    if(item.kind === 'entry' && !itemMoney){
       const chk = document.createElement('button');
       chk.className = 'check';
       chk.setAttribute('aria-pressed', item.done ? 'true' : 'false');
@@ -475,7 +569,7 @@ async function render(){
       row.appendChild(chk);
     } else {
       const dot = document.createElement('span');
-      dot.className = 'dot';
+      dot.className = 'dot' + (item.mode === 'money' ? ' money' : '');
       row.appendChild(dot);
     }
 
@@ -490,19 +584,30 @@ async function render(){
     meta.className = 'meta';
 
     if(item.kind === 'category'){
-      const a = await aggregate(item.id);
       const kids = await repo.listChildren(item.id);
-      const unit = item.unit || currentUnit();
       const parts = [];
-      parts.push(kids.length === 0 ? 'пусто' : kids.length + ' внутри');
-      if(a.count) parts.push(a.done + '/' + a.count + ' готово');
-      if(a.plan)  parts.push(fmt(a.fact) + ' из ' + fmt(a.plan) + (unit ? ' ' + unit : ''));
+      if(itemMoney){
+        const a = await aggregateMoney(item.id, ym);
+        parts.push(a.count ? a.count + ' операций' : 'за месяц пусто');
+        if(a.expense) parts.push('расход ' + money(a.expense));
+        if(a.income)  parts.push('доход ' + money(a.income));
+      } else {
+        const a = await aggregate(item.id);
+        const unit = item.unit || currentUnit();
+        parts.push(kids.length === 0 ? 'пусто' : kids.length + ' внутри');
+        if(a.count) parts.push(a.done + '/' + a.count + ' готово');
+        if(a.plan)  parts.push(fmt(a.fact) + ' из ' + fmt(a.plan) + (unit ? ' ' + unit : ''));
+      }
       meta.textContent = parts.join(' · ');
       body.appendChild(meta);
       body.onclick = () => {
-        path.push({id:item.id, name:item.name, unit:item.unit});
+        path.push({id:item.id, name:item.name, unit:item.unit, mode:item.mode});
         render();
       };
+    } else if(itemMoney){
+      meta.textContent = item.op_date ? item.op_date.split('-').reverse().join('.') : '';
+      body.appendChild(meta);
+      body.onclick = () => openMenu(item);
     } else {
       const unit = item.unit || currentUnit();
       const parts = [];
@@ -528,18 +633,25 @@ async function render(){
     }
     row.appendChild(body);
 
-    if(item.kind === 'entry'){
+    /* правая часть */
+    if(item.kind === 'category'){
+      const chev = document.createElement('span');
+      chev.className = 'chev';
+      chev.textContent = '›';
+      row.appendChild(chev);
+    } else if(itemMoney){
+      const sum = document.createElement('span');
+      const income = Number(item.direction) > 0;
+      sum.className = 'sum ' + (income ? 'in' : 'out');
+      sum.textContent = (income ? '+' : '−') + money(item.amount);
+      row.appendChild(sum);
+    } else {
       const plus = document.createElement('button');
       plus.className = 'plus';
       plus.textContent = '+';
       plus.setAttribute('aria-label', 'Добавить к факту: ' + item.name);
       plus.onclick = e => { e.stopPropagation(); openQuick(item); };
       row.appendChild(plus);
-    } else {
-      const chev = document.createElement('span');
-      chev.className = 'chev';
-      chev.textContent = '›';
-      row.appendChild(chev);
     }
 
     const more = document.createElement('button');
@@ -555,18 +667,37 @@ async function render(){
 
 /* ------------------------- добавить / изменить ------------------ */
 
-let editState = {mode:'add', kind:'category', node:null};
+let editState = {mode:'add', kind:'category', catMode:'plain', dir:-1, node:null};
 
-function syncKindFields(){
+function syncEditFields(){
   const cat = editState.kind === 'category';
+  const inMoney = isMoney();
+  const moneyEntry = !cat && (inMoney || (editState.node && editState.node.amount != null));
+
   $('catFields').style.display   = cat ? 'block' : 'none';
-  $('entryFields').style.display = cat ? 'none'  : 'block';
+  $('entryFields').style.display = (!cat && !moneyEntry) ? 'block' : 'none';
+  $('moneyFields').style.display = moneyEntry ? 'block' : 'none';
+
+  /* внутри финансовой категории новые категории тоже финансовые */
+  $('modeWrap').style.display = (cat && !inMoney) ? 'block' : 'none';
+  $('unitWrap').style.display = (cat && editState.catMode === 'plain' && !inMoney) ? 'block' : 'none';
+
   [...$('kinds').children].forEach(b =>
     b.setAttribute('aria-pressed', String(b.dataset.kind === editState.kind)));
+  [...$('modes').children].forEach(b =>
+    b.setAttribute('aria-pressed', String(b.dataset.mode === editState.catMode)));
+  [...$('dirs').children].forEach(b =>
+    b.setAttribute('aria-pressed', String(Number(b.dataset.dir) === editState.dir)));
 }
 
 function openEditor(mode, node){
-  editState = {mode, kind: node ? node.kind : 'category', node: node || null};
+  editState = {
+    mode,
+    kind: node ? node.kind : 'category',
+    catMode: node ? (node.mode === 'money' ? 'money' : 'plain') : (isMoney() ? 'money' : 'plain'),
+    dir: node && Number(node.direction) > 0 ? 1 : -1,
+    node: node || null
+  };
   $('editTitle').textContent = mode === 'add' ? 'Новое' : 'Изменить';
   $('kinds').style.display = mode === 'add' ? 'flex' : 'none';
 
@@ -576,6 +707,8 @@ function openEditor(mode, node){
   $('fFact').value     = node && node.fact != null ? node.fact : '';
   $('fDeadline').value = node && node.deadline ? node.deadline : '';
   $('fUnitOwn').value  = node && node.kind === 'entry' ? (node.unit || '') : '';
+  $('fAmount').value   = node && node.amount != null ? node.amount : '';
+  $('fDate').value     = node && node.op_date ? node.op_date : today();
 
   const inherited = currentUnit();
   $('unitHint').textContent = inherited
@@ -585,7 +718,7 @@ function openEditor(mode, node){
     ? 'Пусто — считается в «' + inherited + '»'
     : 'У категории выше единица не задана';
 
-  syncKindFields();
+  syncEditFields();
   $('editBg').classList.add('open');
   setTimeout(() => $('fName').focus(), 50);
 }
@@ -593,7 +726,13 @@ function openEditor(mode, node){
 function closeEditor(){ $('editBg').classList.remove('open'); }
 
 [...$('kinds').children].forEach(b => {
-  b.onclick = () => { editState.kind = b.dataset.kind; syncKindFields(); };
+  b.onclick = () => { editState.kind = b.dataset.kind; syncEditFields(); };
+});
+[...$('modes').children].forEach(b => {
+  b.onclick = () => { editState.catMode = b.dataset.mode; syncEditFields(); };
+});
+[...$('dirs').children].forEach(b => {
+  b.onclick = () => { editState.dir = Number(b.dataset.dir); syncEditFields(); };
 });
 
 $('add').onclick = () => openEditor('add', null);
@@ -603,15 +742,38 @@ $('editSave').onclick = async () => {
   const name = $('fName').value.trim();
   if(!name){ toast('Введи название'); return; }
 
-  const isCat = editState.kind === 'category';
-  const data = {
-    name,
-    kind: editState.kind,
-    unit: (isCat ? $('fUnit').value : $('fUnitOwn').value).trim() || null,
-    plan: isCat ? null : num($('fPlan').value),
-    fact: isCat ? null : num($('fFact').value),
-    deadline: isCat ? null : ($('fDeadline').value || null)
-  };
+  const cat = editState.kind === 'category';
+  const inMoney = isMoney();
+  let data;
+
+  if(cat){
+    const isMoneyCat = inMoney || editState.catMode === 'money';
+    data = {
+      name, kind:'category',
+      mode: isMoneyCat ? 'money' : null,
+      unit: isMoneyCat ? null : ($('fUnit').value.trim() || null),
+      plan:null, fact:null, deadline:null, amount:null, op_date:null, direction:null
+    };
+  } else if(inMoney || (editState.node && editState.node.amount != null)){
+    const amount = num($('fAmount').value);
+    if(amount === null){ toast('Введи сумму'); return; }
+    data = {
+      name, kind:'entry', mode:null, unit:null,
+      plan:null, fact:null, deadline:null,
+      amount: Math.abs(amount),
+      op_date: $('fDate').value || today(),
+      direction: editState.dir
+    };
+  } else {
+    data = {
+      name, kind:'entry', mode:null,
+      unit: $('fUnitOwn').value.trim() || null,
+      plan: num($('fPlan').value),
+      fact: num($('fFact').value),
+      deadline: $('fDeadline').value || null,
+      amount:null, op_date:null, direction:null
+    };
+  }
 
   if(editState.mode === 'add'){
     await createNode(current(), data);
@@ -619,7 +781,7 @@ $('editSave').onclick = async () => {
   } else {
     await repo.update(editState.node.id, data);
     const p = path.find(x => x.id === editState.node.id);
-    if(p){ p.name = data.name; p.unit = data.unit; }
+    if(p){ p.name = data.name; p.unit = data.unit; p.mode = data.mode; }
     toast('Сохранено');
   }
   closeEditor();
