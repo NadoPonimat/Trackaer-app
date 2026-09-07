@@ -112,6 +112,17 @@
   }
   input:focus{outline:2px solid var(--accent);outline-offset:-1px}
   .hint{font-size:12px;color:var(--muted);margin-top:5px}
+  textarea{
+    width:100%;min-height:120px;resize:vertical;padding:13px 12px;
+    background:var(--bg);color:var(--text);border:1px solid var(--line);
+    border-radius:var(--radius);font:inherit;line-height:1.5;
+  }
+  textarea:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  .note{
+    background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);
+    padding:12px;margin-bottom:12px;font-size:14px;color:var(--text);
+    white-space:pre-wrap;max-height:40vh;overflow-y:auto;
+  }
   .seg{display:flex;gap:8px;margin-bottom:14px}
   .seg button{
     flex:1;padding:12px;border-radius:var(--radius);background:var(--bg);
@@ -250,6 +261,11 @@
       </div>
     </div>
 
+    <div class="field">
+      <label for="fNote">Заметка</label>
+      <textarea id="fNote" placeholder="Идея, планы сторон, типовые ходы"></textarea>
+    </div>
+
     <div class="actions">
       <button id="editCancel">Отмена</button>
       <button id="editSave" class="primary">Сохранить</button>
@@ -275,6 +291,7 @@
 <div class="sheet-bg" id="menuBg">
   <div class="sheet menu">
     <h2 id="menuTitle"></h2>
+    <div class="note" id="menuNote" style="display:none"></div>
     <button id="menuLinks">Связи</button>
     <button id="menuEdit">Изменить</button>
     <button id="menuDelete" class="danger">Удалить</button>
@@ -340,6 +357,7 @@ CREATE TABLE IF NOT EXISTS node (
   op_date TEXT,
   direction INTEGER,
   target_id INTEGER,
+  note TEXT,
   sort INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL
 );
@@ -364,11 +382,12 @@ const NEW_COLUMNS = [
   "ALTER TABLE node ADD COLUMN amount REAL",
   "ALTER TABLE node ADD COLUMN op_date TEXT",
   "ALTER TABLE node ADD COLUMN direction INTEGER",
-  "ALTER TABLE node ADD COLUMN target_id INTEGER"
+  "ALTER TABLE node ADD COLUMN target_id INTEGER",
+  "ALTER TABLE node ADD COLUMN note TEXT"
 ];
 
 const FIELDS = ['parent_id','name','kind','mode','unit','plan','fact','deadline','done',
-                'amount','op_date','direction','target_id','sort','created_at'];
+                'amount','op_date','direction','target_id','note','sort','created_at'];
 
 const SqliteRepo = {
   async init(){
@@ -485,7 +504,7 @@ function createNode(parentId, d){
     mode:d.mode ?? null, unit:d.unit ?? null,
     plan:d.plan ?? null, fact:d.fact ?? null, deadline:d.deadline ?? null, done:0,
     amount:d.amount ?? null, op_date:d.op_date ?? null, direction:d.direction ?? null,
-    target_id:d.target_id ?? null,
+    target_id:d.target_id ?? null, note:d.note ?? null,
     sort:Date.now(), created_at:new Date().toISOString()
   });
 }
@@ -735,6 +754,7 @@ async function render(){
       const out = linksFrom(item.id).length, inc = linksTo(item.id).length;
       if(out) parts.push('ведёт к ' + out);
       if(inc) parts.push('из ' + inc);
+      if(item.note) parts.push('есть заметка');
       meta.textContent = parts.join(' · ');
       if(overdue(item)) meta.classList.add('late');
       body.appendChild(meta);
@@ -832,6 +852,7 @@ function openEditor(mode, node){
   $('fUnitOwn').value  = node && node.kind === 'entry' ? (node.unit || '') : '';
   $('fAmount').value   = node && node.amount != null ? node.amount : '';
   $('fDate').value     = node && node.op_date ? node.op_date : today();
+  $('fNote').value     = node && node.note ? node.note : '';
 
   const inherited = currentUnit();
   $('unitHint').textContent = inherited
@@ -878,6 +899,7 @@ $('editSave').onclick = async () => {
       mode: isMoneyCat ? 'money' : null,
       unit: isMoneyCat ? null : ($('fUnit').value.trim() || null),
       target_id: isMoneyCat ? null : editState.target,
+      note: $('fNote').value.trim() || null,
       plan:null, fact:null, deadline:null, amount:null, op_date:null, direction:null
     };
   } else if(inMoney || (editState.node && editState.node.amount != null)){
@@ -885,6 +907,7 @@ $('editSave').onclick = async () => {
     if(amount === null){ toast('Введи сумму'); return; }
     data = {
       name, kind:'entry', mode:null, unit:null, target_id:null,
+      note: $('fNote').value.trim() || null,
       plan:null, fact:null, deadline:null,
       amount: Math.abs(amount),
       op_date: $('fDate').value || today(),
@@ -893,6 +916,7 @@ $('editSave').onclick = async () => {
   } else {
     data = {
       name, kind:'entry', mode:null, target_id:null,
+      note: $('fNote').value.trim() || null,
       unit: $('fUnitOwn').value.trim() || null,
       plan: num($('fPlan').value),
       fact: num($('fFact').value),
@@ -1080,6 +1104,8 @@ let menuNode = null;
 function openMenu(node){
   menuNode = node;
   $('menuTitle').textContent = node.name;
+  $('menuNote').textContent = node.note || '';
+  $('menuNote').style.display = node.note ? 'block' : 'none';
   /* связи только у обычных записей */
   $('menuLinks').style.display =
     (node.kind === 'entry' && node.amount == null) ? 'block' : 'none';
