@@ -14,7 +14,7 @@ jobs:
       - uses: actions/setup-java@v4
         with: {distribution: temurin, java-version: '21'}
       - uses: android-actions/setup-android@v3
-      - run: mkdir -p www && cp index.html www/index.html
+      - run: mkdir -p www && cp index.html data.js www/
       - run: mkdir -p assets && cp icon.png assets/icon.png && cp icon-foreground.png assets/icon-foreground.png && cp icon-background.png assets/icon-background.png && cp splash.png assets/splash.png
       - run: npm install
       - run: npx cap add android
