@@ -18,124 +18,109 @@
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;padding:0;height:100%}
   body{
-    background:var(--bg);
-    color:var(--text);
+    background:var(--bg);color:var(--text);
     font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-    font-size:16px;
-    line-height:1.45;
-    display:flex;
-    flex-direction:column;
-    overscroll-behavior:none;
+    font-size:16px;line-height:1.45;
+    display:flex;flex-direction:column;overscroll-behavior:none;
   }
 
   header{
     padding:calc(env(safe-area-inset-top) + 14px) 16px 12px;
-    border-bottom:1px solid var(--line);
-    background:var(--surface);
+    border-bottom:1px solid var(--line);background:var(--surface);
   }
   .crumbs{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px;min-height:19px}
-  .crumbs button{
-    background:none;border:none;padding:0;color:var(--muted);
-    font:inherit;font-size:13px;cursor:pointer;
-  }
+  .crumbs button{background:none;border:none;padding:0;color:var(--muted);font:inherit;font-size:13px;cursor:pointer}
   .crumbs .sep{opacity:.5}
   h1{margin:2px 0 0;font-size:24px;font-weight:650;letter-spacing:-.01em}
+  .total{font-size:13px;color:var(--muted);margin-top:4px}
+  .total b{color:var(--text);font-weight:600}
 
   main{flex:1;overflow-y:auto;padding:8px 12px 96px}
 
   .row{
-    display:flex;align-items:center;gap:12px;
-    background:var(--surface);
-    border:1px solid var(--line);
-    border-radius:var(--radius);
-    padding:14px 12px;
-    margin-bottom:8px;
+    display:flex;align-items:center;gap:10px;
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);padding:12px;margin-bottom:8px;
   }
   .row:active{background:var(--surface-2)}
   .row .body{flex:1;min-width:0;cursor:pointer}
   .row .name{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .row .meta{display:block;font-size:12px;color:var(--muted);margin-top:2px}
-  .row .chev{color:var(--muted);font-size:20px;line-height:1}
-  .dot{
-    width:8px;height:8px;border-radius:50%;
-    background:var(--accent);flex:none;
-  }
-  .dot.note{background:var(--line)}
+  .row.done .name{color:var(--muted);text-decoration:line-through}
+  .row .meta{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+  .late{color:var(--accent)}
+  .chev{color:var(--muted);font-size:20px;line-height:1}
 
-  .more{
-    background:none;border:none;color:var(--muted);
-    font-size:20px;padding:4px 6px;cursor:pointer;line-height:1;
+  .check{
+    width:26px;height:26px;flex:none;border-radius:7px;
+    border:1.5px solid var(--line);background:var(--bg);
+    color:var(--accent);font-size:15px;line-height:1;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;
   }
+  .check[aria-pressed="true"]{border-color:var(--accent)}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none;margin:0 9px}
 
-  .empty{
-    text-align:center;color:var(--muted);
-    padding:56px 24px;font-size:15px;
+  .bar{height:3px;background:var(--line);border-radius:2px;margin-top:6px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--accent);border-radius:2px}
+
+  .plus{
+    background:var(--bg);border:1px solid var(--line);color:var(--text);
+    border-radius:8px;width:34px;height:34px;font-size:18px;flex:none;cursor:pointer;
   }
+  .more{background:none;border:none;color:var(--muted);font-size:20px;padding:4px 6px;cursor:pointer;line-height:1}
+
+  .empty{text-align:center;color:var(--muted);padding:56px 24px;font-size:15px}
 
   .fab{
-    position:fixed;right:18px;
-    bottom:calc(env(safe-area-inset-bottom) + 22px);
-    height:56px;padding:0 22px;
-    border:none;border-radius:28px;
-    background:var(--accent);color:#fff;
-    font:inherit;font-size:16px;font-weight:600;
-    box-shadow:0 6px 20px rgba(224,40,38,.35);
-    cursor:pointer;
+    position:fixed;right:18px;bottom:calc(env(safe-area-inset-bottom) + 22px);
+    height:56px;padding:0 22px;border:none;border-radius:28px;
+    background:var(--accent);color:#fff;font:inherit;font-size:16px;font-weight:600;
+    box-shadow:0 6px 20px rgba(224,40,38,.35);cursor:pointer;
   }
   .fab:active{transform:translateY(1px)}
 
-  .sheet-bg{
-    position:fixed;inset:0;background:rgba(0,0,0,.65);
-    display:none;align-items:flex-end;z-index:20;
-  }
+  .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:flex-end;z-index:20}
   .sheet-bg.open{display:flex}
   .sheet{
-    width:100%;background:var(--surface);
-    border-top:1px solid var(--line);
-    border-radius:16px 16px 0 0;
+    width:100%;max-height:92vh;overflow-y:auto;background:var(--surface);
+    border-top:1px solid var(--line);border-radius:16px 16px 0 0;
     padding:20px 16px calc(env(safe-area-inset-bottom) + 20px);
   }
   .sheet h2{margin:0 0 14px;font-size:17px;font-weight:600}
-  .sheet input{
-    width:100%;padding:13px 12px;
-    background:var(--bg);color:var(--text);
-    border:1px solid var(--line);border-radius:var(--radius);
-    font:inherit;margin-bottom:12px;
+  label{display:block;font-size:13px;color:var(--muted);margin:0 0 5px}
+  .field{margin-bottom:12px}
+  .two{display:flex;gap:10px}
+  .two .field{flex:1}
+  input{
+    width:100%;padding:13px 12px;background:var(--bg);color:var(--text);
+    border:1px solid var(--line);border-radius:var(--radius);font:inherit;
   }
-  .sheet input:focus{outline:2px solid var(--accent);outline-offset:-1px}
-  .kinds{display:flex;gap:8px;margin-bottom:16px}
+  input:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  .hint{font-size:12px;color:var(--muted);margin-top:5px}
+  .kinds{display:flex;gap:8px;margin-bottom:14px}
   .kinds button{
-    flex:1;padding:12px;border-radius:var(--radius);
-    background:var(--bg);color:var(--muted);
-    border:1px solid var(--line);font:inherit;cursor:pointer;
+    flex:1;padding:12px;border-radius:var(--radius);background:var(--bg);
+    color:var(--muted);border:1px solid var(--line);font:inherit;cursor:pointer;
   }
-  .kinds button[aria-pressed="true"]{
-    border-color:var(--accent);color:var(--text);
+  .kinds button[aria-pressed="true"]{border-color:var(--accent);color:var(--text)}
+  .actions{display:flex;gap:8px;margin-top:4px}
+  .actions button{
+    flex:1;padding:14px;border-radius:var(--radius);font:inherit;font-weight:600;
+    border:1px solid var(--line);background:var(--bg);color:var(--text);cursor:pointer;
   }
-  .sheet .actions{display:flex;gap:8px}
-  .sheet .actions button{
-    flex:1;padding:14px;border-radius:var(--radius);
-    font:inherit;font-weight:600;border:1px solid var(--line);
-    background:var(--bg);color:var(--text);cursor:pointer;
-  }
-  .sheet .actions .primary{background:var(--accent);border-color:var(--accent);color:#fff}
-  .sheet .actions .danger{color:var(--accent)}
-
+  .actions .primary{background:var(--accent);border-color:var(--accent);color:#fff}
   .menu button{
-    display:block;width:100%;text-align:left;
-    padding:15px 12px;margin-bottom:8px;
-    background:var(--bg);color:var(--text);
-    border:1px solid var(--line);border-radius:var(--radius);
-    font:inherit;cursor:pointer;
+    display:block;width:100%;text-align:left;padding:15px 12px;margin-bottom:8px;
+    background:var(--bg);color:var(--text);border:1px solid var(--line);
+    border-radius:var(--radius);font:inherit;cursor:pointer;
   }
   .menu button.danger{color:var(--accent)}
 
   .toast{
     position:fixed;left:50%;transform:translateX(-50%);
     bottom:calc(env(safe-area-inset-bottom) + 92px);
-    background:var(--surface-2);border:1px solid var(--line);
-    color:var(--text);padding:11px 16px;border-radius:var(--radius);
-    font-size:14px;opacity:0;pointer-events:none;transition:opacity .18s;z-index:30;
+    background:var(--surface-2);border:1px solid var(--line);color:var(--text);
+    padding:11px 16px;border-radius:var(--radius);font-size:14px;
+    opacity:0;pointer-events:none;transition:opacity .18s;z-index:30;
   }
   .toast.show{opacity:1}
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -146,6 +131,7 @@
 <header>
   <nav class="crumbs" id="crumbs"></nav>
   <h1 id="title">Трекер</h1>
+  <div class="total" id="total"></div>
 </header>
 
 <main id="list"></main>
@@ -154,12 +140,48 @@
 
 <div class="sheet-bg" id="editBg">
   <div class="sheet">
-    <h2 id="editTitle">Новая категория</h2>
-    <input id="editName" placeholder="Название" autocomplete="off">
+    <h2 id="editTitle">Новое</h2>
+
     <div class="kinds" id="kinds">
       <button data-kind="category" aria-pressed="true">Категория</button>
       <button data-kind="entry" aria-pressed="false">Запись</button>
     </div>
+
+    <div class="field">
+      <label for="fName">Название</label>
+      <input id="fName" autocomplete="off">
+    </div>
+
+    <div id="catFields">
+      <div class="field">
+        <label for="fUnit">Единица измерения</label>
+        <input id="fUnit" autocomplete="off" placeholder="повторы, часы, партии">
+        <div class="hint" id="unitHint"></div>
+      </div>
+    </div>
+
+    <div id="entryFields">
+      <div class="two">
+        <div class="field">
+          <label for="fPlan">План</label>
+          <input id="fPlan" type="number" inputmode="decimal">
+        </div>
+        <div class="field">
+          <label for="fFact">Факт</label>
+          <input id="fFact" type="number" inputmode="decimal">
+        </div>
+      </div>
+      <div class="field">
+        <label for="fDeadline">Дедлайн</label>
+        <input id="fDeadline" type="date">
+      </div>
+      <div class="field">
+        <label for="fUnitOwn">Своя единица</label>
+        <input id="fUnitOwn" autocomplete="off">
+        <div class="hint" id="unitOwnHint"></div>
+      </div>
+    </div>
+
     <div class="actions">
       <button id="editCancel">Отмена</button>
       <button id="editSave" class="primary">Сохранить</button>
@@ -167,10 +189,25 @@
   </div>
 </div>
 
+<div class="sheet-bg" id="quickBg">
+  <div class="sheet">
+    <h2 id="quickTitle"></h2>
+    <div class="field">
+      <label for="fQuick">Сколько добавить к факту</label>
+      <input id="fQuick" type="number" inputmode="decimal">
+      <div class="hint" id="quickHint"></div>
+    </div>
+    <div class="actions">
+      <button id="quickCancel">Отмена</button>
+      <button id="quickSave" class="primary">Добавить</button>
+    </div>
+  </div>
+</div>
+
 <div class="sheet-bg" id="menuBg">
   <div class="sheet menu">
     <h2 id="menuTitle"></h2>
-    <button id="menuRename">Переименовать</button>
+    <button id="menuEdit">Изменить</button>
     <button id="menuDelete" class="danger">Удалить</button>
     <div class="actions"><button id="menuCancel">Отмена</button></div>
   </div>
@@ -179,18 +216,24 @@
 <div class="toast" id="toast"></div>
 
 <script>
-/* ---------------------------------------------------------------
-   Хранилище. На телефоне — SQLite, в браузере — localStorage,
+/* =====================================================================
+   Хранилище. На телефоне SQLite, в браузере localStorage —
    чтобы можно было проверять интерфейс без сборки APK.
-----------------------------------------------------------------*/
+   Обе реализации дают одни и те же методы.
+====================================================================== */
 const DB = 'tracker';
 
-const SchemaSQL = `
+const CREATE = `
 CREATE TABLE IF NOT EXISTS node (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   parent_id INTEGER,
   name TEXT NOT NULL,
   kind TEXT NOT NULL DEFAULT 'category',
+  unit TEXT,
+  plan REAL,
+  fact REAL,
+  deadline TEXT,
+  done INTEGER NOT NULL DEFAULT 0,
   sort INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL
 );
@@ -205,6 +248,17 @@ CREATE INDEX IF NOT EXISTS idx_link_from ON link(from_id);
 CREATE INDEX IF NOT EXISTS idx_link_to ON link(to_id);
 `;
 
+/* колонок не было в первой версии — добавляем по одной, молча */
+const NEW_COLUMNS = [
+  "ALTER TABLE node ADD COLUMN unit TEXT",
+  "ALTER TABLE node ADD COLUMN plan REAL",
+  "ALTER TABLE node ADD COLUMN fact REAL",
+  "ALTER TABLE node ADD COLUMN deadline TEXT",
+  "ALTER TABLE node ADD COLUMN done INTEGER NOT NULL DEFAULT 0"
+];
+
+const FIELDS = ['parent_id','name','kind','unit','plan','fact','deadline','done','sort','created_at'];
+
 const SqliteRepo = {
   async init(){
     const S = window.Capacitor.Plugins.CapacitorSQLite;
@@ -212,53 +266,66 @@ const SqliteRepo = {
     await S.createConnection({database:DB, version:1, encrypted:false,
                               mode:'no-encryption', readonly:false});
     await S.open({database:DB, readonly:false});
-    await S.execute({database:DB, statements:SchemaSQL, transaction:true});
+    await S.execute({database:DB, statements:CREATE, transaction:true});
+    for(const sql of NEW_COLUMNS){
+      try{ await S.execute({database:DB, statements:sql, transaction:false}); }
+      catch(e){ /* колонка уже есть */ }
+    }
   },
-  async all(statement, values=[]){
-    const r = await this.S.query({database:DB, statement, values});
+  async listChildren(parentId){
+    const st = parentId === null
+      ? 'SELECT * FROM node WHERE parent_id IS NULL ORDER BY sort, id'
+      : 'SELECT * FROM node WHERE parent_id = ? ORDER BY sort, id';
+    const r = await this.S.query({database:DB, statement:st,
+                                  values: parentId === null ? [] : [parentId]});
     return r.values || [];
   },
-  async run(statement, values=[]){
-    const r = await this.S.run({database:DB, statement, values, transaction:true});
+  async get(id){
+    const r = await this.S.query({database:DB, statement:'SELECT * FROM node WHERE id = ?', values:[id]});
+    return (r.values || [])[0] || null;
+  },
+  async insert(obj){
+    const st = 'INSERT INTO node (' + FIELDS.join(',') + ') VALUES (' +
+               FIELDS.map(() => '?').join(',') + ')';
+    const r = await this.S.run({database:DB, statement:st,
+                                values:FIELDS.map(f => obj[f] ?? null), transaction:true});
     return r.changes ? r.changes.lastId : null;
+  },
+  async update(id, patch){
+    const keys = Object.keys(patch);
+    if(!keys.length) return;
+    const st = 'UPDATE node SET ' + keys.map(k => k + ' = ?').join(', ') + ' WHERE id = ?';
+    await this.S.run({database:DB, statement:st,
+                      values:[...keys.map(k => patch[k] ?? null), id], transaction:true});
+  },
+  async remove(id){
+    await this.S.run({database:DB, statement:'DELETE FROM node WHERE id = ?',
+                      values:[id], transaction:true});
   }
 };
 
 const MemoryRepo = {
-  async init(){
-    this.data = JSON.parse(localStorage.getItem(DB) || '{"node":[],"link":[],"seq":0}');
+  async init(){ this.d = JSON.parse(localStorage.getItem(DB) || '{"node":[],"seq":0}'); },
+  save(){ localStorage.setItem(DB, JSON.stringify(this.d)); },
+  async listChildren(parentId){
+    return this.d.node.filter(n => n.parent_id === parentId)
+                      .sort((a,b) => a.sort - b.sort || a.id - b.id);
   },
-  save(){ localStorage.setItem(DB, JSON.stringify(this.data)); },
-  async all(statement, values=[]){
-    if(statement.includes('parent_id IS NULL'))
-      return this.data.node.filter(n => n.parent_id === null)
-                           .sort((a,b)=>a.sort-b.sort || a.id-b.id);
-    if(statement.includes('parent_id = ?'))
-      return this.data.node.filter(n => n.parent_id === values[0])
-                           .sort((a,b)=>a.sort-b.sort || a.id-b.id);
-    if(statement.includes('WHERE id = ?'))
-      return this.data.node.filter(n => n.id === values[0]);
-    if(statement.includes('COUNT'))
-      return [{n: this.data.node.filter(x => x.parent_id === values[0]).length}];
-    return [];
+  async get(id){ return this.d.node.find(n => n.id === id) || null; },
+  async insert(obj){
+    const id = ++this.d.seq;
+    const row = {id};
+    FIELDS.forEach(f => row[f] = obj[f] ?? null);
+    this.d.node.push(row); this.save(); return id;
   },
-  async run(statement, values=[]){
-    if(statement.startsWith('INSERT INTO node')){
-      const id = ++this.data.seq;
-      this.data.node.push({id, parent_id:values[0], name:values[1],
-                           kind:values[2], sort:values[3], created_at:values[4]});
-      this.save(); return id;
-    }
-    if(statement.startsWith('UPDATE node')){
-      const n = this.data.node.find(x => x.id === values[1]);
-      if(n) n.name = values[0];
-      this.save(); return null;
-    }
-    if(statement.startsWith('DELETE FROM node')){
-      this.data.node = this.data.node.filter(x => x.id !== values[0]);
-      this.save(); return null;
-    }
-    return null;
+  async update(id, patch){
+    const n = this.d.node.find(x => x.id === id);
+    if(n) Object.assign(n, patch);
+    this.save();
+  },
+  async remove(id){
+    this.d.node = this.d.node.filter(x => x.id !== id);
+    this.save();
   }
 };
 
@@ -267,56 +334,70 @@ let repo;
 async function openDatabase(){
   const native = window.Capacitor && window.Capacitor.isNativePlatform
               && window.Capacitor.isNativePlatform();
-  if(native){
-    repo = SqliteRepo;
-    await repo.init();
-  } else {
-    repo = MemoryRepo;
-    await repo.init();
-  }
-  const roots = await repo.all('SELECT * FROM node WHERE parent_id IS NULL');
+  repo = native ? SqliteRepo : MemoryRepo;
+  await repo.init();
+  const roots = await repo.listChildren(null);
   if(roots.length === 0){
-    await addNode(null, 'Развитие', 'category');
-    await addNode(null, 'Финансы', 'category');
+    await createNode(null, {name:'Развитие', kind:'category'});
+    await createNode(null, {name:'Финансы',  kind:'category'});
   }
 }
 
-/* ------------------------------ данные ------------------------ */
+/* ------------------------------ данные ------------------------- */
 
-function addNode(parentId, name, kind){
-  return repo.run(
-    'INSERT INTO node (parent_id, name, kind, sort, created_at) VALUES (?,?,?,?,?)',
-    [parentId, name, kind, Date.now(), new Date().toISOString()]
-  );
+function createNode(parentId, data){
+  return repo.insert({
+    parent_id: parentId,
+    name: data.name,
+    kind: data.kind,
+    unit: data.unit ?? null,
+    plan: data.plan ?? null,
+    fact: data.fact ?? null,
+    deadline: data.deadline ?? null,
+    done: 0,
+    sort: Date.now(),
+    created_at: new Date().toISOString()
+  });
 }
 
-function children(parentId){
-  return parentId === null
-    ? repo.all('SELECT * FROM node WHERE parent_id IS NULL ORDER BY sort, id')
-    : repo.all('SELECT * FROM node WHERE parent_id = ? ORDER BY sort, id', [parentId]);
-}
-
-function renameNode(id, name){
-  return repo.run('UPDATE node SET name = ? WHERE id = ?', [name, id]);
-}
-
-/* Удаляем вместе со всем, что лежит внутри. */
 async function deleteNode(id){
-  for(const kid of await children(id)) await deleteNode(kid.id);
-  await repo.run('DELETE FROM node WHERE id = ?', [id]);
+  for(const kid of await repo.listChildren(id)) await deleteNode(kid.id);
+  await repo.remove(id);
 }
 
-async function countChildren(id){
-  const r = await repo.all('SELECT COUNT(*) AS n FROM node WHERE parent_id = ?', [id]);
-  return r.length ? (r[0].n ?? r[0]['COUNT(*)'] ?? 0) : 0;
+/* Итог по категории: записи на любой глубине внутри.
+   Те, у кого своя единица, в сумму не идут — считаются отдельно. */
+async function aggregate(id){
+  let plan = 0, fact = 0, count = 0, done = 0, own = 0;
+  for(const kid of await repo.listChildren(id)){
+    if(kid.kind === 'entry'){
+      count++;
+      if(kid.done) done++;
+      if(kid.unit) own++;
+      else { plan += Number(kid.plan) || 0; fact += Number(kid.fact) || 0; }
+    } else {
+      const a = await aggregate(kid.id);
+      plan += a.plan; fact += a.fact; count += a.count; done += a.done; own += a.own;
+    }
+  }
+  return {plan, fact, count, done, own};
 }
 
 /* ------------------------------ экран -------------------------- */
 
-let path = [];                       // [{id, name}] — где мы сейчас
+let path = [];
 const current = () => path.length ? path[path.length-1].id : null;
+const currentUnit = () => {
+  for(let i = path.length - 1; i >= 0; i--) if(path[i].unit) return path[i].unit;
+  return '';
+};
 
 const $ = id => document.getElementById(id);
+const num = v => (v === null || v === undefined || v === '') ? null : Number(v);
+const fmt = v => {
+  const n = Number(v) || 0;
+  return Number.isInteger(n) ? String(n) : n.toFixed(1).replace('.', ',');
+};
 
 function toast(text){
   const t = $('toast');
@@ -324,6 +405,11 @@ function toast(text){
   t.classList.add('show');
   clearTimeout(t._timer);
   t._timer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+function overdue(item){
+  if(!item.deadline || item.done) return false;
+  return item.deadline < new Date().toISOString().slice(0,10);
 }
 
 async function render(){
@@ -347,9 +433,21 @@ async function render(){
     });
   }
 
+  const totalEl = $('total');
+  if(path.length){
+    const a = await aggregate(current());
+    const unit = currentUnit();
+    totalEl.innerHTML = a.count === 0 ? '' :
+      'Выполнено <b>' + a.done + '</b> из <b>' + a.count + '</b>' +
+      (a.plan ? ' · <b>' + fmt(a.fact) + '</b> из <b>' + fmt(a.plan) + '</b>' +
+                (unit ? ' ' + unit : '') : '');
+  } else {
+    totalEl.innerHTML = '';
+  }
+
   const list = $('list');
   list.innerHTML = '';
-  const items = await children(current());
+  const items = await repo.listChildren(current());
 
   if(items.length === 0){
     const e = document.createElement('div');
@@ -361,11 +459,25 @@ async function render(){
 
   for(const item of items){
     const row = document.createElement('div');
-    row.className = 'row';
+    row.className = 'row' + (item.done ? ' done' : '');
 
-    const dot = document.createElement('span');
-    dot.className = 'dot' + (item.kind === 'entry' ? ' note' : '');
-    row.appendChild(dot);
+    if(item.kind === 'entry'){
+      const chk = document.createElement('button');
+      chk.className = 'check';
+      chk.setAttribute('aria-pressed', item.done ? 'true' : 'false');
+      chk.setAttribute('aria-label', 'Выполнено: ' + item.name);
+      chk.textContent = item.done ? '✓' : '';
+      chk.onclick = async e => {
+        e.stopPropagation();
+        await repo.update(item.id, {done: item.done ? 0 : 1});
+        render();
+      };
+      row.appendChild(chk);
+    } else {
+      const dot = document.createElement('span');
+      dot.className = 'dot';
+      row.appendChild(dot);
+    }
 
     const body = document.createElement('div');
     body.className = 'body';
@@ -374,19 +486,56 @@ async function render(){
     name.textContent = item.name;
     body.appendChild(name);
 
+    const meta = document.createElement('span');
+    meta.className = 'meta';
+
     if(item.kind === 'category'){
-      const n = await countChildren(item.id);
-      const meta = document.createElement('span');
-      meta.className = 'meta';
-      meta.textContent = n === 0 ? 'пусто' : n + ' внутри';
+      const a = await aggregate(item.id);
+      const kids = await repo.listChildren(item.id);
+      const unit = item.unit || currentUnit();
+      const parts = [];
+      parts.push(kids.length === 0 ? 'пусто' : kids.length + ' внутри');
+      if(a.count) parts.push(a.done + '/' + a.count + ' готово');
+      if(a.plan)  parts.push(fmt(a.fact) + ' из ' + fmt(a.plan) + (unit ? ' ' + unit : ''));
+      meta.textContent = parts.join(' · ');
       body.appendChild(meta);
-      body.onclick = () => { path.push({id:item.id, name:item.name}); render(); };
+      body.onclick = () => {
+        path.push({id:item.id, name:item.name, unit:item.unit});
+        render();
+      };
     } else {
+      const unit = item.unit || currentUnit();
+      const parts = [];
+      if(item.plan !== null && item.plan !== undefined && item.plan !== '')
+        parts.push(fmt(item.fact) + ' из ' + fmt(item.plan) + (unit ? ' ' + unit : ''));
+      else if(item.fact)
+        parts.push(fmt(item.fact) + (unit ? ' ' + unit : ''));
+      if(item.deadline) parts.push('до ' + item.deadline.split('-').reverse().join('.'));
+      meta.textContent = parts.join(' · ');
+      if(overdue(item)) meta.classList.add('late');
+      body.appendChild(meta);
+
+      if(item.plan){
+        const bar = document.createElement('div');
+        bar.className = 'bar';
+        const fill = document.createElement('i');
+        fill.style.width =
+          Math.min(100, Math.round((Number(item.fact) || 0) / Number(item.plan) * 100)) + '%';
+        bar.appendChild(fill);
+        body.appendChild(bar);
+      }
       body.onclick = () => openMenu(item);
     }
     row.appendChild(body);
 
-    if(item.kind === 'category'){
+    if(item.kind === 'entry'){
+      const plus = document.createElement('button');
+      plus.className = 'plus';
+      plus.textContent = '+';
+      plus.setAttribute('aria-label', 'Добавить к факту: ' + item.name);
+      plus.onclick = e => { e.stopPropagation(); openQuick(item); };
+      row.appendChild(plus);
+    } else {
       const chev = document.createElement('span');
       chev.className = 'chev';
       chev.textContent = '›';
@@ -408,47 +557,102 @@ async function render(){
 
 let editState = {mode:'add', kind:'category', node:null};
 
-function openEditor(mode, node){
-  editState = {mode, kind: node ? node.kind : 'category', node: node || null};
-  $('editTitle').textContent = mode === 'add' ? 'Новое' : 'Переименовать';
-  $('editName').value = node ? node.name : '';
-  $('kinds').style.display = mode === 'add' ? 'flex' : 'none';
-  syncKinds();
-  $('editBg').classList.add('open');
-  setTimeout(() => $('editName').focus(), 50);
-}
-
-function closeEditor(){ $('editBg').classList.remove('open'); }
-
-function syncKinds(){
+function syncKindFields(){
+  const cat = editState.kind === 'category';
+  $('catFields').style.display   = cat ? 'block' : 'none';
+  $('entryFields').style.display = cat ? 'none'  : 'block';
   [...$('kinds').children].forEach(b =>
     b.setAttribute('aria-pressed', String(b.dataset.kind === editState.kind)));
 }
 
+function openEditor(mode, node){
+  editState = {mode, kind: node ? node.kind : 'category', node: node || null};
+  $('editTitle').textContent = mode === 'add' ? 'Новое' : 'Изменить';
+  $('kinds').style.display = mode === 'add' ? 'flex' : 'none';
+
+  $('fName').value     = node ? node.name : '';
+  $('fUnit').value     = node && node.kind === 'category' ? (node.unit || '') : '';
+  $('fPlan').value     = node && node.plan != null ? node.plan : '';
+  $('fFact').value     = node && node.fact != null ? node.fact : '';
+  $('fDeadline').value = node && node.deadline ? node.deadline : '';
+  $('fUnitOwn').value  = node && node.kind === 'entry' ? (node.unit || '') : '';
+
+  const inherited = currentUnit();
+  $('unitHint').textContent = inherited
+    ? 'Если оставить пустым, наследуется: ' + inherited
+    : 'Наследуется всем, что внутри';
+  $('unitOwnHint').textContent = inherited
+    ? 'Пусто — считается в «' + inherited + '»'
+    : 'У категории выше единица не задана';
+
+  syncKindFields();
+  $('editBg').classList.add('open');
+  setTimeout(() => $('fName').focus(), 50);
+}
+
+function closeEditor(){ $('editBg').classList.remove('open'); }
+
 [...$('kinds').children].forEach(b => {
-  b.onclick = () => { editState.kind = b.dataset.kind; syncKinds(); };
+  b.onclick = () => { editState.kind = b.dataset.kind; syncKindFields(); };
 });
 
 $('add').onclick = () => openEditor('add', null);
 $('editCancel').onclick = closeEditor;
 
 $('editSave').onclick = async () => {
-  const name = $('editName').value.trim();
+  const name = $('fName').value.trim();
   if(!name){ toast('Введи название'); return; }
+
+  const isCat = editState.kind === 'category';
+  const data = {
+    name,
+    kind: editState.kind,
+    unit: (isCat ? $('fUnit').value : $('fUnitOwn').value).trim() || null,
+    plan: isCat ? null : num($('fPlan').value),
+    fact: isCat ? null : num($('fFact').value),
+    deadline: isCat ? null : ($('fDeadline').value || null)
+  };
+
   if(editState.mode === 'add'){
-    await addNode(current(), name, editState.kind);
+    await createNode(current(), data);
     toast('Добавлено');
   } else {
-    await renameNode(editState.node.id, name);
-    toast('Переименовано');
+    await repo.update(editState.node.id, data);
+    const p = path.find(x => x.id === editState.node.id);
+    if(p){ p.name = data.name; p.unit = data.unit; }
+    toast('Сохранено');
   }
   closeEditor();
   render();
 };
 
-$('editName').addEventListener('keydown', e => {
-  if(e.key === 'Enter') $('editSave').click();
-});
+/* --------------------------- быстрый факт ----------------------- */
+
+let quickNode = null;
+
+function openQuick(node){
+  quickNode = node;
+  const unit = node.unit || currentUnit();
+  $('quickTitle').textContent = node.name;
+  $('fQuick').value = '';
+  $('quickHint').textContent =
+    'Сейчас ' + fmt(node.fact) + (node.plan ? ' из ' + fmt(node.plan) : '') +
+    (unit ? ' ' + unit : '');
+  $('quickBg').classList.add('open');
+  setTimeout(() => $('fQuick').focus(), 50);
+}
+function closeQuick(){ $('quickBg').classList.remove('open'); }
+
+$('quickCancel').onclick = closeQuick;
+$('quickSave').onclick = async () => {
+  const add = num($('fQuick').value);
+  if(add === null){ toast('Введи число'); return; }
+  await repo.update(quickNode.id, {fact: (Number(quickNode.fact) || 0) + add});
+  closeQuick();
+  toast('Записано');
+  render();
+};
+$('fQuick').addEventListener('keydown', e => { if(e.key === 'Enter') $('quickSave').click(); });
 
 /* --------------------------- меню строки ------------------------ */
 
@@ -462,34 +666,31 @@ function openMenu(node){
 function closeMenu(){ $('menuBg').classList.remove('open'); }
 
 $('menuCancel').onclick = closeMenu;
-$('menuRename').onclick = () => { closeMenu(); openEditor('rename', menuNode); };
+$('menuEdit').onclick = () => { closeMenu(); openEditor('edit', menuNode); };
 $('menuDelete').onclick = async () => {
-  const n = await countChildren(menuNode.id);
-  const ok = n > 0
-    ? confirm('Внутри «' + menuNode.name + '» есть записи. Удалить вместе с содержимым?')
-    : true;
-  if(!ok) return;
+  const kids = await repo.listChildren(menuNode.id);
+  if(kids.length &&
+     !confirm('Внутри «' + menuNode.name + '» есть записи. Удалить вместе с содержимым?')) return;
   await deleteNode(menuNode.id);
   closeMenu();
   toast('Удалено');
   render();
 };
 
-[$('editBg'), $('menuBg')].forEach(bg => {
+['editBg','quickBg','menuBg'].forEach(id => {
+  const bg = $(id);
   bg.onclick = e => { if(e.target === bg) bg.classList.remove('open'); };
 });
 
-/* аппаратная кнопка «назад» поднимает на уровень выше */
-document.addEventListener('DOMContentLoaded', () => {
-  if(window.Capacitor && window.Capacitor.Plugins.App){
-    window.Capacitor.Plugins.App.addListener('backButton', () => {
-      if($('editBg').classList.contains('open')) return closeEditor();
-      if($('menuBg').classList.contains('open')) return closeMenu();
-      if(path.length){ path.pop(); render(); return; }
-      window.Capacitor.Plugins.App.exitApp();
-    });
-  }
-});
+if(window.Capacitor && window.Capacitor.Plugins.App){
+  window.Capacitor.Plugins.App.addListener('backButton', () => {
+    for(const id of ['editBg','quickBg','menuBg']){
+      if($(id).classList.contains('open')){ $(id).classList.remove('open'); return; }
+    }
+    if(path.length){ path.pop(); render(); return; }
+    window.Capacitor.Plugins.App.exitApp();
+  });
+}
 
 /* ------------------------------ старт --------------------------- */
 
@@ -498,8 +699,7 @@ document.addEventListener('DOMContentLoaded', () => {
     await openDatabase();
     await render();
   }catch(err){
-    document.getElementById('list').innerHTML =
-      '<div class="empty">База не открылась: ' + err.message + '</div>';
+    $('list').innerHTML = '<div class="empty">База не открылась: ' + err.message + '</div>';
   }
 })();
 </script>
