@@ -32,7 +32,8 @@
   .crumbs{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px;min-height:19px}
   .crumbs button{background:none;border:none;padding:0;color:var(--muted);font:inherit;font-size:13px;cursor:pointer}
   .crumbs .sep{opacity:.5}
-  h1{margin:2px 0 0;font-size:24px;font-weight:650;letter-spacing:-.01em}
+  .titlerow{display:flex;align-items:center;gap:8px}
+  h1{margin:2px 0 0;font-size:24px;font-weight:650;letter-spacing:-.01em;flex:1}
   .total{font-size:13px;color:var(--muted);margin-top:4px}
   .total b{color:var(--text);font-weight:600}
   .total .in{color:var(--income)}
@@ -160,7 +161,10 @@
 
 <header>
   <nav class="crumbs" id="crumbs"></nav>
-  <h1 id="title">Трекер</h1>
+  <div class="titlerow">
+    <h1 id="title">Трекер</h1>
+    <button class="more" id="service" aria-label="Сервис">⋯</button>
+  </div>
   <div class="total" id="total"></div>
   <div class="months" id="months" style="display:none">
     <button id="prevMonth" aria-label="Предыдущий месяц">‹</button>
@@ -300,6 +304,15 @@
     <div class="field"><input id="pickSearch" placeholder="Поиск" autocomplete="off"></div>
     <div class="scroll" id="pickList"></div>
     <div class="actions"><button id="pickClose">Готово</button></div>
+  </div>
+</div>
+
+<div class="sheet-bg" id="serviceBg">
+  <div class="sheet menu">
+    <h2>Сервис</h2>
+    <button id="seedChess">Загрузить шахматную базу</button>
+    <div class="hint" id="seedHint">104 дебюта, 44 типовые структуры, 44 типа эндшпилей и связи между ними. Всё добавится в текущую категорию.</div>
+    <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
 
@@ -1087,20 +1100,280 @@ $('menuDelete').onclick = async () => {
   render();
 };
 
-['editBg','quickBg','menuBg','linkBg','pickBg'].forEach(id => {
+['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg'].forEach(id => {
   const bg = $(id);
   bg.onclick = e => { if(e.target === bg) bg.classList.remove('open'); };
 });
 
 if(window.Capacitor && window.Capacitor.Plugins.App){
   window.Capacitor.Plugins.App.addListener('backButton', () => {
-    for(const id of ['pickBg','linkBg','editBg','quickBg','menuBg']){
+    for(const id of ['pickBg','linkBg','editBg','quickBg','menuBg','serviceBg']){
       if($(id).classList.contains('open')){ $(id).classList.remove('open'); return; }
     }
     if(path.length){ path.pop(); render(); return; }
     window.Capacitor.Plugins.App.exitApp();
   });
 }
+
+/* ========================= шахматная база ======================= */
+
+/* эндшпили: [ключ, название] */
+const END = [
+['lucena','Позиция Лусены'],
+['philidor','Позиция Филидора'],
+['vancura','Позиция Ванчуры'],
+['rook-behind','Ладья позади проходной'],
+['cutoff','Отрезание короля по линии'],
+['r43','Ладейный: 4 пешки против 3 на одном фланге'],
+['r32','Ладейный: 3 пешки против 2 на одном фланге'],
+['rp-r','Ладья с пешкой против ладьи'],
+['rb-r','Ладья и слон против ладьи'],
+['r-vs-n','Ладья против коня'],
+['r-vs-b','Ладья против слона'],
+['q-vs-r','Ферзь против ладьи'],
+['q-vs-p','Ферзь против пешки на седьмой'],
+['queen-pp','Ферзевый эндшпиль с проходной'],
+['qp-q','Ферзь с пешкой против ферзя'],
+['opp-bishops','Разноцветные слоны'],
+['same-bishops','Одноцветные слоны'],
+['b-vs-n-open','Слон против коня в открытой позиции'],
+['n-vs-b-closed','Конь против слона при закрытых пешках'],
+['bad-bishop','Плохой слон против коня'],
+['two-bishops','Преимущество двух слонов'],
+['wrong-bishop','Слон не того цвета с крайней пешкой'],
+['np-n','Конь с пешкой против коня'],
+['blockade-n','Блокада проходной конём'],
+['iso-end','Эндшпиль с изолированной пешкой'],
+['square','Правило квадрата'],
+['opposition','Оппозиция'],
+['triangle','Треугольник и передача очереди хода'],
+['keysq','Ключевые поля'],
+['kp-k','Король с пешкой против короля'],
+['outside-pp','Отдалённая проходная'],
+['protected-pp','Защищённая проходная'],
+['majority-pp','Пешечное большинство и создание проходной'],
+['breakthrough','Пешечный прорыв'],
+['blockade','Блокада проходной'],
+['king-active','Активность короля'],
+['zugzwang','Цугцванг'],
+['fortress','Крепость'],
+['stalemate','Патовые ресурсы'],
+['saavedra','Позиция Сааведры'],
+['mate-q','Мат ферзём'],
+['mate-r','Мат ладьёй'],
+['mate-2b','Мат двумя слонами'],
+['mate-bn','Мат слоном и конём']
+];
+
+/* структуры: [ключ, название, [эндшпили, к которым обычно ведёт]] */
+const MID = [
+['iso','Изолированная пешка d4 или d5',['iso-end','opp-bishops','r43','blockade','b-vs-n-open']],
+['hanging','Висячие пешки c4 и d4',['r43','blockade','queen-pp','opp-bishops']],
+['carlsbad','Карлсбадская структура',['majority-pp','r32','bad-bishop','rook-behind']],
+['minority','Атака пешечного меньшинства',['r32','majority-pp','rook-behind']],
+['hedgehog','Структура «Ёж»',['r43','n-vs-b-closed','queen-pp','king-active']],
+['maroczy','Связка Мароци',['n-vs-b-closed','r43','bad-bishop','zugzwang']],
+['small-center','Малый центр (Схевенинген)',['r43','opp-bishops','queen-pp','king-active']],
+['dragon-struct','Драконовская структура',['r43','opp-bishops','outside-pp','mate-r']],
+['spanish-center','Испанский центр с упором d5',['n-vs-b-closed','zugzwang','protected-pp','r32']],
+['french-chain','Французская пешечная цепь',['bad-bishop','blockade','protected-pp','n-vs-b-closed']],
+['caro-struct','Каро-каннская структура',['r32','same-bishops','majority-pp','king-active']],
+['slav-struct','Славянская структура',['r43','b-vs-n-open','majority-pp','opp-bishops']],
+['botvinnik-struct','Система Ботвинника (пешки c4-d3-e4)',['n-vs-b-closed','zugzwang','protected-pp']],
+['kid-chain','Староиндийская цепь с упором d5',['blockade','n-vs-b-closed','zugzwang','protected-pp']],
+['benoni-struct','Бенони: пешки c5 и d6',['outside-pp','majority-pp','blockade','r43']],
+['benko-lines','Волжские линии a и b',['rook-behind','outside-pp','king-active','r32']],
+['grunfeld-center','Большой пешечный центр против фианкетто',['blockade','breakthrough','iso-end','r43']],
+['stonewall','Каменная стена',['bad-bishop','n-vs-b-closed','blockade','zugzwang']],
+['qside-majority','Пешечное большинство на ферзевом фланге',['majority-pp','outside-pp','rook-behind','breakthrough']],
+['kside-majority','Пешечное большинство на королевском фланге',['majority-pp','breakthrough','king-active']],
+['doubled-pawns','Сдвоенные пешки',['zugzwang','two-bishops','r32','bad-bishop']],
+['open-c','Открытая линия «c»',['r43','rook-behind','cutoff','q-vs-r']],
+['open-d','Открытая линия «d»',['rook-behind','cutoff','r43','lucena']],
+['halfopen-e','Полуоткрытая линия «e»',['r32','rook-behind','philidor']],
+['outpost-d5','Форпост на d5',['n-vs-b-closed','bad-bishop','zugzwang']],
+['outpost-e5','Форпост на e5',['n-vs-b-closed','np-n','blockade-n']],
+['n-vs-bad-b','Конь против плохого слона',['bad-bishop','n-vs-b-closed','zugzwang','np-n']],
+['good-vs-bad-b','Хороший слон против плохого',['same-bishops','bad-bishop','king-active']],
+['two-bishops-mid','Два слона в открытой позиции',['two-bishops','b-vs-n-open','opp-bishops']],
+['opposite-castling','Разносторонние рокировки',['queen-pp','mate-r','king-active','outside-pp']],
+['pawn-storm','Пешечный штурм при односторонних рокировках',['breakthrough','r43','king-active']],
+['greek-gift','Жертва слона на h7',['mate-q','mate-r','q-vs-r']],
+['sac-f7','Удар по пункту f7',['mate-q','q-vs-r','king-active']],
+['exchange-c3','Жертва качества на c3',['r-vs-b','r-vs-n','two-bishops','fortress']],
+['blockade-mid','Блокада проходной в миттельшпиле',['blockade','blockade-n','protected-pp','fortress']],
+['tense-center','Напряжённый центр',['iso-end','r43','breakthrough']],
+['mobile-center','Подвижный пешечный центр',['breakthrough','protected-pp','majority-pp','king-active']],
+['closed-center','Закрытый центр и игра на флангах',['zugzwang','n-vs-b-closed','blockade','fortress']],
+['wedge-e5','Пешечный клин на e5',['blockade','bad-bishop','protected-pp']],
+['backward-d6','Отсталая пешка d6',['zugzwang','r32','n-vs-b-closed','king-active']],
+['passed-mid','Проходная пешка в миттельшпиле',['rook-behind','queen-pp','blockade','outside-pp']],
+['opp-bishops-mid','Разноцветные слоны при ферзях',['opp-bishops','queen-pp','fortress','king-active']]
+];
+
+/* дебюты: [название, [структуры, к которым обычно ведёт]] */
+const OPEN = [
+['Испанская партия, закрытый вариант',['spanish-center','qside-majority','closed-center']],
+['Испанская партия, вариант Брейера',['spanish-center','closed-center','outpost-d5']],
+['Испанская партия, вариант Чигорина',['spanish-center','tense-center','pawn-storm']],
+['Испанская партия, вариант Маршалла',['iso','open-d','opposite-castling']],
+['Испанская партия, открытый вариант',['iso','two-bishops-mid','tense-center']],
+['Испанская партия, разменный вариант',['kside-majority','doubled-pawns','two-bishops-mid']],
+['Испанская партия, берлинская защита',['doubled-pawns','kside-majority','two-bishops-mid']],
+['Испанская партия, атака Уорралла',['spanish-center','tense-center']],
+['Итальянская партия, тихий вариант',['tense-center','mobile-center','closed-center']],
+['Итальянская партия, атака Греко',['mobile-center','sac-f7','iso']],
+['Гамбит Эванса',['mobile-center','sac-f7','two-bishops-mid']],
+['Венгерская защита',['closed-center','backward-d6','spanish-center']],
+['Защита двух коней',['sac-f7','tense-center','two-bishops-mid']],
+['Шотландская партия',['iso','open-d','doubled-pawns']],
+['Шотландский гамбит',['mobile-center','sac-f7','open-d']],
+['Русская партия (защита Петрова)',['open-e','iso','halfopen-e']],
+['Венская партия',['tense-center','pawn-storm','mobile-center']],
+['Дебют слона',['tense-center','closed-center']],
+['Королевский гамбит принятый',['mobile-center','pawn-storm','open-c']],
+['Королевский гамбит отказанный',['tense-center','closed-center','doubled-pawns']],
+['Защита Филидора',['backward-d6','closed-center','halfopen-e']],
+['Дебют четырёх коней',['tense-center','doubled-pawns','halfopen-e']],
+['Центральный дебют',['open-d','iso','two-bishops-mid']],
+['Северный гамбит',['mobile-center','two-bishops-mid','sac-f7']],
+['Дебют Понциани',['tense-center','open-d']],
+['Латышский гамбит',['sac-f7','pawn-storm','open-e']],
+['Сицилианская защита, вариант Найдорфа',['small-center','opposite-castling','backward-d6']],
+['Сицилианская защита, схевенингенский вариант',['small-center','open-c','opposite-castling']],
+['Сицилианская защита, вариант дракона',['dragon-struct','opposite-castling','exchange-c3']],
+['Сицилианская защита, ускоренный дракон',['maroczy','dragon-struct','open-c']],
+['Сицилианская защита, челябинский вариант',['outpost-d5','backward-d6','n-vs-bad-b']],
+['Сицилианская защита, вариант Свешникова',['outpost-d5','backward-d6','n-vs-bad-b']],
+['Сицилианская защита, вариант Тайманова',['hedgehog','maroczy','open-c']],
+['Сицилианская защита, вариант Кана',['hedgehog','small-center','maroczy']],
+['Сицилианская защита, вариант Паульсена',['hedgehog','open-c','small-center']],
+['Сицилианская защита, атака Раузера',['opposite-castling','open-d','backward-d6']],
+['Сицилианская защита, английская атака',['opposite-castling','pawn-storm','small-center']],
+['Сицилианская защита, закрытый вариант',['closed-center','pawn-storm','kside-majority']],
+['Сицилианская защита, вариант Алапина',['iso','tense-center','open-c']],
+['Сицилианская защита, гамбит Морра',['open-c','open-d','passed-mid']],
+['Сицилианская защита, вариант Россолимо',['doubled-pawns','closed-center','kside-majority']],
+['Сицилианская защита, вариант Мозера',['open-c','small-center']],
+['Французская защита, классический вариант',['french-chain','wedge-e5','n-vs-bad-b']],
+['Французская защита, вариант Винавера',['french-chain','doubled-pawns','opposite-castling']],
+['Французская защита, вариант Тарраша',['iso','french-chain','wedge-e5']],
+['Французская защита, вариант Рубинштейна',['iso','halfopen-e','tense-center']],
+['Французская защита, наступление 3.e5',['french-chain','wedge-e5','blockade-mid']],
+['Французская защита, разменный вариант',['carlsbad','good-vs-bad-b','open-e']],
+['Каро-Канн, классический вариант',['caro-struct','good-vs-bad-b','r32-struct']],
+['Каро-Канн, атака Панова',['iso','hanging','open-c']],
+['Каро-Канн, наступление 3.e5',['french-chain','wedge-e5','caro-struct']],
+['Каро-Канн, вариант двух коней',['caro-struct','tense-center']],
+['Каро-Канн, вариант Смыслова',['caro-struct','n-vs-bad-b','closed-center']],
+['Каро-Канн, гамбит Фантазия',['pawn-storm','open-e','mobile-center']],
+['Скандинавская защита',['iso','open-d','caro-struct']],
+['Защита Алехина',['mobile-center','blockade-mid','tense-center']],
+['Защита Пирца-Уфимцева',['closed-center','pawn-storm','backward-d6']],
+['Современная защита (Робач)',['closed-center','maroczy','backward-d6']],
+['Защита Нимцовича 1.e4 Кc6',['open-d','tense-center']],
+['Ферзевый гамбит принятый',['iso','hanging','open-c']],
+['Ферзевый гамбит, ортодоксальная защита',['carlsbad','minority','open-c']],
+['Ферзевый гамбит, разменный вариант',['carlsbad','minority','n-vs-bad-b']],
+['Ферзевый гамбит, защита Тарраша',['iso','hanging','open-d']],
+['Ферзевый гамбит, вариант Кембридж-Спрингс',['carlsbad','open-c','minority']],
+['Ферзевый гамбит, защита Ласкера',['carlsbad','open-d','r32-struct']],
+['Славянская защита',['slav-struct','open-c','carlsbad']],
+['Полуславянская защита',['slav-struct','hanging','open-c']],
+['Меранский вариант',['hanging','qside-majority','open-c']],
+['Вариант Ботвинника в полуславянской',['passed-mid','opposite-castling','open-c']],
+['Каталонское начало',['qside-majority','good-vs-bad-b','open-c']],
+['Защита Нимцовича',['doubled-pawns','iso','hanging']],
+['Защита Нимцовича, вариант Рубинштейна',['iso','doubled-pawns','carlsbad']],
+['Новоиндийская защита',['hedgehog','good-vs-bad-b','closed-center']],
+['Защита Богоиндийская',['closed-center','good-vs-bad-b','doubled-pawns']],
+['Староиндийская защита, классический вариант',['kid-chain','pawn-storm','closed-center']],
+['Староиндийская защита, система Земиша',['kid-chain','opposite-castling','pawn-storm']],
+['Староиндийская защита, четыре пешки',['mobile-center','kid-chain','tense-center']],
+['Староиндийская защита, фианкетто',['kid-chain','closed-center','qside-majority']],
+['Защита Грюнфельда, разменный вариант',['grunfeld-center','tense-center','iso']],
+['Защита Грюнфельда, русская система',['grunfeld-center','hanging','open-c']],
+['Волжский гамбит',['benko-lines','qside-majority','open-c']],
+['Модерн-Бенони',['benoni-struct','kside-majority','passed-mid']],
+['Староиндийская защита, вариант Бенони',['benoni-struct','kid-chain','closed-center']],
+['Будапештский гамбит',['open-e','doubled-pawns','tense-center']],
+['Контргамбит Альбина',['passed-mid','open-d','blockade-mid']],
+['Защита Чигорина',['two-bishops-mid','iso','open-c']],
+['Голландская защита, ленинградский вариант',['closed-center','kside-majority','pawn-storm']],
+['Голландская защита, каменная стена',['stonewall','n-vs-bad-b','outpost-e5']],
+['Голландская защита, классический вариант',['stonewall','closed-center','halfopen-e']],
+['Английское начало, симметричный вариант',['hedgehog','maroczy','open-c']],
+['Английское начало, обратная сицилианская',['closed-center','kside-majority','outpost-d5']],
+['Английское начало, вариант четырёх коней',['hedgehog','doubled-pawns','open-c']],
+['Дебют Рети',['hedgehog','qside-majority','closed-center']],
+['Староиндийское начало',['closed-center','kid-chain','pawn-storm']],
+['Лондонская система',['carlsbad','stonewall','good-vs-bad-b']],
+['Система Колле',['carlsbad','iso','greek-gift']],
+['Дебют Торре',['carlsbad','closed-center','doubled-pawns']],
+['Атака Тромповского',['doubled-pawns','two-bishops-mid','closed-center']],
+['Дебют Вересова',['carlsbad','closed-center','tense-center']],
+['Гамбит Блэкмара-Димера',['open-d','mobile-center','sac-f7']],
+['Дебют Бёрда',['stonewall','outpost-e5','kside-majority']],
+['Дебют Ларсена',['closed-center','good-vs-bad-b','tense-center']],
+['Дебют Сокольского',['qside-majority','open-c','closed-center']],
+['Дебют ферзевых пешек',['carlsbad','tense-center','closed-center']]
+];
+
+/* структуры, на которые ссылаются дебюты, но которых нет в списке выше */
+const MID_EXTRA = [
+['open-e','Открытая линия «e»',['cutoff','philidor','r32']],
+['r32-struct','Четыре пешки против трёх на фланге',['r43','r32','majority-pp']]
+];
+
+async function seedChess(){
+  const root = current();
+  const all = [...MID, ...MID_EXTRA];
+
+  const endIds = new Map();
+  const midIds = new Map();
+
+  const catEnd = await createNode(root, {name:'Эндшпили', kind:'category', unit:'партии'});
+  const catMid = await createNode(root, {name:'Миттельшпили', kind:'category',
+                                         unit:'партии', target_id:catEnd});
+  const catOpen = await createNode(root, {name:'Дебюты', kind:'category',
+                                          unit:'партии', target_id:catMid});
+
+  for(const [key, name] of END)
+    endIds.set(key, await createNode(catEnd, {name, kind:'entry'}));
+
+  for(const [key, name] of all)
+    midIds.set(key, await createNode(catMid, {name, kind:'entry'}));
+
+  for(const [key, , ends] of all){
+    const from = midIds.get(key);
+    for(const e of ends) if(endIds.has(e)) await repo.addLink(from, endIds.get(e));
+  }
+
+  for(const [name, mids] of OPEN){
+    const id = await createNode(catOpen, {name, kind:'entry'});
+    for(const m of mids) if(midIds.has(m)) await repo.addLink(id, midIds.get(m));
+  }
+}
+
+$('service').onclick = () => $('serviceBg').classList.add('open');
+$('serviceClose').onclick = () => $('serviceBg').classList.remove('open');
+
+$('seedChess').onclick = async () => {
+  const btn = $('seedChess');
+  if(btn.disabled) return;
+  btn.disabled = true;
+  btn.textContent = 'Загружаю…';
+  try{
+    await seedChess();
+    $('serviceBg').classList.remove('open');
+    toast('Шахматная база загружена');
+    await render();
+  }catch(err){
+    toast('Не получилось: ' + err.message);
+  }
+  btn.disabled = false;
+  btn.textContent = 'Загрузить шахматную базу';
+};
 
 /* ------------------------------ старт --------------------------- */
 
