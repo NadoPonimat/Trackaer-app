@@ -100,6 +100,7 @@
     padding:20px 16px calc(env(safe-area-inset-bottom) + 20px);
   }
   .sheet h2{margin:0 0 14px;font-size:17px;font-weight:600}
+  .sheet h3{margin:16px 0 8px;font-size:13px;font-weight:600;color:var(--muted)}
   label{display:block;font-size:13px;color:var(--muted);margin:0 0 5px}
   .field{margin-bottom:12px}
   .two{display:flex;gap:10px}
@@ -116,6 +117,10 @@
     color:var(--muted);border:1px solid var(--line);font:inherit;cursor:pointer;
   }
   .seg button[aria-pressed="true"]{border-color:var(--accent);color:var(--text)}
+  .picker{
+    width:100%;padding:13px 12px;text-align:left;background:var(--bg);color:var(--text);
+    border:1px solid var(--line);border-radius:var(--radius);font:inherit;cursor:pointer;
+  }
   .actions{display:flex;gap:8px;margin-top:4px}
   .actions button{
     flex:1;padding:14px;border-radius:var(--radius);font:inherit;font-weight:600;
@@ -128,6 +133,17 @@
     border-radius:var(--radius);font:inherit;cursor:pointer;
   }
   .menu button.danger{color:var(--accent)}
+
+  .pick{
+    display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+    padding:13px 12px;margin-bottom:8px;background:var(--bg);color:var(--text);
+    border:1px solid var(--line);border-radius:var(--radius);font:inherit;cursor:pointer;
+  }
+  .pick[aria-pressed="true"]{border-color:var(--accent)}
+  .pick .where{display:block;font-size:12px;color:var(--muted)}
+  .pick .mark{color:var(--accent);flex:none}
+  .pick .x{margin-left:auto;color:var(--muted);flex:none}
+  .scroll{max-height:52vh;overflow-y:auto;margin-bottom:12px}
 
   .toast{
     position:fixed;left:50%;transform:translateX(-50%);
@@ -171,7 +187,6 @@
       <input id="fName" autocomplete="off">
     </div>
 
-    <!-- категория -->
     <div id="catFields">
       <div id="modeWrap">
         <label>Тип категории</label>
@@ -185,9 +200,13 @@
         <input id="fUnit" autocomplete="off" placeholder="повторы, часы, партии">
         <div class="hint" id="unitHint"></div>
       </div>
+      <div class="field" id="targetWrap">
+        <label>Связи ведут в</label>
+        <button class="picker" id="fTarget">Не выбрано</button>
+        <div class="hint">Дебюты ведут в миттельшпили, миттельшпили — в эндшпили</div>
+      </div>
     </div>
 
-    <!-- обычная запись -->
     <div id="entryFields">
       <div class="two">
         <div class="field">
@@ -210,7 +229,6 @@
       </div>
     </div>
 
-    <!-- денежная запись -->
     <div id="moneyFields">
       <div class="seg" id="dirs">
         <button data-dir="-1" aria-pressed="true">Расход</button>
@@ -253,9 +271,35 @@
 <div class="sheet-bg" id="menuBg">
   <div class="sheet menu">
     <h2 id="menuTitle"></h2>
+    <button id="menuLinks">Связи</button>
     <button id="menuEdit">Изменить</button>
     <button id="menuDelete" class="danger">Удалить</button>
     <div class="actions"><button id="menuCancel">Отмена</button></div>
+  </div>
+</div>
+
+<!-- связи выбранной записи -->
+<div class="sheet-bg" id="linkBg">
+  <div class="sheet">
+    <h2 id="linkTitle"></h2>
+    <h3>Ведёт к</h3>
+    <div id="linkOut"></div>
+    <h3>Приходит из</h3>
+    <div id="linkIn"></div>
+    <div class="actions">
+      <button id="linkClose">Закрыть</button>
+      <button id="linkAdd" class="primary">Добавить связь</button>
+    </div>
+  </div>
+</div>
+
+<!-- выбор: цель связи или целевая категория -->
+<div class="sheet-bg" id="pickBg">
+  <div class="sheet">
+    <h2 id="pickTitle">Выбрать</h2>
+    <div class="field"><input id="pickSearch" placeholder="Поиск" autocomplete="off"></div>
+    <div class="scroll" id="pickList"></div>
+    <div class="actions"><button id="pickClose">Готово</button></div>
   </div>
 </div>
 
@@ -282,6 +326,7 @@ CREATE TABLE IF NOT EXISTS node (
   amount REAL,
   op_date TEXT,
   direction INTEGER,
+  target_id INTEGER,
   sort INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL
 );
@@ -296,7 +341,6 @@ CREATE INDEX IF NOT EXISTS idx_link_from ON link(from_id);
 CREATE INDEX IF NOT EXISTS idx_link_to ON link(to_id);
 `;
 
-/* колонки, добавленные в поздних версиях */
 const NEW_COLUMNS = [
   "ALTER TABLE node ADD COLUMN unit TEXT",
   "ALTER TABLE node ADD COLUMN plan REAL",
@@ -306,11 +350,12 @@ const NEW_COLUMNS = [
   "ALTER TABLE node ADD COLUMN mode TEXT",
   "ALTER TABLE node ADD COLUMN amount REAL",
   "ALTER TABLE node ADD COLUMN op_date TEXT",
-  "ALTER TABLE node ADD COLUMN direction INTEGER"
+  "ALTER TABLE node ADD COLUMN direction INTEGER",
+  "ALTER TABLE node ADD COLUMN target_id INTEGER"
 ];
 
 const FIELDS = ['parent_id','name','kind','mode','unit','plan','fact','deadline','done',
-                'amount','op_date','direction','sort','created_at'];
+                'amount','op_date','direction','target_id','sort','created_at'];
 
 const SqliteRepo = {
   async init(){
@@ -325,14 +370,17 @@ const SqliteRepo = {
       catch(e){ /* колонка уже есть */ }
     }
   },
-  async listChildren(parentId){
-    const st = parentId === null
-      ? 'SELECT * FROM node WHERE parent_id IS NULL ORDER BY sort, id'
-      : 'SELECT * FROM node WHERE parent_id = ? ORDER BY sort, id';
-    const r = await this.S.query({database:DB, statement:st,
-                                  values: parentId === null ? [] : [parentId]});
+  async q(statement, values=[]){
+    const r = await this.S.query({database:DB, statement, values});
     return r.values || [];
   },
+  listChildren(parentId){
+    return parentId === null
+      ? this.q('SELECT * FROM node WHERE parent_id IS NULL ORDER BY sort, id')
+      : this.q('SELECT * FROM node WHERE parent_id = ? ORDER BY sort, id', [parentId]);
+  },
+  listAll(){ return this.q('SELECT * FROM node'); },
+  allLinks(){ return this.q('SELECT * FROM link'); },
   async insert(obj){
     const st = 'INSERT INTO node (' + FIELDS.join(',') + ') VALUES (' +
                FIELDS.map(() => '?').join(',') + ')';
@@ -348,18 +396,34 @@ const SqliteRepo = {
                       values:[...keys.map(k => patch[k] ?? null), id], transaction:true});
   },
   async remove(id){
-    await this.S.run({database:DB, statement:'DELETE FROM node WHERE id = ?',
-                      values:[id], transaction:true});
+    await this.S.run({database:DB, statement:'DELETE FROM node WHERE id = ?', values:[id], transaction:true});
+    await this.S.run({database:DB, statement:'DELETE FROM link WHERE from_id = ? OR to_id = ?',
+                      values:[id, id], transaction:true});
+  },
+  async addLink(from, to){
+    await this.S.run({database:DB,
+      statement:'INSERT INTO link (from_id, to_id, kind) VALUES (?,?,?)',
+      values:[from, to, 'leads_to'], transaction:true});
+  },
+  async removeLink(from, to){
+    await this.S.run({database:DB,
+      statement:'DELETE FROM link WHERE from_id = ? AND to_id = ?',
+      values:[from, to], transaction:true});
   }
 };
 
 const MemoryRepo = {
-  async init(){ this.d = JSON.parse(localStorage.getItem(DB) || '{"node":[],"seq":0}'); },
+  async init(){
+    this.d = JSON.parse(localStorage.getItem(DB) || '{"node":[],"link":[],"seq":0}');
+    if(!this.d.link) this.d.link = [];
+  },
   save(){ localStorage.setItem(DB, JSON.stringify(this.d)); },
   async listChildren(parentId){
     return this.d.node.filter(n => n.parent_id === parentId)
                       .sort((a,b) => a.sort - b.sort || a.id - b.id);
   },
+  async listAll(){ return this.d.node.slice(); },
+  async allLinks(){ return this.d.link.slice(); },
   async insert(obj){
     const id = ++this.d.seq;
     const row = {id};
@@ -373,6 +437,15 @@ const MemoryRepo = {
   },
   async remove(id){
     this.d.node = this.d.node.filter(x => x.id !== id);
+    this.d.link = this.d.link.filter(l => l.from_id !== id && l.to_id !== id);
+    this.save();
+  },
+  async addLink(from, to){
+    this.d.link.push({from_id:from, to_id:to, kind:'leads_to'});
+    this.save();
+  },
+  async removeLink(from, to){
+    this.d.link = this.d.link.filter(l => !(l.from_id === from && l.to_id === to));
     this.save();
   }
 };
@@ -399,6 +472,7 @@ function createNode(parentId, d){
     mode:d.mode ?? null, unit:d.unit ?? null,
     plan:d.plan ?? null, fact:d.fact ?? null, deadline:d.deadline ?? null, done:0,
     amount:d.amount ?? null, op_date:d.op_date ?? null, direction:d.direction ?? null,
+    target_id:d.target_id ?? null,
     sort:Date.now(), created_at:new Date().toISOString()
   });
 }
@@ -408,7 +482,6 @@ async function deleteNode(id){
   await repo.remove(id);
 }
 
-/* итог обычной категории */
 async function aggregate(id){
   let plan = 0, fact = 0, count = 0, done = 0;
   for(const kid of await repo.listChildren(id)){
@@ -424,7 +497,6 @@ async function aggregate(id){
   return {plan, fact, count, done};
 }
 
-/* итог финансовой категории за месяц ym = 'YYYY-MM' */
 async function aggregateMoney(id, ym){
   let income = 0, expense = 0, count = 0;
   for(const kid of await repo.listChildren(id)){
@@ -441,10 +513,41 @@ async function aggregateMoney(id, ym){
   return {income, expense, count};
 }
 
+/* индекс всех узлов: имя, путь, дети — для связей и выбора */
+let index = {byId:new Map(), all:[], links:[]};
+
+async function reindex(){
+  const all = await repo.listAll();
+  const byId = new Map(all.map(n => [n.id, n]));
+  index = {byId, all, links: await repo.allLinks()};
+}
+
+function nodePath(node){
+  const parts = [];
+  let p = node.parent_id != null ? index.byId.get(node.parent_id) : null;
+  while(p){ parts.unshift(p.name); p = p.parent_id != null ? index.byId.get(p.parent_id) : null; }
+  return parts.join(' / ');
+}
+
+function descendantEntries(id){
+  const out = [];
+  const walk = pid => {
+    for(const n of index.all){
+      if(n.parent_id !== pid) continue;
+      if(n.kind === 'entry') out.push(n); else walk(n.id);
+    }
+  };
+  walk(id);
+  return out;
+}
+
+const linksFrom = id => index.links.filter(l => l.from_id === id);
+const linksTo   = id => index.links.filter(l => l.to_id === id);
+
 /* ------------------------------ экран -------------------------- */
 
-let path = [];                                  // [{id,name,unit,mode}]
-let month = new Date();                         // выбранный месяц
+let path = [];
+let month = new Date();
 
 const current = () => path.length ? path[path.length-1].id : null;
 const currentUnit = () => {
@@ -482,6 +585,8 @@ $('prevMonth').onclick = () => { month.setMonth(month.getMonth() - 1); render();
 $('nextMonth').onclick = () => { month.setMonth(month.getMonth() + 1); render(); };
 
 async function render(){
+  await reindex();
+
   $('title').textContent = path.length ? path[path.length-1].name : 'Трекер';
 
   const crumbs = $('crumbs');
@@ -534,7 +639,6 @@ async function render(){
   list.innerHTML = '';
   let items = await repo.listChildren(current());
 
-  /* в финансовом разделе операции показываем только за выбранный месяц */
   if(moneyView)
     items = items.filter(n => n.kind === 'category' ||
                               (n.op_date && n.op_date.startsWith(ym)));
@@ -554,7 +658,6 @@ async function render(){
     row.className = 'row' + (item.done ? ' done' : '');
     const itemMoney = moneyView || item.mode === 'money';
 
-    /* левый маркер */
     if(item.kind === 'entry' && !itemMoney){
       const chk = document.createElement('button');
       chk.className = 'check';
@@ -616,6 +719,9 @@ async function render(){
       else if(item.fact)
         parts.push(fmt(item.fact) + (unit ? ' ' + unit : ''));
       if(item.deadline) parts.push('до ' + item.deadline.split('-').reverse().join('.'));
+      const out = linksFrom(item.id).length, inc = linksTo(item.id).length;
+      if(out) parts.push('ведёт к ' + out);
+      if(inc) parts.push('из ' + inc);
       meta.textContent = parts.join(' · ');
       if(overdue(item)) meta.classList.add('late');
       body.appendChild(meta);
@@ -633,7 +739,6 @@ async function render(){
     }
     row.appendChild(body);
 
-    /* правая часть */
     if(item.kind === 'category'){
       const chev = document.createElement('span');
       chev.className = 'chev';
@@ -667,7 +772,7 @@ async function render(){
 
 /* ------------------------- добавить / изменить ------------------ */
 
-let editState = {mode:'add', kind:'category', catMode:'plain', dir:-1, node:null};
+let editState = {mode:'add', kind:'category', catMode:'plain', dir:-1, target:null, node:null};
 
 function syncEditFields(){
   const cat = editState.kind === 'category';
@@ -678,9 +783,13 @@ function syncEditFields(){
   $('entryFields').style.display = (!cat && !moneyEntry) ? 'block' : 'none';
   $('moneyFields').style.display = moneyEntry ? 'block' : 'none';
 
-  /* внутри финансовой категории новые категории тоже финансовые */
-  $('modeWrap').style.display = (cat && !inMoney) ? 'block' : 'none';
-  $('unitWrap').style.display = (cat && editState.catMode === 'plain' && !inMoney) ? 'block' : 'none';
+  const plainCat = cat && editState.catMode === 'plain' && !inMoney;
+  $('modeWrap').style.display   = (cat && !inMoney) ? 'block' : 'none';
+  $('unitWrap').style.display   = plainCat ? 'block' : 'none';
+  $('targetWrap').style.display = plainCat ? 'block' : 'none';
+
+  const t = editState.target != null ? index.byId.get(editState.target) : null;
+  $('fTarget').textContent = t ? t.name : 'Не выбрано';
 
   [...$('kinds').children].forEach(b =>
     b.setAttribute('aria-pressed', String(b.dataset.kind === editState.kind)));
@@ -696,6 +805,7 @@ function openEditor(mode, node){
     kind: node ? node.kind : 'category',
     catMode: node ? (node.mode === 'money' ? 'money' : 'plain') : (isMoney() ? 'money' : 'plain'),
     dir: node && Number(node.direction) > 0 ? 1 : -1,
+    target: node ? (node.target_id ?? null) : null,
     node: node || null
   };
   $('editTitle').textContent = mode === 'add' ? 'Новое' : 'Изменить';
@@ -735,6 +845,8 @@ function closeEditor(){ $('editBg').classList.remove('open'); }
   b.onclick = () => { editState.dir = Number(b.dataset.dir); syncEditFields(); };
 });
 
+$('fTarget').onclick = () => openPicker('target');
+
 $('add').onclick = () => openEditor('add', null);
 $('editCancel').onclick = closeEditor;
 
@@ -752,13 +864,14 @@ $('editSave').onclick = async () => {
       name, kind:'category',
       mode: isMoneyCat ? 'money' : null,
       unit: isMoneyCat ? null : ($('fUnit').value.trim() || null),
+      target_id: isMoneyCat ? null : editState.target,
       plan:null, fact:null, deadline:null, amount:null, op_date:null, direction:null
     };
   } else if(inMoney || (editState.node && editState.node.amount != null)){
     const amount = num($('fAmount').value);
     if(amount === null){ toast('Введи сумму'); return; }
     data = {
-      name, kind:'entry', mode:null, unit:null,
+      name, kind:'entry', mode:null, unit:null, target_id:null,
       plan:null, fact:null, deadline:null,
       amount: Math.abs(amount),
       op_date: $('fDate').value || today(),
@@ -766,7 +879,7 @@ $('editSave').onclick = async () => {
     };
   } else {
     data = {
-      name, kind:'entry', mode:null,
+      name, kind:'entry', mode:null, target_id:null,
       unit: $('fUnitOwn').value.trim() || null,
       plan: num($('fPlan').value),
       fact: num($('fFact').value),
@@ -816,6 +929,137 @@ $('quickSave').onclick = async () => {
 };
 $('fQuick').addEventListener('keydown', e => { if(e.key === 'Enter') $('quickSave').click(); });
 
+/* ------------------------------ связи --------------------------- */
+
+let linkNode = null;
+
+function openLinks(node){
+  linkNode = node;
+  $('linkTitle').textContent = node.name;
+  renderLinks();
+  $('linkBg').classList.add('open');
+}
+function closeLinks(){ $('linkBg').classList.remove('open'); }
+
+function renderLinks(){
+  const out = $('linkOut'), inc = $('linkIn');
+  out.innerHTML = ''; inc.innerHTML = '';
+
+  const outs = linksFrom(linkNode.id);
+  if(!outs.length) out.innerHTML = '<div class="hint">Пока никуда не ведёт</div>';
+  outs.forEach(l => {
+    const n = index.byId.get(l.to_id);
+    if(!n) return;
+    const b = document.createElement('button');
+    b.className = 'pick';
+    b.innerHTML = '<span><span>' + n.name +
+                  '</span><span class="where">' + nodePath(n) + '</span></span>' +
+                  '<span class="x">убрать</span>';
+    b.onclick = async () => {
+      await repo.removeLink(linkNode.id, n.id);
+      await reindex(); renderLinks(); render();
+    };
+    out.appendChild(b);
+  });
+
+  const ins = linksTo(linkNode.id);
+  if(!ins.length) inc.innerHTML = '<div class="hint">Сюда пока ничего не ведёт</div>';
+  ins.forEach(l => {
+    const n = index.byId.get(l.from_id);
+    if(!n) return;
+    const d = document.createElement('div');
+    d.className = 'pick';
+    d.innerHTML = '<span><span>' + n.name +
+                  '</span><span class="where">' + nodePath(n) + '</span></span>';
+    inc.appendChild(d);
+  });
+}
+
+$('linkClose').onclick = closeLinks;
+$('linkAdd').onclick = () => openPicker('link');
+
+/* ---------------------------- выбор ----------------------------- */
+
+let pickMode = 'link';   // 'link' — цель связи, 'target' — целевая категория
+
+function openPicker(mode){
+  pickMode = mode;
+  $('pickTitle').textContent = mode === 'link' ? 'Куда ведёт' : 'Целевая категория';
+  $('pickSearch').value = '';
+  renderPicker();
+  $('pickBg').classList.add('open');
+}
+function closePicker(){ $('pickBg').classList.remove('open'); }
+
+$('pickClose').onclick = closePicker;
+$('pickSearch').addEventListener('input', renderPicker);
+
+function pickCandidates(){
+  const q = $('pickSearch').value.trim().toLowerCase();
+
+  if(pickMode === 'target'){
+    return index.all
+      .filter(n => n.kind === 'category' && n.mode !== 'money' &&
+                   (!editState.node || n.id !== editState.node.id))
+      .filter(n => !q || n.name.toLowerCase().includes(q));
+  }
+
+  /* цель связи: сначала записи из целевой категории родителя */
+  const parent = linkNode.parent_id != null ? index.byId.get(linkNode.parent_id) : null;
+  let pool;
+  if(parent && parent.target_id != null){
+    pool = descendantEntries(parent.target_id);
+    if(q) pool = pool.filter(n => n.name.toLowerCase().includes(q));
+    if(!q || pool.length) return pool;
+  }
+  pool = index.all.filter(n => n.kind === 'entry' && n.id !== linkNode.id && n.amount == null);
+  return q ? pool.filter(n => n.name.toLowerCase().includes(q)) : pool.slice(0, 50);
+}
+
+function renderPicker(){
+  const list = $('pickList');
+  list.innerHTML = '';
+  const items = pickCandidates();
+
+  if(!items.length){
+    list.innerHTML = '<div class="hint">Ничего не найдено. ' +
+      (pickMode === 'link'
+        ? 'Проверь, задана ли у категории целевая, или ищи по названию.'
+        : 'Сначала создай категорию.') + '</div>';
+    return;
+  }
+
+  const linked = pickMode === 'link'
+    ? new Set(linksFrom(linkNode.id).map(l => l.to_id))
+    : new Set();
+
+  for(const n of items){
+    const b = document.createElement('button');
+    b.className = 'pick';
+    const on = pickMode === 'link'
+      ? linked.has(n.id)
+      : editState.target === n.id;
+    b.setAttribute('aria-pressed', String(on));
+    b.innerHTML = '<span class="mark">' + (on ? '✓' : '·') + '</span>' +
+                  '<span><span>' + n.name +
+                  '</span><span class="where">' + nodePath(n) + '</span></span>';
+    b.onclick = async () => {
+      if(pickMode === 'target'){
+        editState.target = editState.target === n.id ? null : n.id;
+        syncEditFields();
+        closePicker();
+      } else {
+        if(linked.has(n.id)) await repo.removeLink(linkNode.id, n.id);
+        else await repo.addLink(linkNode.id, n.id);
+        await reindex();
+        renderPicker();
+        renderLinks();
+      }
+    };
+    list.appendChild(b);
+  }
+}
+
 /* --------------------------- меню строки ------------------------ */
 
 let menuNode = null;
@@ -823,11 +1067,15 @@ let menuNode = null;
 function openMenu(node){
   menuNode = node;
   $('menuTitle').textContent = node.name;
+  /* связи только у обычных записей */
+  $('menuLinks').style.display =
+    (node.kind === 'entry' && node.amount == null) ? 'block' : 'none';
   $('menuBg').classList.add('open');
 }
 function closeMenu(){ $('menuBg').classList.remove('open'); }
 
 $('menuCancel').onclick = closeMenu;
+$('menuLinks').onclick = () => { closeMenu(); openLinks(menuNode); };
 $('menuEdit').onclick = () => { closeMenu(); openEditor('edit', menuNode); };
 $('menuDelete').onclick = async () => {
   const kids = await repo.listChildren(menuNode.id);
@@ -839,14 +1087,14 @@ $('menuDelete').onclick = async () => {
   render();
 };
 
-['editBg','quickBg','menuBg'].forEach(id => {
+['editBg','quickBg','menuBg','linkBg','pickBg'].forEach(id => {
   const bg = $(id);
   bg.onclick = e => { if(e.target === bg) bg.classList.remove('open'); };
 });
 
 if(window.Capacitor && window.Capacitor.Plugins.App){
   window.Capacitor.Plugins.App.addListener('backButton', () => {
-    for(const id of ['editBg','quickBg','menuBg']){
+    for(const id of ['pickBg','linkBg','editBg','quickBg','menuBg']){
       if($(id).classList.contains('open')){ $(id).classList.remove('open'); return; }
     }
     if(path.length){ path.pop(); render(); return; }
