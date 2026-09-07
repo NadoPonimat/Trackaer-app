@@ -402,7 +402,7 @@
 <div class="sheet-bg" id="serviceBg">
   <div class="sheet menu">
     <h2>Сервис</h2>
-    <div class="hint" id="version">Версия 21 — курсы Excel и SQL</div>
+    <div class="hint" id="version">Версия 22 — теория SQL (модули 1-2)</div>
     <label>Единица планирования</label>
     <div class="seg" id="planUnits">
       <button data-u="hours">Часы</button>
@@ -424,6 +424,7 @@
     <button id="fillKzTheory">Право Казахстана: залить теорию</button>
     <button id="seedExcel">Загрузить курс: Excel</button>
     <button id="seedSql">Загрузить курс: SQL</button>
+    <button id="fillSqlTheory">SQL: залить теорию</button>
     
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
@@ -1708,6 +1709,39 @@ courseButton('seedExcel', 'Excel', () => EXCEL_COURSE, 'часов',
 courseButton('seedSql', 'SQL и базы данных', () => SQL_COURSE, 'часов',
   'Академический курс: реляционная теория, запросы, проектирование, оптимизация.',
   'Загрузить курс: SQL');
+
+/* Кладёт теорию в заметки уже созданных тем, находя их по названию. */
+async function fillTheoryFrom(arr){
+  await reindex();
+  const byName = new Map();
+  for(const n of index.all)
+    if(n.kind === 'entry' && !byName.has(n.name)) byName.set(n.name, n);
+  let done = 0, missed = 0;
+  for(const [name, text] of arr){
+    const node = byName.get(name);
+    if(!node){ missed++; continue; }
+    await repo.update(node.id, {note: text});
+    done++;
+  }
+  return {done, missed};
+}
+
+$('fillSqlTheory').onclick = async () => {
+  const btn = $('fillSqlTheory');
+  if(btn.disabled) return;
+  btn.disabled = true;
+  btn.textContent = 'Заливаю…';
+  try{
+    const r = await fillTheoryFrom(SQL_THEORY);
+    $('serviceBg').classList.remove('open');
+    toast('Тем с теорией: ' + r.done + (r.missed ? ', не найдено ' + r.missed : ''));
+    await render();
+  }catch(err){
+    toast('Не получилось: ' + err.message);
+  }
+  btn.disabled = false;
+  btn.textContent = 'SQL: залить теорию';
+};
 
 $('fillKzTheory').onclick = async () => {
   const btn = $('fillKzTheory');
