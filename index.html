@@ -230,6 +230,18 @@
         <input id="fUnit" autocomplete="off" placeholder="повторы, часы, партии">
         <div class="hint" id="unitHint"></div>
       </div>
+      <div class="two">
+        <div class="field">
+          <label for="fVolume">Объём</label>
+          <input id="fVolume" type="number" inputmode="decimal">
+        </div>
+        <div class="field">
+          <label for="fCatDeadline">Дедлайн</label>
+          <input id="fCatDeadline" type="date">
+        </div>
+      </div>
+      <div class="hint" id="volumeHint">Сколько всего нужно на это направление.</div>
+
       <div class="field" id="targetWrap">
         <label>Связи ведут в</label>
         <button class="picker" id="fTarget">Не выбрано</button>
@@ -378,10 +390,30 @@
   </div>
 </div>
 
+<div class="sheet-bg" id="planBg">
+  <div class="sheet">
+    <h2>План и сроки</h2>
+    <div class="hint" id="planSummary"></div>
+    <div class="scroll" id="planList"></div>
+    <div class="actions"><button id="planClose">Закрыть</button></div>
+  </div>
+</div>
+
 <div class="sheet-bg" id="serviceBg">
   <div class="sheet menu">
     <h2>Сервис</h2>
-    <div class="hint" id="version">Версия 9 — программа тренировок, без шахматного раздела</div>
+    <div class="hint" id="version">Версия 10 — планировщик сроков и нагрузки</div>
+    <label>Единица планирования</label>
+    <div class="seg" id="planUnits">
+      <button data-u="hours">Часы</button>
+      <button data-u="topics">Темы</button>
+    </div>
+    <div class="field">
+      <label for="fBudget">Бюджет в неделю</label>
+      <input id="fBudget" type="number" inputmode="decimal">
+      <div class="hint">Сколько всего можешь тратить в неделю на все направления.</div>
+    </div>
+    <button id="openPlan">План и сроки</button>
     <label>Режим расписания</label>
     <div class="seg" id="schedModes">
       <button data-s="days">По дням недели</button>
@@ -419,6 +451,8 @@ CREATE TABLE IF NOT EXISTS node (
   target_id INTEGER,
   note TEXT,
   fen TEXT,
+  days TEXT,
+  volume REAL,
   sort INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL
 );
@@ -461,11 +495,12 @@ const NEW_COLUMNS = [
   "ALTER TABLE node ADD COLUMN target_id INTEGER",
   "ALTER TABLE node ADD COLUMN note TEXT",
   "ALTER TABLE node ADD COLUMN fen TEXT",
-  "ALTER TABLE node ADD COLUMN days TEXT"
+  "ALTER TABLE node ADD COLUMN days TEXT",
+  "ALTER TABLE node ADD COLUMN volume REAL"
 ];
 
 const FIELDS = ['parent_id','name','kind','mode','unit','plan','fact','deadline','done',
-                'amount','op_date','direction','target_id','note','fen','days','sort','created_at'];
+                'amount','op_date','direction','target_id','note','fen','days','volume','sort','created_at'];
 
 const SqliteRepo = {
   async init(){
@@ -622,6 +657,8 @@ async function openDatabase(){
   await repo.init();
   const s = await repo.getSettings();
   settings.schedule = s.schedule === 'free' ? 'free' : 'days';
+  settings.planUnit = s.planUnit === 'topics' ? 'topics' : 'hours';
+  settings.budget = s.budget || '';
   const roots = await repo.listChildren(null);
   if(roots.length === 0){
     await createNode(null, {name:'Развитие', kind:'category'});
@@ -638,7 +675,7 @@ function createNode(parentId, d){
     plan:d.plan ?? null, fact:d.fact ?? null, deadline:d.deadline ?? null, done:0,
     amount:d.amount ?? null, op_date:d.op_date ?? null, direction:d.direction ?? null,
     target_id:d.target_id ?? null, note:d.note ?? null, fen:d.fen ?? null,
-    days:d.days ?? null,
+    days:d.days ?? null, volume:d.volume ?? null,
     sort:Date.now(), created_at:new Date().toISOString()
   });
 }
@@ -681,7 +718,7 @@ async function aggregateMoney(id, ym){
 
 /* индекс всех узлов: имя, путь, дети — для связей и выбора */
 let index = {byId:new Map(), all:[], links:[], setsToday:new Map()};
-let settings = {schedule:'days'};
+let settings = {schedule:'days', planUnit:'hours', budget:''};
 
 async function reindex(){
   const all = await repo.listAll();
@@ -893,6 +930,13 @@ async function render(){
         const a = await aggregate(item.id);
         const unit = item.unit || currentUnit();
         parts.push(kids.length === 0 ? 'пусто' : kids.length + ' внутри');
+        if(item.volume){
+          const w = weeksLeft(item.deadline);
+          const left = Math.max(0, Number(item.volume) - (a.fact || 0));
+          parts.push(fmt(left) + ' ' + planUnitWord() + ' осталось');
+          if(w) parts.push(fmt(Math.round(left / w * 10) / 10) + ' ' + planUnitWord() + '/нед');
+          else if(w === 0) parts.push('срок вышел');
+        }
         if(a.count) parts.push(a.done + '/' + a.count + ' готово');
         if(a.plan)  parts.push(fmt(a.fact) + ' из ' + fmt(a.plan) + (unit ? ' ' + unit : ''));
       }
@@ -1037,6 +1081,8 @@ function openEditor(mode, node){
   $('fAmount').value   = node && node.amount != null ? node.amount : '';
   $('fDate').value     = node && node.op_date ? node.op_date : today();
   $('fNote').value     = node && node.note ? node.note : '';
+  $('fVolume').value   = node && node.volume != null ? node.volume : '';
+  $('fCatDeadline').value = node && node.kind === 'category' && node.deadline ? node.deadline : '';
 
   const inherited = currentUnit();
   $('unitHint').textContent = inherited
@@ -1096,8 +1142,10 @@ $('editSave').onclick = async () => {
       mode: isMoneyCat ? 'money' : null,
       unit: isMoneyCat ? null : ($('fUnit').value.trim() || null),
       target_id: isMoneyCat ? null : editState.target,
+      volume: isMoneyCat ? null : num($('fVolume').value),
+      deadline: isMoneyCat ? null : ($('fCatDeadline').value || null),
       note: $('fNote').value.trim() || null,
-      plan:null, fact:null, deadline:null, amount:null, op_date:null, direction:null
+      plan:null, fact:null, amount:null, op_date:null, direction:null
     };
   } else if(inMoney || (editState.node && editState.node.amount != null)){
     const amount = num($('fAmount').value);
@@ -1114,6 +1162,7 @@ $('editSave').onclick = async () => {
     data = {
       name, kind:'entry', mode:null, target_id:null,
       note: $('fNote').value.trim() || null,
+      volume: null,
       days: [...editDays].sort().join(',') || null,
       unit: $('fUnitOwn').value.trim() || null,
       plan: num($('fPlan').value),
@@ -1397,14 +1446,14 @@ $('menuDelete').onclick = async () => {
   render();
 };
 
-['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg'].forEach(id => {
+['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg'].forEach(id => {
   const bg = $(id);
   bg.onclick = e => { if(e.target === bg) bg.classList.remove('open'); };
 });
 
 if(window.Capacitor && window.Capacitor.Plugins.App){
   window.Capacitor.Plugins.App.addListener('backButton', () => {
-    for(const id of ['pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg']){
+    for(const id of ['pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg']){
       if($(id).classList.contains('open')){ $(id).classList.remove('open'); return; }
     }
     if(path.length){ path.pop(); render(); return; }
@@ -1618,6 +1667,107 @@ async function seedTraining(){
   return {added};
 }
 
+/* ---------------------- план и сроки ---------------------------- */
+
+const planUnitWord = () => settings.planUnit === 'topics' ? 'тем' : 'ч';
+
+function weeksLeft(deadline){
+  if(!deadline) return null;
+  const ms = new Date(deadline + 'T00:00:00') - new Date(todayISO() + 'T00:00:00');
+  return Math.max(0, Math.ceil(ms / (7 * 24 * 3600 * 1000)));
+}
+
+/* Направление — любая категория, у которой задан объём. */
+async function planRows(){
+  const rows = [];
+  for(const n of index.all){
+    if(n.kind !== 'category' || !n.volume) continue;
+    const a = await aggregate(n.id);
+    const done = a.fact || 0;
+    const left = Math.max(0, Number(n.volume) - done);
+    const w = weeksLeft(n.deadline);
+    rows.push({
+      node: n, done, left, weeks: w,
+      need: (w && w > 0) ? left / w : null
+    });
+  }
+  rows.sort((x, y) => (x.weeks ?? 9999) - (y.weeks ?? 9999));
+  return rows;
+}
+
+async function renderPlan(){
+  const list = $('planList');
+  list.innerHTML = '';
+  const rows = await planRows();
+
+  if(!rows.length){
+    $('planSummary').textContent =
+      'Ни у одного направления не задан объём. Открой категорию, нажми «Изменить» и заполни объём и дедлайн.';
+    return;
+  }
+
+  let total = 0;
+  for(const r of rows){
+    if(r.need) total += r.need;
+    const d = document.createElement('div');
+    d.className = 'setrow';
+    const parts = [];
+    parts.push('осталось ' + fmt(r.left) + ' ' + planUnitWord());
+    if(r.weeks === null) parts.push('без дедлайна');
+    else if(r.weeks === 0) parts.push('срок вышел');
+    else parts.push(r.weeks + ' нед.');
+    if(r.need) parts.push('нужно ' + fmt(Math.round(r.need * 10) / 10) + ' ' + planUnitWord() + '/нед');
+    d.innerHTML = '<span><span>' + r.node.name + '</span>' +
+                  '<span class="where">' + parts.join(' · ') + '</span></span>';
+    if(r.weeks === 0) d.querySelector('.where').classList.add('late');
+    list.appendChild(d);
+  }
+
+  const budget = Number(settings.budget) || 0;
+  let text = 'Нужно ' + fmt(Math.round(total * 10) / 10) + ' ' + planUnitWord() + '/нед';
+  if(budget){
+    const diff = budget - total;
+    text += ' из ' + fmt(budget) + '. ' +
+      (diff >= 0
+        ? 'Влезает, запас ' + fmt(Math.round(diff * 10) / 10) + '.'
+        : 'Не влезает: не хватает ' + fmt(Math.round(-diff * 10) / 10) + '. Сдвинь дедлайны или урежь объёмы.');
+  } else {
+    text += '. Бюджет не задан.';
+  }
+  $('planSummary').textContent = text;
+}
+
+function syncPlanUnits(){
+  [...$('planUnits').children].forEach(b =>
+    b.setAttribute('aria-pressed', String(b.dataset.u === settings.planUnit)));
+  $('volumeHint').textContent = settings.planUnit === 'topics'
+    ? 'Сколько всего тем в направлении.'
+    : 'Сколько всего часов нужно на направление.';
+}
+
+[...$('planUnits').children].forEach(b => {
+  b.onclick = async () => {
+    settings.planUnit = b.dataset.u;
+    await repo.setSetting('planUnit', settings.planUnit);
+    syncPlanUnits();
+    render();
+  };
+});
+
+$('fBudget').addEventListener('change', async () => {
+  settings.budget = $('fBudget').value.trim();
+  await repo.setSetting('budget', settings.budget);
+  toast('Бюджет сохранён');
+});
+
+$('openPlan').onclick = async () => {
+  $('serviceBg').classList.remove('open');
+  await reindex();
+  await renderPlan();
+  $('planBg').classList.add('open');
+};
+$('planClose').onclick = () => $('planBg').classList.remove('open');
+
 function syncSched(){
   [...$('schedModes').children].forEach(b =>
     b.setAttribute('aria-pressed', String(b.dataset.s === settings.schedule)));
@@ -1632,7 +1782,12 @@ function syncSched(){
   };
 });
 
-$('service').onclick = () => { syncSched(); $('serviceBg').classList.add('open'); };
+$('service').onclick = () => {
+  syncSched();
+  syncPlanUnits();
+  $('fBudget').value = settings.budget || '';
+  $('serviceBg').classList.add('open');
+};
 $('serviceClose').onclick = () => $('serviceBg').classList.remove('open');
 
 
