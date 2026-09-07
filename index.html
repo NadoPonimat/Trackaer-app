@@ -141,6 +141,21 @@
     color:var(--muted);border:1px solid var(--line);font:inherit;cursor:pointer;
   }
   .seg button[aria-pressed="true"]{border-color:var(--accent);color:var(--text)}
+  .week{display:flex;gap:5px}
+  .week button{
+    flex:1;padding:10px 0;border-radius:8px;background:var(--bg);color:var(--muted);
+    border:1px solid var(--line);font:inherit;font-size:13px;cursor:pointer;
+  }
+  .week button[aria-pressed="true"]{border-color:var(--accent);color:var(--text)}
+  .today{
+    font-size:11px;color:var(--accent);border:1px solid var(--accent);
+    border-radius:6px;padding:1px 6px;margin-left:6px;
+  }
+  .setrow{
+    display:flex;align-items:center;gap:10px;padding:11px 12px;margin-bottom:8px;
+    background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);font-size:14px;
+  }
+  .setrow .x{margin-left:auto;color:var(--muted);cursor:pointer}
   .picker{
     width:100%;padding:13px 12px;text-align:left;background:var(--bg);color:var(--text);
     border:1px solid var(--line);border-radius:var(--radius);font:inherit;cursor:pointer;
@@ -273,6 +288,17 @@
       </div>
     </div>
 
+    <div class="field" id="daysWrap">
+      <label>Дни недели</label>
+      <div class="week" id="fDays">
+        <button data-d="1">Пн</button><button data-d="2">Вт</button>
+        <button data-d="3">Ср</button><button data-d="4">Чт</button>
+        <button data-d="5">Пт</button><button data-d="6">Сб</button>
+        <button data-d="7">Вс</button>
+      </div>
+      <div class="hint">Пусто — упражнение без расписания, отмечай когда занимался.</div>
+    </div>
+
     <div class="field" id="fenWrap">
       <label for="fFen">Позиция (FEN)</label>
       <input id="fFen" autocomplete="off" spellcheck="false"
@@ -313,6 +339,7 @@
     <h2 id="menuTitle"></h2>
     <div id="menuBoard"></div>
     <div class="note" id="menuNote" style="display:none"></div>
+    <button id="menuLog">Журнал подходов</button>
     <button id="menuLinks">Связи</button>
     <button id="menuEdit">Изменить</button>
     <button id="menuDelete" class="danger">Удалить</button>
@@ -345,9 +372,41 @@
   </div>
 </div>
 
+<div class="sheet-bg" id="logBg">
+  <div class="sheet">
+    <h2 id="logTitle"></h2>
+    <div class="hint" id="logPlan"></div>
+    <div class="two">
+      <div class="field">
+        <label for="fSetValue">Результат</label>
+        <input id="fSetValue" type="number" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label for="fSetRpe">Тяжесть 1-10</label>
+        <input id="fSetRpe" type="number" inputmode="numeric" min="1" max="10">
+      </div>
+    </div>
+    <div class="field">
+      <label for="fSetNote">Заметка к подходу</label>
+      <input id="fSetNote" autocomplete="off" placeholder="Например: отказ раньше плана">
+    </div>
+    <div class="actions">
+      <button id="logClose">Закрыть</button>
+      <button id="logSave" class="primary">Записать подход</button>
+    </div>
+    <h3>История</h3>
+    <div class="scroll" id="logList"></div>
+  </div>
+</div>
+
 <div class="sheet-bg" id="serviceBg">
   <div class="sheet menu">
     <h2>Сервис</h2>
+    <label>Режим расписания</label>
+    <div class="seg" id="schedModes">
+      <button data-s="days">По дням недели</button>
+      <button data-s="free">Свободный</button>
+    </div>
     <button id="seedChess">Загрузить шахматную базу</button>
     <button id="fillTheory">Дополнить дебюты теорией</button>
     <button id="fillSicilian">Сицилианская: разобрать по линиям</button>
@@ -394,6 +453,21 @@ CREATE TABLE IF NOT EXISTS link (
 );
 CREATE INDEX IF NOT EXISTS idx_link_from ON link(from_id);
 CREATE INDEX IF NOT EXISTS idx_link_to ON link(to_id);
+CREATE TABLE IF NOT EXISTS set_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  node_id INTEGER NOT NULL,
+  date TEXT NOT NULL,
+  attempt INTEGER NOT NULL DEFAULT 1,
+  value REAL,
+  rpe INTEGER,
+  note TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_set_node ON set_log(node_id);
+CREATE INDEX IF NOT EXISTS idx_set_date ON set_log(date);
+CREATE TABLE IF NOT EXISTS setting (
+  key TEXT PRIMARY KEY,
+  value TEXT
+);
 `;
 
 const NEW_COLUMNS = [
@@ -408,11 +482,12 @@ const NEW_COLUMNS = [
   "ALTER TABLE node ADD COLUMN direction INTEGER",
   "ALTER TABLE node ADD COLUMN target_id INTEGER",
   "ALTER TABLE node ADD COLUMN note TEXT",
-  "ALTER TABLE node ADD COLUMN fen TEXT"
+  "ALTER TABLE node ADD COLUMN fen TEXT",
+  "ALTER TABLE node ADD COLUMN days TEXT"
 ];
 
 const FIELDS = ['parent_id','name','kind','mode','unit','plan','fact','deadline','done',
-                'amount','op_date','direction','target_id','note','fen','sort','created_at'];
+                'amount','op_date','direction','target_id','note','fen','days','sort','created_at'];
 
 const SqliteRepo = {
   async init(){
@@ -456,11 +531,41 @@ const SqliteRepo = {
     await this.S.run({database:DB, statement:'DELETE FROM node WHERE id = ?', values:[id], transaction:true});
     await this.S.run({database:DB, statement:'DELETE FROM link WHERE from_id = ? OR to_id = ?',
                       values:[id, id], transaction:true});
+    await this.S.run({database:DB, statement:'DELETE FROM set_log WHERE node_id = ?',
+                      values:[id], transaction:true});
   },
   async addLink(from, to){
     await this.S.run({database:DB,
       statement:'INSERT INTO link (from_id, to_id, kind) VALUES (?,?,?)',
       values:[from, to, 'leads_to'], transaction:true});
+  },
+  listSets(nodeId){
+    return this.q('SELECT * FROM set_log WHERE node_id = ? ORDER BY date DESC, attempt DESC',
+                  [nodeId]);
+  },
+  setsOnDate(date){
+    return this.q('SELECT * FROM set_log WHERE date = ?', [date]);
+  },
+  async addSet(s){
+    await this.S.run({database:DB,
+      statement:'INSERT INTO set_log (node_id, date, attempt, value, rpe, note) VALUES (?,?,?,?,?,?)',
+      values:[s.node_id, s.date, s.attempt, s.value ?? null, s.rpe ?? null, s.note ?? null],
+      transaction:true});
+  },
+  async removeSet(id){
+    await this.S.run({database:DB, statement:'DELETE FROM set_log WHERE id = ?',
+                      values:[id], transaction:true});
+  },
+  async getSettings(){
+    const rows = await this.q('SELECT * FROM setting');
+    const o = {};
+    rows.forEach(r => o[r.key] = r.value);
+    return o;
+  },
+  async setSetting(key, value){
+    await this.S.run({database:DB,
+      statement:'INSERT OR REPLACE INTO setting (key, value) VALUES (?,?)',
+      values:[key, value], transaction:true});
   },
   async removeLink(from, to){
     await this.S.run({database:DB,
@@ -473,6 +578,8 @@ const MemoryRepo = {
   async init(){
     this.d = JSON.parse(localStorage.getItem(DB) || '{"node":[],"link":[],"seq":0}');
     if(!this.d.link) this.d.link = [];
+    if(!this.d.sets) this.d.sets = [];
+    if(!this.d.settings) this.d.settings = {};
   },
   save(){ localStorage.setItem(DB, JSON.stringify(this.d)); },
   async listChildren(parentId){
@@ -495,10 +602,31 @@ const MemoryRepo = {
   async remove(id){
     this.d.node = this.d.node.filter(x => x.id !== id);
     this.d.link = this.d.link.filter(l => l.from_id !== id && l.to_id !== id);
+    this.d.sets = (this.d.sets || []).filter(s => s.node_id !== id);
     this.save();
   },
   async addLink(from, to){
     this.d.link.push({from_id:from, to_id:to, kind:'leads_to'});
+    this.save();
+  },
+  async listSets(nodeId){
+    return (this.d.sets || []).filter(s => s.node_id === nodeId)
+             .sort((a,b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.attempt - a.attempt));
+  },
+  async setsOnDate(date){ return (this.d.sets || []).filter(s => s.date === date); },
+  async addSet(s){
+    if(!this.d.sets) this.d.sets = [];
+    this.d.sets.push({id: ++this.d.seq, ...s});
+    this.save();
+  },
+  async removeSet(id){
+    this.d.sets = (this.d.sets || []).filter(s => s.id !== id);
+    this.save();
+  },
+  async getSettings(){ return this.d.settings || {}; },
+  async setSetting(key, value){
+    if(!this.d.settings) this.d.settings = {};
+    this.d.settings[key] = value;
     this.save();
   },
   async removeLink(from, to){
@@ -514,6 +642,8 @@ async function openDatabase(){
               && window.Capacitor.isNativePlatform();
   repo = native ? SqliteRepo : MemoryRepo;
   await repo.init();
+  const s = await repo.getSettings();
+  settings.schedule = s.schedule === 'free' ? 'free' : 'days';
   const roots = await repo.listChildren(null);
   if(roots.length === 0){
     await createNode(null, {name:'Развитие', kind:'category'});
@@ -530,6 +660,7 @@ function createNode(parentId, d){
     plan:d.plan ?? null, fact:d.fact ?? null, deadline:d.deadline ?? null, done:0,
     amount:d.amount ?? null, op_date:d.op_date ?? null, direction:d.direction ?? null,
     target_id:d.target_id ?? null, note:d.note ?? null, fen:d.fen ?? null,
+    days:d.days ?? null,
     sort:Date.now(), created_at:new Date().toISOString()
   });
 }
@@ -571,12 +702,31 @@ async function aggregateMoney(id, ym){
 }
 
 /* индекс всех узлов: имя, путь, дети — для связей и выбора */
-let index = {byId:new Map(), all:[], links:[]};
+let index = {byId:new Map(), all:[], links:[], setsToday:new Map()};
+let settings = {schedule:'days'};
 
 async function reindex(){
   const all = await repo.listAll();
   const byId = new Map(all.map(n => [n.id, n]));
-  index = {byId, all, links: await repo.allLinks()};
+  const sets = await repo.setsOnDate(todayISO());
+  const setsToday = new Map();
+  sets.forEach(s => setsToday.set(s.node_id, (setsToday.get(s.node_id) || 0) + 1));
+  index = {byId, all, links: await repo.allLinks(), setsToday};
+}
+
+const WD = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+/* в базе дни хранятся как 1=Пн … 7=Вс */
+function weekdayToday(){
+  const d = new Date().getDay();
+  return d === 0 ? 7 : d;
+}
+function scheduledToday(node){
+  if(!node.days) return false;
+  return node.days.split(',').includes(String(weekdayToday()));
+}
+function daysLabel(days){
+  if(!days) return '';
+  return days.split(',').map(d => WD[Number(d) % 7]).join(' ');
 }
 
 function nodePath(node){
@@ -621,7 +771,11 @@ const fmt = v => {
 };
 const money = v => (Number(v) || 0).toLocaleString('ru-RU', {maximumFractionDigits:0});
 const ymOf = d => d.toISOString().slice(0,7);
-const today = () => new Date().toISOString().slice(0,10);
+const todayISO = () => {
+  const d = new Date();
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0,10);
+};
+const today = todayISO;
 const MONTHS = ['январь','февраль','март','апрель','май','июнь',
                 'июль','август','сентябрь','октябрь','ноябрь','декабрь'];
 
@@ -738,6 +892,12 @@ async function render(){
     const name = document.createElement('span');
     name.className = 'name';
     name.textContent = item.name;
+    if(settings.schedule === 'days' && item.kind === 'entry' && scheduledToday(item)){
+      const b = document.createElement('span');
+      b.className = 'today';
+      b.textContent = 'сегодня';
+      name.appendChild(b);
+    }
     body.appendChild(name);
 
     const meta = document.createElement('span');
@@ -778,7 +938,10 @@ async function render(){
       if(item.deadline) parts.push('до ' + item.deadline.split('-').reverse().join('.'));
       const out = linksFrom(item.id).length, inc = linksTo(item.id).length;
       const kids = index.all.filter(n => n.parent_id === item.id).length;
-      if(kids) parts.push(kids + ' линий');
+      if(kids) parts.push(kids + ' внутри');
+      const doneToday = index.setsToday.get(item.id) || 0;
+      if(doneToday) parts.push('сегодня ' + doneToday + ' подх.');
+      if(settings.schedule === 'days' && item.days) parts.push(daysLabel(item.days));
       if(out) parts.push('ведёт к ' + out);
       if(inc) parts.push('из ' + inc);
       if(item.note) parts.push('есть заметка');
@@ -826,8 +989,8 @@ async function render(){
       const plus = document.createElement('button');
       plus.className = 'plus';
       plus.textContent = '+';
-      plus.setAttribute('aria-label', 'Добавить к факту: ' + item.name);
-      plus.onclick = e => { e.stopPropagation(); openQuick(item); };
+      plus.setAttribute('aria-label', 'Записать подход: ' + item.name);
+      plus.onclick = e => { e.stopPropagation(); openLog(item); };
       row.appendChild(plus);
     }
 
@@ -855,6 +1018,8 @@ function syncEditFields(){
   $('entryFields').style.display = (!cat && !moneyEntry) ? 'block' : 'none';
   $('moneyFields').style.display = moneyEntry ? 'block' : 'none';
   $('fenWrap').style.display     = moneyEntry ? 'none' : 'block';
+  $('daysWrap').style.display    = (!cat && !moneyEntry && settings.schedule === 'days')
+                                   ? 'block' : 'none';
 
   const plainCat = cat && editState.catMode === 'plain' && !inMoney;
   $('modeWrap').style.display   = (cat && !inMoney) ? 'block' : 'none';
@@ -873,6 +1038,8 @@ function syncEditFields(){
 }
 
 function openEditor(mode, node){
+  editDays = new Set((node && node.days ? node.days.split(',') : []));
+  syncDays();
   editState = {
     mode,
     kind: node ? node.kind : 'category',
@@ -923,6 +1090,19 @@ function closeEditor(){ $('editBg').classList.remove('open'); }
 
 $('fTarget').onclick = () => openPicker('target');
 
+let editDays = new Set();
+function syncDays(){
+  [...$('fDays').children].forEach(b =>
+    b.setAttribute('aria-pressed', String(editDays.has(b.dataset.d))));
+}
+[...$('fDays').children].forEach(b => {
+  b.onclick = () => {
+    if(editDays.has(b.dataset.d)) editDays.delete(b.dataset.d);
+    else editDays.add(b.dataset.d);
+    syncDays();
+  };
+});
+
 /* живой просмотр доски, пока печатаешь FEN */
 $('fFen').addEventListener('input', () => drawBoard($('fenPreview'), $('fFen').value));
 
@@ -965,6 +1145,7 @@ $('editSave').onclick = async () => {
       name, kind:'entry', mode:null, target_id:null,
       note: $('fNote').value.trim() || null,
       fen: $('fFen').value.trim() || null,
+      days: [...editDays].sort().join(',') || null,
       unit: $('fUnitOwn').value.trim() || null,
       plan: num($('fPlan').value),
       fact: num($('fFact').value),
@@ -1145,6 +1326,77 @@ function renderPicker(){
   }
 }
 
+/* ------------------------ журнал подходов ----------------------- */
+
+let logNode = null;
+
+async function openLog(node){
+  logNode = node;
+  $('logTitle').textContent = node.name;
+  const unit = node.unit || currentUnit();
+  $('logPlan').textContent = node.plan
+    ? 'План: ' + fmt(node.plan) + (unit ? ' ' + unit : '') +
+      (node.note ? ' · ' + node.note : '')
+    : (node.note || '');
+  $('fSetValue').value = '';
+  $('fSetRpe').value = '';
+  $('fSetNote').value = '';
+  await renderLog();
+  $('logBg').classList.add('open');
+  setTimeout(() => $('fSetValue').focus(), 50);
+}
+function closeLog(){ $('logBg').classList.remove('open'); }
+
+async function renderLog(){
+  const list = $('logList');
+  list.innerHTML = '';
+  const sets = await repo.listSets(logNode.id);
+  if(!sets.length){
+    list.innerHTML = '<div class="hint">Пока ни одного подхода.</div>';
+    return;
+  }
+  for(const s of sets){
+    const d = document.createElement('div');
+    d.className = 'setrow';
+    const parts = [s.date.split('-').reverse().join('.'),
+                   'подход ' + s.attempt,
+                   fmt(s.value)];
+    if(s.rpe) parts.push('тяжесть ' + s.rpe);
+    if(s.note) parts.push(s.note);
+    d.innerHTML = '<span>' + parts.join(' · ') + '</span><span class="x">убрать</span>';
+    d.querySelector('.x').onclick = async () => {
+      await repo.removeSet(s.id);
+      await renderLog();
+      await render();
+    };
+    list.appendChild(d);
+  }
+}
+
+$('logClose').onclick = closeLog;
+$('logSave').onclick = async () => {
+  const v = num($('fSetValue').value);
+  if(v === null){ toast('Введи результат'); return; }
+  const sets = await repo.listSets(logNode.id);
+  const attempt = sets.filter(s => s.date === todayISO()).length + 1;
+  await repo.addSet({
+    node_id: logNode.id,
+    date: todayISO(),
+    attempt,
+    value: v,
+    rpe: num($('fSetRpe').value),
+    note: $('fSetNote').value.trim() || null
+  });
+  await repo.update(logNode.id, {fact: (Number(logNode.fact) || 0) + 1});
+  logNode = index.byId.get(logNode.id) || logNode;
+  $('fSetValue').value = '';
+  $('fSetNote').value = '';
+  toast('Подход ' + attempt + ' записан');
+  await render();
+  logNode = index.byId.get(logNode.id) || logNode;
+  await renderLog();
+};
+
 /* --------------------------- меню строки ------------------------ */
 
 let menuNode = null;
@@ -1156,13 +1408,15 @@ function openMenu(node){
   $('menuNote').textContent = node.note || '';
   $('menuNote').style.display = node.note ? 'block' : 'none';
   /* связи только у обычных записей */
-  $('menuLinks').style.display =
-    (node.kind === 'entry' && node.amount == null) ? 'block' : 'none';
+  const plainEntry = node.kind === 'entry' && node.amount == null;
+  $('menuLinks').style.display = plainEntry ? 'block' : 'none';
+  $('menuLog').style.display   = plainEntry ? 'block' : 'none';
   $('menuBg').classList.add('open');
 }
 function closeMenu(){ $('menuBg').classList.remove('open'); }
 
 $('menuCancel').onclick = closeMenu;
+$('menuLog').onclick = () => { closeMenu(); openLog(menuNode); };
 $('menuLinks').onclick = () => { closeMenu(); openLinks(menuNode); };
 $('menuEdit').onclick = () => { closeMenu(); openEditor('edit', menuNode); };
 $('menuDelete').onclick = async () => {
@@ -1175,14 +1429,14 @@ $('menuDelete').onclick = async () => {
   render();
 };
 
-['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg'].forEach(id => {
+['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg'].forEach(id => {
   const bg = $(id);
   bg.onclick = e => { if(e.target === bg) bg.classList.remove('open'); };
 });
 
 if(window.Capacitor && window.Capacitor.Plugins.App){
   window.Capacitor.Plugins.App.addListener('backButton', () => {
-    for(const id of ['pickBg','linkBg','editBg','quickBg','menuBg','serviceBg']){
+    for(const id of ['pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg']){
       if($(id).classList.contains('open')){ $(id).classList.remove('open'); return; }
     }
     if(path.length){ path.pop(); render(); return; }
@@ -1742,7 +1996,21 @@ async function fillSicilianLines(){
   return {added, missed};
 }
 
-$('service').onclick = () => $('serviceBg').classList.add('open');
+function syncSched(){
+  [...$('schedModes').children].forEach(b =>
+    b.setAttribute('aria-pressed', String(b.dataset.s === settings.schedule)));
+}
+[...$('schedModes').children].forEach(b => {
+  b.onclick = async () => {
+    settings.schedule = b.dataset.s;
+    await repo.setSetting('schedule', settings.schedule);
+    syncSched();
+    toast(settings.schedule === 'days' ? 'Режим: по дням недели' : 'Режим: свободный');
+    render();
+  };
+});
+
+$('service').onclick = () => { syncSched(); $('serviceBg').classList.add('open'); };
 $('serviceClose').onclick = () => $('serviceBg').classList.remove('open');
 
 $('fillTheory').onclick = async () => {
