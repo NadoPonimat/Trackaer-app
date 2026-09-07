@@ -118,6 +118,22 @@
     border-radius:var(--radius);font:inherit;line-height:1.5;
   }
   textarea:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  .board{
+    width:100%;max-width:340px;margin:0 auto 12px;
+    display:grid;grid-template-columns:repeat(8,1fr);
+    border:1px solid var(--line);border-radius:8px;overflow:hidden;
+  }
+  .board .sq{
+    position:relative;padding-top:100%;
+  }
+  .board .sq span{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-size:min(7.2vw,26px);line-height:1;
+  }
+  .board .light{background:#E3D3C6}
+  .board .dark{background:#7E4340}
+  .board .w{color:#FFFFFF;text-shadow:0 0 1px #000,0 0 2px #000}
+  .board .b{color:#12090A}
   .note{
     background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);
     padding:12px;margin-bottom:12px;font-size:14px;color:var(--text);
@@ -261,6 +277,14 @@
       </div>
     </div>
 
+    <div class="field" id="fenWrap">
+      <label for="fFen">Позиция (FEN)</label>
+      <input id="fFen" autocomplete="off" spellcheck="false"
+             placeholder="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR">
+      <div class="hint">Строка позиции из любой шахматной программы. Доска нарисуется сама.</div>
+      <div id="fenPreview"></div>
+    </div>
+
     <div class="field">
       <label for="fNote">Заметка</label>
       <textarea id="fNote" placeholder="Идея, планы сторон, типовые ходы"></textarea>
@@ -291,6 +315,7 @@
 <div class="sheet-bg" id="menuBg">
   <div class="sheet menu">
     <h2 id="menuTitle"></h2>
+    <div id="menuBoard"></div>
     <div class="note" id="menuNote" style="display:none"></div>
     <button id="menuLinks">Связи</button>
     <button id="menuEdit">Изменить</button>
@@ -358,6 +383,7 @@ CREATE TABLE IF NOT EXISTS node (
   direction INTEGER,
   target_id INTEGER,
   note TEXT,
+  fen TEXT,
   sort INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL
 );
@@ -383,11 +409,12 @@ const NEW_COLUMNS = [
   "ALTER TABLE node ADD COLUMN op_date TEXT",
   "ALTER TABLE node ADD COLUMN direction INTEGER",
   "ALTER TABLE node ADD COLUMN target_id INTEGER",
-  "ALTER TABLE node ADD COLUMN note TEXT"
+  "ALTER TABLE node ADD COLUMN note TEXT",
+  "ALTER TABLE node ADD COLUMN fen TEXT"
 ];
 
 const FIELDS = ['parent_id','name','kind','mode','unit','plan','fact','deadline','done',
-                'amount','op_date','direction','target_id','note','sort','created_at'];
+                'amount','op_date','direction','target_id','note','fen','sort','created_at'];
 
 const SqliteRepo = {
   async init(){
@@ -504,7 +531,7 @@ function createNode(parentId, d){
     mode:d.mode ?? null, unit:d.unit ?? null,
     plan:d.plan ?? null, fact:d.fact ?? null, deadline:d.deadline ?? null, done:0,
     amount:d.amount ?? null, op_date:d.op_date ?? null, direction:d.direction ?? null,
-    target_id:d.target_id ?? null, note:d.note ?? null,
+    target_id:d.target_id ?? null, note:d.note ?? null, fen:d.fen ?? null,
     sort:Date.now(), created_at:new Date().toISOString()
   });
 }
@@ -815,6 +842,7 @@ function syncEditFields(){
   $('catFields').style.display   = cat ? 'block' : 'none';
   $('entryFields').style.display = (!cat && !moneyEntry) ? 'block' : 'none';
   $('moneyFields').style.display = moneyEntry ? 'block' : 'none';
+  $('fenWrap').style.display     = moneyEntry ? 'none' : 'block';
 
   const plainCat = cat && editState.catMode === 'plain' && !inMoney;
   $('modeWrap').style.display   = (cat && !inMoney) ? 'block' : 'none';
@@ -853,6 +881,8 @@ function openEditor(mode, node){
   $('fAmount').value   = node && node.amount != null ? node.amount : '';
   $('fDate').value     = node && node.op_date ? node.op_date : today();
   $('fNote').value     = node && node.note ? node.note : '';
+  $('fFen').value      = node && node.fen ? node.fen : '';
+  drawBoard($('fenPreview'), $('fFen').value);
 
   const inherited = currentUnit();
   $('unitHint').textContent = inherited
@@ -881,6 +911,9 @@ function closeEditor(){ $('editBg').classList.remove('open'); }
 
 $('fTarget').onclick = () => openPicker('target');
 
+/* живой просмотр доски, пока печатаешь FEN */
+$('fFen').addEventListener('input', () => drawBoard($('fenPreview'), $('fFen').value));
+
 $('add').onclick = () => openEditor('add', null);
 $('editCancel').onclick = closeEditor;
 
@@ -900,6 +933,7 @@ $('editSave').onclick = async () => {
       unit: isMoneyCat ? null : ($('fUnit').value.trim() || null),
       target_id: isMoneyCat ? null : editState.target,
       note: $('fNote').value.trim() || null,
+      fen: $('fFen').value.trim() || null,
       plan:null, fact:null, deadline:null, amount:null, op_date:null, direction:null
     };
   } else if(inMoney || (editState.node && editState.node.amount != null)){
@@ -908,6 +942,7 @@ $('editSave').onclick = async () => {
     data = {
       name, kind:'entry', mode:null, unit:null, target_id:null,
       note: $('fNote').value.trim() || null,
+      fen: $('fFen').value.trim() || null,
       plan:null, fact:null, deadline:null,
       amount: Math.abs(amount),
       op_date: $('fDate').value || today(),
@@ -917,6 +952,7 @@ $('editSave').onclick = async () => {
     data = {
       name, kind:'entry', mode:null, target_id:null,
       note: $('fNote').value.trim() || null,
+      fen: $('fFen').value.trim() || null,
       unit: $('fUnitOwn').value.trim() || null,
       plan: num($('fPlan').value),
       fact: num($('fFact').value),
@@ -1104,6 +1140,7 @@ let menuNode = null;
 function openMenu(node){
   menuNode = node;
   $('menuTitle').textContent = node.name;
+  drawBoard($('menuBoard'), node.fen);
   $('menuNote').textContent = node.note || '';
   $('menuNote').style.display = node.note ? 'block' : 'none';
   /* связи только у обычных записей */
@@ -1139,6 +1176,46 @@ if(window.Capacitor && window.Capacitor.Plugins.App){
     if(path.length){ path.pop(); render(); return; }
     window.Capacitor.Plugins.App.exitApp();
   });
+}
+
+/* ============================ доска ============================= */
+
+const GLYPH = {k:'\u265A', q:'\u265B', r:'\u265C', b:'\u265D', n:'\u265E', p:'\u265F'};
+
+/* Рисует позицию из FEN. Пустая или кривая строка — доски нет. */
+function drawBoard(host, fen){
+  host.innerHTML = '';
+  if(!fen) return;
+
+  const rows = String(fen).trim().split(/\s+/)[0].split('/');
+  if(rows.length !== 8) return;
+
+  const cells = [];
+  for(const row of rows){
+    const line = [];
+    for(const ch of row){
+      if(/[1-8]/.test(ch)) for(let i = 0; i < Number(ch); i++) line.push(null);
+      else if(/[kqrbnpKQRBNP]/.test(ch)) line.push(ch);
+      else return;
+    }
+    if(line.length !== 8) return;
+    cells.push(line);
+  }
+
+  const board = document.createElement('div');
+  board.className = 'board';
+  cells.forEach((line, r) => line.forEach((ch, c) => {
+    const sq = document.createElement('div');
+    sq.className = 'sq ' + ((r + c) % 2 ? 'dark' : 'light');
+    if(ch){
+      const s = document.createElement('span');
+      s.className = ch === ch.toUpperCase() ? 'w' : 'b';
+      s.textContent = GLYPH[ch.toLowerCase()];
+      sq.appendChild(s);
+    }
+    board.appendChild(sq);
+  }));
+  host.appendChild(board);
 }
 
 /* ========================= шахматная база ======================= */
