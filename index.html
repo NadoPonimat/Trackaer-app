@@ -16,6 +16,26 @@
     --muted:#9A7B7C;
     --radius:10px;
   }
+  html[data-theme="blue"]{
+    --bg:#070B14; --surface:#0D1524; --surface-2:#131F33; --line:#1E3050;
+    --accent:#2F7BF6; --income:#3FA96B; --text:#E8EEF9; --muted:#7E90AC;
+  }
+  html[data-theme="teal"]{
+    --bg:#05100F; --surface:#0A1A19; --surface-2:#0F2422; --line:#1A3B38;
+    --accent:#17B8A6; --income:#6FD36A; --text:#E3F4F1; --muted:#79A29C;
+  }
+  html[data-theme="graphite"]{
+    --bg:#0D0D0F; --surface:#16161A; --surface-2:#1E1E23; --line:#2E2E36;
+    --accent:#8A8FF5; --income:#5BBE85; --text:#ECECEF; --muted:#8D8D98;
+  }
+  html[data-theme="sand"]{
+    --bg:#14110C; --surface:#1E1912; --surface-2:#2A2318; --line:#3D3323;
+    --accent:#D9A441; --income:#7FB069; --text:#F3EADA; --muted:#A18F73;
+  }
+  html[data-theme="light"]{
+    --bg:#F5F6F8; --surface:#FFFFFF; --surface-2:#EDEFF3; --line:#D5D9E0;
+    --accent:#1F6FEB; --income:#1F8A4C; --text:#14161A; --muted:#5C6470;
+  }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;padding:0;height:100%}
   body{
@@ -129,6 +149,13 @@
     color:var(--muted);border:1px solid var(--line);font:inherit;cursor:pointer;
   }
   .seg button[aria-pressed="true"]{border-color:var(--accent);color:var(--text)}
+  .themes{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .themes button{
+    flex:1 1 30%;padding:11px 6px;border-radius:var(--radius);
+    background:var(--bg);color:var(--muted);border:1px solid var(--line);
+    font:inherit;font-size:13px;cursor:pointer;
+  }
+  .themes button[aria-pressed="true"]{border-color:var(--accent);color:var(--text)}
   .week{display:flex;gap:5px}
   .week button{
     flex:1;padding:10px 0;border-radius:8px;background:var(--bg);color:var(--muted);
@@ -172,6 +199,37 @@
   .pick .x{margin-left:auto;color:var(--muted);flex:none}
   .scroll{max-height:52vh;overflow-y:auto;margin-bottom:12px}
 
+  .graph-bg{
+    position:fixed;inset:0;background:var(--bg);z-index:25;display:none;
+    flex-direction:column;
+  }
+  .graph-bg.open{display:flex}
+  .graph-top{
+    display:flex;align-items:flex-start;gap:10px;
+    padding:calc(env(safe-area-inset-top) + 12px) 16px 10px;
+    border-bottom:1px solid var(--line);background:var(--surface);
+  }
+  .graph-title{font-size:17px;font-weight:600;flex:1}
+  .graph-sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .graph-top .more{margin-left:auto}
+  #graphCanvas{flex:1;width:100%;touch-action:none;display:block}
+  .graph-bottom{
+    display:flex;gap:8px;padding:10px 12px calc(env(safe-area-inset-bottom) + 12px);
+    border-top:1px solid var(--line);background:var(--surface);
+  }
+  .graph-bottom button{
+    flex:1;padding:11px;border-radius:var(--radius);background:var(--bg);
+    color:var(--muted);border:1px solid var(--line);font:inherit;font-size:14px;cursor:pointer;
+  }
+  .graph-bottom button[aria-pressed="true"]{border-color:var(--accent);color:var(--text)}
+  .graph-card{
+    position:absolute;left:12px;right:12px;
+    bottom:calc(env(safe-area-inset-bottom) + 70px);
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);padding:14px;
+  }
+  .graph-card-name{font-weight:600;margin-bottom:2px}
+  .graph-card-path{font-size:12px;color:var(--muted);margin-bottom:12px}
   .toast{
     position:fixed;left:50%;transform:translateX(-50%);
     bottom:calc(env(safe-area-inset-bottom) + 92px);
@@ -390,6 +448,30 @@
   </div>
 </div>
 
+<div class="graph-bg" id="graphBg">
+  <div class="graph-top">
+    <div>
+      <div class="graph-title" id="graphTitle">Карта связей</div>
+      <div class="graph-sub" id="graphSub"></div>
+    </div>
+    <button class="more" id="graphClose" aria-label="Закрыть">✕</button>
+  </div>
+  <canvas id="graphCanvas"></canvas>
+  <div class="graph-bottom">
+    <button id="graphTree" aria-pressed="true">Вложенность</button>
+    <button id="graphLinks" aria-pressed="true">Связи</button>
+    <button id="graphReset">Пересобрать</button>
+  </div>
+  <div class="graph-card" id="graphCard" style="display:none">
+    <div class="graph-card-name" id="graphCardName"></div>
+    <div class="graph-card-path" id="graphCardPath"></div>
+    <div class="actions">
+      <button id="graphCardOpen">Открыть</button>
+      <button id="graphCardFocus" class="primary">В центр</button>
+    </div>
+  </div>
+</div>
+
 <div class="sheet-bg" id="planBg">
   <div class="sheet">
     <h2>План и сроки</h2>
@@ -402,7 +484,16 @@
 <div class="sheet-bg" id="serviceBg">
   <div class="sheet menu">
     <h2>Сервис</h2>
-    <div class="hint" id="version">Версия 22 — теория SQL (модули 1-2)</div>
+    <div class="hint" id="version">Версия 25</div>
+    <label>Оформление</label>
+    <div class="themes" id="themes">
+      <button data-t="red">Красная</button>
+      <button data-t="blue">Синяя</button>
+      <button data-t="teal">Бирюзовая</button>
+      <button data-t="graphite">Графит</button>
+      <button data-t="sand">Песок</button>
+      <button data-t="light">Светлая</button>
+    </div>
     <label>Единица планирования</label>
     <div class="seg" id="planUnits">
       <button data-u="hours">Часы</button>
@@ -414,6 +505,7 @@
       <div class="hint">Сколько всего можешь тратить в неделю на все направления.</div>
     </div>
     <button id="openPlan">План и сроки</button>
+    <button id="openGraph">Карта связей</button>
     <label>Режим расписания</label>
     <div class="seg" id="schedModes">
       <button data-s="days">По дням недели</button>
@@ -456,7 +548,6 @@ CREATE TABLE IF NOT EXISTS node (
   direction INTEGER,
   target_id INTEGER,
   note TEXT,
-  fen TEXT,
   days TEXT,
   volume REAL,
   sort INTEGER NOT NULL DEFAULT 0,
@@ -500,13 +591,12 @@ const NEW_COLUMNS = [
   "ALTER TABLE node ADD COLUMN direction INTEGER",
   "ALTER TABLE node ADD COLUMN target_id INTEGER",
   "ALTER TABLE node ADD COLUMN note TEXT",
-  "ALTER TABLE node ADD COLUMN fen TEXT",
   "ALTER TABLE node ADD COLUMN days TEXT",
   "ALTER TABLE node ADD COLUMN volume REAL"
 ];
 
 const FIELDS = ['parent_id','name','kind','mode','unit','plan','fact','deadline','done',
-                'amount','op_date','direction','target_id','note','fen','days','volume','sort','created_at'];
+                'amount','op_date','direction','target_id','note','days','volume','sort','created_at'];
 
 const SqliteRepo = {
   async init(){
@@ -665,6 +755,8 @@ async function openDatabase(){
   settings.schedule = s.schedule === 'free' ? 'free' : 'days';
   settings.planUnit = s.planUnit === 'topics' ? 'topics' : 'hours';
   settings.budget = s.budget || '';
+  settings.theme = s.theme || 'red';
+  applyTheme();
   const roots = await repo.listChildren(null);
   if(roots.length === 0){
     await createNode(null, {name:'Развитие', kind:'category'});
@@ -680,7 +772,7 @@ function createNode(parentId, d){
     mode:d.mode ?? null, unit:d.unit ?? null,
     plan:d.plan ?? null, fact:d.fact ?? null, deadline:d.deadline ?? null, done:0,
     amount:d.amount ?? null, op_date:d.op_date ?? null, direction:d.direction ?? null,
-    target_id:d.target_id ?? null, note:d.note ?? null, fen:d.fen ?? null,
+    target_id:d.target_id ?? null, note:d.note ?? null,
     days:d.days ?? null, volume:d.volume ?? null,
     sort:Date.now(), created_at:new Date().toISOString()
   });
@@ -724,7 +816,7 @@ async function aggregateMoney(id, ym){
 
 /* индекс всех узлов: имя, путь, дети — для связей и выбора */
 let index = {byId:new Map(), all:[], links:[], setsToday:new Map()};
-let settings = {schedule:'days', planUnit:'hours', budget:''};
+let settings = {schedule:'days', planUnit:'hours', budget:'', theme:'red'};
 
 async function reindex(){
   const all = await repo.listAll();
@@ -1302,7 +1394,7 @@ function pickCandidates(){
     if(q) pool = pool.filter(n => n.name.toLowerCase().includes(q));
     if(!q || pool.length) return pool;
   }
-  pool = index.all.filter(n => n.kind === 'entry' && n.id !== linkNode.id && n.amount == null);
+  pool = index.all.filter(n => n.id !== linkNode.id && n.amount == null);
   return q ? pool.filter(n => n.name.toLowerCase().includes(q)) : pool.slice(0, 50);
 }
 
@@ -1432,7 +1524,7 @@ function openMenu(node){
   $('menuNote').style.display = node.note ? 'block' : 'none';
   /* связи только у обычных записей */
   const plainEntry = node.kind === 'entry' && node.amount == null;
-  $('menuLinks').style.display = plainEntry ? 'block' : 'none';
+  $('menuLinks').style.display = node.amount == null ? 'block' : 'none';
   $('menuLog').style.display   = plainEntry ? 'block' : 'none';
   $('menuBg').classList.add('open');
 }
@@ -1459,7 +1551,7 @@ $('menuDelete').onclick = async () => {
 
 if(window.Capacitor && window.Capacitor.Plugins.App){
   window.Capacitor.Plugins.App.addListener('backButton', () => {
-    for(const id of ['pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg']){
+    for(const id of ['pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg']){
       if($(id).classList.contains('open')){ $(id).classList.remove('open'); return; }
     }
     if(path.length){ path.pop(); render(); return; }
@@ -1559,6 +1651,346 @@ async function fillKzTheory(){
   }
   return {done, missed};
 }
+
+/* ------------------------- карта связей -------------------------
+   Граф узлов: вложенность рисуется тонкими линиями, связи «ведёт к» —
+   красными. Раскладка считается пружинной моделью один раз при
+   открытии, дальше узлы можно таскать.
+------------------------------------------------------------------*/
+
+const graphCanvas = document.getElementById('graphCanvas');
+
+const graph = {
+  nodes: [], edges: [],
+  scale: 1, ox: 0, oy: 0,
+  showTree: true, showLinks: true,
+  selected: null, dragging: null,
+  pointers: new Map(), pinchDist: 0, pinchScale: 1,
+  raf: null
+};
+
+const GRAPH_LIMIT = 320;
+
+function collectSubtree(rootId){
+  const out = [];
+  const walk = (pid, depth) => {
+    for(const n of index.all){
+      if(n.parent_id !== pid) continue;
+      out.push({node:n, depth});
+      if(out.length < GRAPH_LIMIT) walk(n.id, depth + 1);
+    }
+  };
+  if(rootId !== null){
+    const root = index.byId.get(rootId);
+    if(root) out.push({node:root, depth:0});
+    walk(rootId, 1);
+  } else {
+    walk(null, 0);
+  }
+  return out.slice(0, GRAPH_LIMIT);
+}
+
+function buildGraph(){
+  const picked = collectSubtree(current());
+  const ids = new Set(picked.map(p => p.node.id));
+  const cx = graphCanvas.width / (2 * devicePixelRatio);
+  const cy = graphCanvas.height / (2 * devicePixelRatio);
+
+  graph.nodes = picked.map((p, i) => {
+    const a = (i / picked.length) * Math.PI * 2;
+    const r = 40 + p.depth * 70;
+    return {
+      id: p.node.id, name: p.node.name, kind: p.node.kind,
+      money: p.node.mode === 'money', depth: p.depth,
+      x: cx + Math.cos(a) * r + (Math.random() - 0.5) * 30,
+      y: cy + Math.sin(a) * r + (Math.random() - 0.5) * 30,
+      vx: 0, vy: 0, deg: 0
+    };
+  });
+  const byId = new Map(graph.nodes.map(n => [n.id, n]));
+
+  graph.edges = [];
+  for(const p of picked){
+    const parent = p.node.parent_id;
+    if(parent != null && byId.has(parent))
+      graph.edges.push({a: byId.get(parent), b: byId.get(p.node.id), kind:'tree'});
+  }
+  for(const l of index.links){
+    if(ids.has(l.from_id) && ids.has(l.to_id))
+      graph.edges.push({a: byId.get(l.from_id), b: byId.get(l.to_id), kind:'link'});
+  }
+  graph.edges.forEach(e => { e.a.deg++; e.b.deg++; });
+
+  layoutGraph();
+  graph.scale = 1; graph.ox = 0; graph.oy = 0;
+  $('graphSub').textContent =
+    graph.nodes.length + ' узлов · ' +
+    graph.edges.filter(e => e.kind === 'link').length + ' связей' +
+    (graph.nodes.length >= GRAPH_LIMIT ? ' · показаны первые ' + GRAPH_LIMIT : '');
+}
+
+/* пружинная раскладка: рёбра притягивают, узлы отталкиваются */
+function layoutGraph(){
+  const n = graph.nodes, m = graph.edges;
+  const cx = graphCanvas.width / (2 * devicePixelRatio);
+  const cy = graphCanvas.height / (2 * devicePixelRatio);
+  const steps = n.length > 200 ? 120 : 220;
+
+  for(let s = 0; s < steps; s++){
+    const k = 1 - s / steps;
+    for(let i = 0; i < n.length; i++){
+      for(let j = i + 1; j < n.length; j++){
+        let dx = n[j].x - n[i].x, dy = n[j].y - n[i].y;
+        let d2 = dx*dx + dy*dy;
+        if(d2 < 1){ dx = Math.random() - 0.5; dy = Math.random() - 0.5; d2 = 1; }
+        if(d2 > 90000) continue;
+        const f = 2600 / d2;
+        const d = Math.sqrt(d2);
+        const fx = f * dx / d, fy = f * dy / d;
+        n[i].vx -= fx; n[i].vy -= fy;
+        n[j].vx += fx; n[j].vy += fy;
+      }
+    }
+    for(const e of m){
+      const dx = e.b.x - e.a.x, dy = e.b.y - e.a.y;
+      const d = Math.sqrt(dx*dx + dy*dy) || 1;
+      const rest = e.kind === 'tree' ? 62 : 110;
+      const f = (d - rest) * 0.02;
+      const fx = f * dx / d, fy = f * dy / d;
+      e.a.vx += fx; e.a.vy += fy;
+      e.b.vx -= fx; e.b.vy -= fy;
+    }
+    for(const p of n){
+      p.vx += (cx - p.x) * 0.002;
+      p.vy += (cy - p.y) * 0.002;
+      p.x += p.vx * k; p.y += p.vy * k;
+      p.vx *= 0.82; p.vy *= 0.82;
+    }
+  }
+}
+
+function nodeRadius(p){
+  return 5 + Math.min(7, p.deg * 0.7) + (p.kind === 'category' ? 2 : 0);
+}
+
+function themeColor(name, fallback){
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v || fallback;
+}
+
+function drawGraph(){
+  const c = graphCanvas, ctx = c.getContext('2d');
+  const cAccent = themeColor('--accent', '#E02826');
+  const cIncome = themeColor('--income', '#3FA96B');
+  const cLine   = themeColor('--line', '#3A1A1D');
+  const cMuted  = themeColor('--muted', '#9A7B7C');
+  const cText   = themeColor('--text', '#F2E9E6');
+  const w = c.width / devicePixelRatio, h = c.height / devicePixelRatio;
+  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  ctx.save();
+  ctx.translate(graph.ox, graph.oy);
+  ctx.scale(graph.scale, graph.scale);
+
+  for(const e of graph.edges){
+    if(e.kind === 'tree' && !graph.showTree) continue;
+    if(e.kind === 'link' && !graph.showLinks) continue;
+    ctx.beginPath();
+    ctx.moveTo(e.a.x, e.a.y);
+    ctx.lineTo(e.b.x, e.b.y);
+    ctx.strokeStyle = e.kind === 'link' ? cAccent : cLine;
+    ctx.globalAlpha = e.kind === 'link' ? 0.6 : 0.75;
+    ctx.lineWidth = e.kind === 'link' ? 1.4 : 0.8;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  for(const p of graph.nodes){
+    const r = nodeRadius(p);
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = p === graph.selected ? cText
+                  : p.money ? cIncome
+                  : p.kind === 'category' ? cAccent : cMuted;
+    ctx.fill();
+    if(p === graph.selected){
+      ctx.strokeStyle = cAccent; ctx.lineWidth = 2; ctx.stroke();
+    }
+  }
+
+  /* подписи только для крупных узлов и при достаточном приближении */
+  ctx.font = '11px system-ui, sans-serif';
+  ctx.fillStyle = cMuted;
+  ctx.textAlign = 'center';
+  for(const p of graph.nodes){
+    if(graph.scale < 0.75 && p.deg < 4 && p !== graph.selected) continue;
+    const name = p.name.length > 22 ? p.name.slice(0, 21) + '…' : p.name;
+    ctx.fillText(name, p.x, p.y - nodeRadius(p) - 5);
+  }
+  ctx.restore();
+}
+
+function resizeGraph(){
+  const c = graphCanvas;
+  const rect = c.getBoundingClientRect();
+  c.width = rect.width * devicePixelRatio;
+  c.height = rect.height * devicePixelRatio;
+}
+
+function graphPoint(ev){
+  const rect = graphCanvas.getBoundingClientRect();
+  return {
+    x: (ev.clientX - rect.left - graph.ox) / graph.scale,
+    y: (ev.clientY - rect.top - graph.oy) / graph.scale
+  };
+}
+
+function hitNode(pt){
+  let best = null, bestD = 22;
+  for(const p of graph.nodes){
+    const d = Math.hypot(p.x - pt.x, p.y - pt.y);
+    if(d < bestD){ best = p; bestD = d; }
+  }
+  return best;
+}
+
+function selectGraphNode(p){
+  graph.selected = p;
+  if(!p){ $('graphCard').style.display = 'none'; drawGraph(); return; }
+  const node = index.byId.get(p.id);
+  $('graphCardName').textContent = p.name;
+  $('graphCardPath').textContent = node ? (nodePath(node) || 'корень') : '';
+  $('graphCard').style.display = 'block';
+  drawGraph();
+}
+
+/* ---- жесты: перетаскивание узлов, панорама, щипковый зум ---- */
+
+graphCanvas.addEventListener('pointerdown', ev => {
+  graphCanvas.setPointerCapture(ev.pointerId);
+  graph.pointers.set(ev.pointerId, {x: ev.clientX, y: ev.clientY});
+  if(graph.pointers.size === 2){
+    const [a, b] = [...graph.pointers.values()];
+    graph.pinchDist = Math.hypot(a.x - b.x, a.y - b.y);
+    graph.pinchScale = graph.scale;
+    graph.dragging = null;
+    return;
+  }
+  const pt = graphPoint(ev);
+  const hit = hitNode(pt);
+  if(hit){
+    graph.dragging = hit;
+    selectGraphNode(hit);
+  } else {
+    graph.dragging = 'canvas';
+    graph.panFrom = {x: ev.clientX, y: ev.clientY, ox: graph.ox, oy: graph.oy};
+    selectGraphNode(null);
+  }
+});
+
+graphCanvas.addEventListener('pointermove', ev => {
+  if(!graph.pointers.has(ev.pointerId)) return;
+  graph.pointers.set(ev.pointerId, {x: ev.clientX, y: ev.clientY});
+
+  if(graph.pointers.size === 2){
+    const [a, b] = [...graph.pointers.values()];
+    const d = Math.hypot(a.x - b.x, a.y - b.y);
+    if(graph.pinchDist > 0){
+      graph.scale = Math.max(0.25, Math.min(3, graph.pinchScale * d / graph.pinchDist));
+      drawGraph();
+    }
+    return;
+  }
+
+  if(graph.dragging === 'canvas'){
+    graph.ox = graph.panFrom.ox + (ev.clientX - graph.panFrom.x);
+    graph.oy = graph.panFrom.oy + (ev.clientY - graph.panFrom.y);
+    drawGraph();
+  } else if(graph.dragging){
+    const pt = graphPoint(ev);
+    graph.dragging.x = pt.x;
+    graph.dragging.y = pt.y;
+    drawGraph();
+  }
+});
+
+['pointerup','pointercancel'].forEach(type => {
+  graphCanvas.addEventListener(type, ev => {
+    graph.pointers.delete(ev.pointerId);
+    if(graph.pointers.size < 2) graph.pinchDist = 0;
+    if(graph.pointers.size === 0) graph.dragging = null;
+  });
+});
+
+/* ---- управление ---- */
+
+function openGraphScreen(){
+  $('serviceBg').classList.remove('open');
+  $('graphBg').classList.add('open');
+  $('graphTitle').textContent = path.length ? path[path.length-1].name : 'Все разделы';
+  requestAnimationFrame(async () => {
+    resizeGraph();
+    await reindex();
+    buildGraph();
+    selectGraphNode(null);
+    drawGraph();
+  });
+}
+function closeGraphScreen(){ $('graphBg').classList.remove('open'); }
+
+$('openGraph').onclick = openGraphScreen;
+$('graphClose').onclick = closeGraphScreen;
+
+$('graphTree').onclick = () => {
+  graph.showTree = !graph.showTree;
+  $('graphTree').setAttribute('aria-pressed', String(graph.showTree));
+  drawGraph();
+};
+$('graphLinks').onclick = () => {
+  graph.showLinks = !graph.showLinks;
+  $('graphLinks').setAttribute('aria-pressed', String(graph.showLinks));
+  drawGraph();
+};
+$('graphReset').onclick = () => { buildGraph(); drawGraph(); };
+
+$('graphCardFocus').onclick = () => {
+  if(!graph.selected) return;
+  const w = graphCanvas.width / devicePixelRatio, h = graphCanvas.height / devicePixelRatio;
+  graph.ox = w / 2 - graph.selected.x * graph.scale;
+  graph.oy = h / 2 - graph.selected.y * graph.scale;
+  drawGraph();
+};
+
+$('graphCardOpen').onclick = async () => {
+  if(!graph.selected) return;
+  const node = index.byId.get(graph.selected.id);
+  if(!node) return;
+  closeGraphScreen();
+  if(node.kind === 'category'){
+    path = pathTo(node);
+    await render();
+  } else {
+    const parent = node.parent_id != null ? index.byId.get(node.parent_id) : null;
+    if(parent) path = pathTo(parent);
+    await render();
+    openMenu(node);
+  }
+};
+
+/* путь к узлу как цепочка для хлебных крошек */
+function pathTo(node){
+  const chain = [];
+  let n = node;
+  while(n){
+    chain.unshift({id:n.id, name:n.name, unit:n.unit, mode:n.mode});
+    n = n.parent_id != null ? index.byId.get(n.parent_id) : null;
+  }
+  return chain;
+}
+
+window.addEventListener('resize', () => {
+  if($('graphBg').classList.contains('open')){ resizeGraph(); drawGraph(); }
+});
 
 /* ---------------------- план и сроки ---------------------------- */
 
@@ -1661,6 +2093,22 @@ $('openPlan').onclick = async () => {
 };
 $('planClose').onclick = () => $('planBg').classList.remove('open');
 
+function applyTheme(){
+  if(settings.theme === 'red') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', settings.theme);
+  [...$('themes').children].forEach(b =>
+    b.setAttribute('aria-pressed', String(b.dataset.t === settings.theme)));
+}
+
+[...$('themes').children].forEach(b => {
+  b.onclick = async () => {
+    settings.theme = b.dataset.t;
+    await repo.setSetting('theme', settings.theme);
+    applyTheme();
+    if($('graphBg').classList.contains('open')) drawGraph();
+  };
+});
+
 function syncSched(){
   [...$('schedModes').children].forEach(b =>
     b.setAttribute('aria-pressed', String(b.dataset.s === settings.schedule)));
@@ -1677,6 +2125,7 @@ function syncSched(){
 
 $('service').onclick = () => {
   syncSched();
+  applyTheme();
   syncPlanUnits();
   $('fBudget').value = settings.budget || '';
   $('serviceBg').classList.add('open');
