@@ -876,9 +876,10 @@
       <button id="fillSqlTheory">SQL: залить теорию</button>
       <button id="fillEngTheory">Английский: залить теорию</button>
       <button id="fillAraTheory">Арабский: залить теорию</button>
+      <button id="fillSpaTheory">Испанский: залить теорию</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 40 — полноэкранная читалка с размером шрифта</div>
+    <div class="hint sv-version" id="version">Версия 41 — теория испанского, модули 1-2</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -890,6 +891,7 @@
 <script src="theory-sql.js"></script>
 <script src="theory-eng.js"></script>
 <script src="theory-ara.js"></script>
+<script src="theory-spa.js"></script>
 <script>
 /* =====================================================================
    Хранилище: на телефоне SQLite, в браузере localStorage.
@@ -3536,6 +3538,7 @@ function theoryButton(id, arr, label){
 }
 theoryButton('fillEngTheory', () => theorySet('ENG_THEORY'), 'Английский: залить теорию');
 theoryButton('fillAraTheory', () => theorySet('ARA_THEORY'), 'Арабский: залить теорию');
+theoryButton('fillSpaTheory', () => theorySet('SPA_THEORY'), 'Испанский: залить теорию');
 
 $('fillSqlTheory').onclick = async () => {
   const btn = $('fillSqlTheory');
