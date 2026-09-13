@@ -350,13 +350,17 @@
   .graph-top .more{margin-left:auto}
   #graphCanvas{flex:1;width:100%;touch-action:none;display:block}
   .graph-bottom{
-    display:flex;gap:8px;padding:10px 12px calc(env(safe-area-inset-bottom) + 12px);
+    display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px calc(env(safe-area-inset-bottom) + 12px);
     border-top:1px solid var(--line);background:var(--surface);
   }
   .graph-bottom button{
-    flex:1;padding:11px;border-radius:var(--radius);background:var(--bg);
-    color:var(--muted);border:1px solid var(--line);font:inherit;font-size:14px;cursor:pointer;
+    flex:1 1 auto;padding:11px 8px;border-radius:var(--radius);background:var(--bg);
+    color:var(--muted);border:1px solid var(--line);font:inherit;font-size:13px;cursor:pointer;
   }
+  .graph-bottom button#graphZoomIn,.graph-bottom button#graphZoomOut{
+    flex:0 0 44px;font-size:18px;font-weight:600;padding:11px 0;
+  }
+  .graph-bottom button#graphFit{flex:0 0 84px}
   .graph-bottom button[aria-pressed="true"]{border-color:var(--accent);color:var(--text)}
   .graph-card{
     position:absolute;left:12px;right:12px;
@@ -712,6 +716,9 @@
   <div class="graph-bottom">
     <button id="graphTree" aria-pressed="true">Вложенность</button>
     <button id="graphLinks" aria-pressed="true">Связи</button>
+    <button id="graphZoomOut" aria-label="Отдалить">−</button>
+    <button id="graphFit">Уместить</button>
+    <button id="graphZoomIn" aria-label="Приблизить">+</button>
     <button id="graphReset">Пересобрать</button>
   </div>
   <div class="graph-card" id="graphCard" style="display:none">
@@ -844,7 +851,7 @@
       <button id="fillEngTheory">Английский: залить теорию</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 37 — грамматика английского</div>
+    <div class="hint sv-version" id="version">Версия 38 — сильный зум карты связей</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -2890,6 +2897,7 @@ function buildGraph(){
 
   layoutGraph();
   graph.scale = 1; graph.ox = 0; graph.oy = 0;
+  setTimeout(() => { if($('graphFit')) $('graphFit').click(); }, 0);
   $('graphSub').textContent =
     graph.nodes.length + ' узлов · ' +
     graph.edges.filter(e => e.kind === 'link').length + ' связей' +
@@ -3063,7 +3071,7 @@ graphCanvas.addEventListener('pointermove', ev => {
     const [a, b] = [...graph.pointers.values()];
     const d = Math.hypot(a.x - b.x, a.y - b.y);
     if(graph.pinchDist > 0){
-      graph.scale = Math.max(0.25, Math.min(3, graph.pinchScale * d / graph.pinchDist));
+      graph.scale = Math.max(0.03, Math.min(12, graph.pinchScale * d / graph.pinchDist));
       drawGraph();
     }
     return;
@@ -3080,6 +3088,18 @@ graphCanvas.addEventListener('pointermove', ev => {
     drawGraph();
   }
 });
+
+graphCanvas.addEventListener('wheel', ev => {
+  ev.preventDefault();
+  const rect = graphCanvas.getBoundingClientRect();
+  const mx = ev.clientX - rect.left, my = ev.clientY - rect.top;
+  const before = {x: (mx - graph.ox) / graph.scale, y: (my - graph.oy) / graph.scale};
+  const factor = ev.deltaY < 0 ? 1.15 : 1/1.15;
+  graph.scale = Math.max(0.03, Math.min(12, graph.scale * factor));
+  graph.ox = mx - before.x * graph.scale;
+  graph.oy = my - before.y * graph.scale;
+  drawGraph();
+}, {passive:false});
 
 ['pointerup','pointercancel'].forEach(type => {
   graphCanvas.addEventListener(type, ev => {
@@ -3119,6 +3139,34 @@ $('graphLinks').onclick = () => {
   drawGraph();
 };
 $('graphReset').onclick = () => { buildGraph(); drawGraph(); };
+
+function zoomStep(factor){
+  const w = graphCanvas.width / devicePixelRatio, h = graphCanvas.height / devicePixelRatio;
+  const cx = w / 2, cy = h / 2;
+  const before = {x: (cx - graph.ox) / graph.scale, y: (cy - graph.oy) / graph.scale};
+  graph.scale = Math.max(0.03, Math.min(12, graph.scale * factor));
+  graph.ox = cx - before.x * graph.scale;
+  graph.oy = cy - before.y * graph.scale;
+  drawGraph();
+}
+$('graphZoomIn').onclick = () => zoomStep(1.4);
+$('graphZoomOut').onclick = () => zoomStep(1/1.4);
+
+/* вписать весь граф в экран — полезно, когда узлов становится много */
+$('graphFit').onclick = () => {
+  if(!graph.nodes.length) return;
+  const pad = 40;
+  const xs = graph.nodes.map(p => p.x), ys = graph.nodes.map(p => p.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const w = graphCanvas.width / devicePixelRatio, h = graphCanvas.height / devicePixelRatio;
+  const scaleX = (w - pad * 2) / Math.max(1, maxX - minX);
+  const scaleY = (h - pad * 2) / Math.max(1, maxY - minY);
+  graph.scale = Math.max(0.03, Math.min(12, Math.min(scaleX, scaleY)));
+  graph.ox = w / 2 - (minX + maxX) / 2 * graph.scale;
+  graph.oy = h / 2 - (minY + maxY) / 2 * graph.scale;
+  drawGraph();
+};
 
 $('graphCardFocus').onclick = () => {
   if(!graph.selected) return;
