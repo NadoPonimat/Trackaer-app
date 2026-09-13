@@ -185,6 +185,15 @@
     background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);font-size:14px;
   }
   .setrow .x{margin-left:auto;color:var(--muted);cursor:pointer}
+  .pl-bar{
+    display:block;position:relative;height:5px;margin-top:7px;
+    background:var(--line);border-radius:3px;overflow:visible;
+  }
+  .pl-bar i{display:block;height:100%;background:var(--accent);border-radius:3px}
+  .pl-bar b{
+    position:absolute;top:-3px;width:2px;height:11px;
+    background:var(--text);border-radius:1px;
+  }
   .picker{
     width:100%;padding:13px 12px;text-align:left;background:var(--bg);color:var(--text);
     border:1px solid var(--line);border-radius:var(--radius);font:inherit;cursor:pointer;
@@ -195,6 +204,23 @@
     border:1px solid var(--line);background:var(--bg);color:var(--text);cursor:pointer;
   }
   .actions .primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .sv-actions{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+  .sv-actions button{
+    flex:1 1 46%;padding:14px 8px;border-radius:var(--radius);
+    background:var(--surface-2);color:var(--text);border:1px solid var(--line);
+    font:inherit;font-size:14px;font-weight:600;cursor:pointer;
+  }
+  .sv-head{
+    width:100%;text-align:left;padding:13px 12px;margin-bottom:8px;
+    background:none;border:none;border-top:1px solid var(--line);
+    color:var(--muted);font:inherit;font-size:13px;font-weight:600;cursor:pointer;
+    display:flex;align-items:center;gap:8px;
+  }
+  .sv-head::after{content:"⌄";margin-left:auto;transition:transform .15s}
+  .sv-head[aria-expanded="true"]::after{transform:rotate(180deg)}
+  .sv-sec{display:none;padding-bottom:8px}
+  .sv-sec.open{display:block}
+  .sv-version{text-align:center;margin:14px 0 10px;opacity:.6}
   .menu button{
     display:block;width:100%;text-align:left;padding:15px 12px;margin-bottom:8px;
     background:var(--bg);color:var(--text);border:1px solid var(--line);
@@ -234,6 +260,25 @@
   .q-fact{position:relative;width:100%;background:var(--income);border-radius:3px 3px 0 0}
   .q-fact.over{background:var(--accent)}
   .q-day{font-size:9px;color:var(--muted);text-align:center}
+  .q-timeline{
+    display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:10px;
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);padding:12px;
+  }
+  .q-mark{
+    font-size:13px;font-variant-numeric:tabular-nums;
+    background:var(--bg);border:1px solid var(--line);
+    border-radius:6px;padding:3px 8px;
+  }
+  .q-gap{font-size:11px;color:var(--muted)}
+  .q-hours{
+    display:flex;align-items:flex-end;gap:2px;height:100px;
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);padding:8px 6px;
+  }
+  .q-hcol{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;gap:3px}
+  .q-hbar{background:var(--accent);border-radius:2px 2px 0 0;min-height:2px}
+  .q-hnum{font-size:9px;color:var(--muted);text-align:center;min-height:11px}
   .q-add{background:var(--accent)!important;color:#fff!important;border-color:var(--accent)!important;font-weight:600}
   .st-body{flex:1;overflow-y:auto;padding:16px 14px calc(env(safe-area-inset-bottom) + 20px)}
   .st-body h3{margin:20px 0 10px;font-size:13px;font-weight:600;color:var(--muted)}
@@ -389,17 +434,19 @@
         <input id="fUnit" autocomplete="off" placeholder="повторы, часы, партии">
         <div class="hint" id="unitHint"></div>
       </div>
-      <div class="two">
-        <div class="field">
-          <label for="fVolume">Объём</label>
-          <input id="fVolume" type="number" inputmode="decimal">
+      <div id="volumeWrap">
+        <div class="two">
+          <div class="field">
+            <label for="fVolume">Объём</label>
+            <input id="fVolume" type="number" inputmode="decimal">
+          </div>
+          <div class="field">
+            <label for="fCatDeadline">Дедлайн</label>
+            <input id="fCatDeadline" type="date">
+          </div>
         </div>
-        <div class="field">
-          <label for="fCatDeadline">Дедлайн</label>
-          <input id="fCatDeadline" type="date">
-        </div>
+        <div class="hint" id="volumeHint">Сколько всего нужно на это направление.</div>
       </div>
-      <div class="hint" id="volumeHint">Сколько всего нужно на это направление.</div>
 
       <div class="field" id="targetWrap">
         <label>Связи ведут в</label>
@@ -518,7 +565,7 @@
 
     <div class="field">
       <label for="fNote">Заметка</label>
-      <textarea id="fNote" placeholder="Идея, планы сторон, типовые ходы"></textarea>
+      <textarea id="fNote" placeholder="Свободный текст: суть, детали, что помнить"></textarea>
     </div>
 
     <div class="actions">
@@ -689,93 +736,114 @@
 <div class="sheet-bg" id="serviceBg">
   <div class="sheet menu">
     <h2>Сервис</h2>
-    <div class="hint" id="version">Версия 30 — трекер отказа от привычки</div>
-    <label>Оформление</label>
-    <div class="themes" id="themes">
-      <button data-t="red">Красная</button>
-      <button data-t="blue">Синяя</button>
-      <button data-t="teal">Бирюзовая</button>
-      <button data-t="graphite">Графит</button>
-      <button data-t="sand">Песок</button>
-      <button data-t="light">Светлая</button>
-    </div>
-    <label>Единица планирования</label>
-    <div class="seg" id="planUnits">
-      <button data-u="hours">Часы</button>
-      <button data-u="topics">Темы</button>
-    </div>
-    <div class="field">
-      <label for="fBudget">Бюджет в неделю</label>
-      <input id="fBudget" type="number" inputmode="decimal">
-      <div class="hint">Сколько всего можешь тратить в неделю на все направления.</div>
-    </div>
-    <button id="openPlan">План и сроки</button>
-    <button id="openGraph">Карта связей</button>
-    <button id="openReview">Повторение</button>
-    <button id="openStats">Статистика учёбы</button>
 
-    <label>Повторения: объём в день</label>
-    <div class="two">
-      <div class="field">
-        <label for="fSrsLimit">Всего карточек</label>
-        <input id="fSrsLimit" type="number" inputmode="numeric">
-      </div>
-      <div class="field">
-        <label for="fSrsNew">Из них новых</label>
-        <input id="fSrsNew" type="number" inputmode="numeric">
-      </div>
+    <div class="sv-actions">
+      <button id="openPlan">План и сроки</button>
+      <button id="openReview">Повторение</button>
+      <button id="openStats">Статистика учёбы</button>
+      <button id="openGraph">Карта связей</button>
     </div>
-    <label>Порядок карточек</label>
-    <div class="seg" id="srsOrder">
-      <button data-o="due">Просроченные</button>
-      <button data-o="mix">Вперемешку</button>
-      <button data-o="new">Новые</button>
-    </div>
-    <label>Интервалы и лёгкость</label>
-    <div class="two">
-      <div class="field">
-        <label for="fSrsFirst">Первый, дней</label>
-        <input id="fSrsFirst" type="number" inputmode="decimal">
-      </div>
-      <div class="field">
-        <label for="fSrsSecond">Второй, дней</label>
-        <input id="fSrsSecond" type="number" inputmode="decimal">
-      </div>
-    </div>
-    <div class="two">
-      <div class="field">
-        <label for="fSrsEase">Стартовая лёгкость</label>
-        <input id="fSrsEase" type="number" inputmode="decimal" step="0.1">
-      </div>
-      <div class="field">
-        <label for="fSrsEasy">Бонус за «легко»</label>
-        <input id="fSrsEasy" type="number" inputmode="decimal" step="0.1">
-      </div>
-    </div>
-    <div class="two">
-      <div class="field">
-        <label for="fSrsHard">Множитель «трудно»</label>
-        <input id="fSrsHard" type="number" inputmode="decimal" step="0.1">
-      </div>
-      <div class="field">
-        <label for="fSrsMax">Потолок, дней</label>
-        <input id="fSrsMax" type="number" inputmode="numeric">
-      </div>
-    </div>
-    <div class="hint">Модель SM-2: интервал умножается на лёгкость, «снова» сбрасывает счёт и снижает лёгкость.</div>
 
-    <label>Режим расписания</label>
-    <div class="seg" id="schedModes">
-      <button data-s="days">По дням недели</button>
-      <button data-s="free">Свободный</button>
+    <button class="sv-head" data-sec="secTheme">Оформление</button>
+    <div class="sv-sec" id="secTheme">
+      <div class="themes" id="themes">
+        <button data-t="red">Красная</button>
+        <button data-t="blue">Синяя</button>
+        <button data-t="teal">Бирюзовая</button>
+        <button data-t="graphite">Графит</button>
+        <button data-t="sand">Песок</button>
+        <button data-t="light">Светлая</button>
+      </div>
     </div>
-    <button id="seedTraining">Загрузить программу тренировок</button>
-    <button id="seedKzLaw">Загрузить курс: право Казахстана</button>
-    <button id="fillKzTheory">Право Казахстана: залить теорию</button>
-    <button id="seedExcel">Загрузить курс: Excel</button>
-    <button id="seedSql">Загрузить курс: SQL</button>
-    <button id="fillSqlTheory">SQL: залить теорию</button>
-    
+
+    <button class="sv-head" data-sec="secPlan">Планирование</button>
+    <div class="sv-sec" id="secPlan">
+      <label>Единица планирования</label>
+      <div class="seg" id="planUnits">
+        <button data-u="hours">Часы</button>
+        <button data-u="topics">Темы</button>
+      </div>
+      <div class="field">
+        <label for="fBudget">Бюджет в неделю</label>
+        <input id="fBudget" type="number" inputmode="decimal">
+        <div class="hint">Сколько всего можешь тратить в неделю на все направления.</div>
+      </div>
+      <label>Режим расписания</label>
+      <div class="seg" id="schedModes">
+        <button data-s="days">По дням недели</button>
+        <button data-s="free">Свободный</button>
+      </div>
+    </div>
+
+    <button class="sv-head" data-sec="secSrs">Повторения</button>
+    <div class="sv-sec" id="secSrs">
+      <label>Объём в день</label>
+      <div class="two">
+        <div class="field">
+          <label for="fSrsLimit">Всего карточек</label>
+          <input id="fSrsLimit" type="number" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label for="fSrsNew">Из них новых</label>
+          <input id="fSrsNew" type="number" inputmode="numeric">
+        </div>
+      </div>
+      <label>Порядок карточек</label>
+      <div class="seg" id="srsOrder">
+        <button data-o="due">Просроченные</button>
+        <button data-o="mix">Вперемешку</button>
+        <button data-o="new">Новые</button>
+      </div>
+      <label>Интервалы и лёгкость</label>
+      <div class="two">
+        <div class="field">
+          <label for="fSrsFirst">Первый, дней</label>
+          <input id="fSrsFirst" type="number" inputmode="decimal">
+        </div>
+        <div class="field">
+          <label for="fSrsSecond">Второй, дней</label>
+          <input id="fSrsSecond" type="number" inputmode="decimal">
+        </div>
+      </div>
+      <div class="two">
+        <div class="field">
+          <label for="fSrsEase">Стартовая лёгкость</label>
+          <input id="fSrsEase" type="number" inputmode="decimal" step="0.1">
+        </div>
+        <div class="field">
+          <label for="fSrsEasy">Бонус за «легко»</label>
+          <input id="fSrsEasy" type="number" inputmode="decimal" step="0.1">
+        </div>
+      </div>
+      <div class="two">
+        <div class="field">
+          <label for="fSrsHard">Множитель «трудно»</label>
+          <input id="fSrsHard" type="number" inputmode="decimal" step="0.1">
+        </div>
+        <div class="field">
+          <label for="fSrsMax">Потолок, дней</label>
+          <input id="fSrsMax" type="number" inputmode="numeric">
+        </div>
+      </div>
+      <div class="hint">Модель SM-2: интервал умножается на лёгкость, «снова» сбрасывает счёт и снижает лёгкость.</div>
+    </div>
+
+    <button class="sv-head" data-sec="secData">Готовые наборы</button>
+    <div class="sv-sec" id="secData">
+      <div class="hint">Загружается в ту категорию, в которой ты сейчас находишься.</div>
+      <button id="seedScaffold">Создать базовую структуру</button>
+      <button id="seedTraining">Программа тренировок</button>
+      <button id="seedEng">Курс: английский</button>
+      <button id="seedAra">Курс: арабский</button>
+      <button id="seedSpa">Курс: испанский</button>
+      <button id="seedKzLaw">Курс: право Казахстана</button>
+      <button id="fillKzTheory">Право Казахстана: залить теорию</button>
+      <button id="seedExcel">Курс: Excel</button>
+      <button id="seedSql">Курс: SQL</button>
+      <button id="fillSqlTheory">SQL: залить теорию</button>
+    </div>
+
+    <div class="hint sv-version" id="version">Версия 34 — языки, базовая структура, отставание в плане</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -1040,10 +1108,36 @@ async function openDatabase(){
       : SRS_DEFAULTS[key];
   applyTheme();
   const roots = await repo.listChildren(null);
-  if(roots.length === 0){
-    await createNode(null, {name:'Развитие', kind:'category'});
-    await createNode(null, {name:'Финансы',  kind:'category', mode:'money'});
-  }
+  if(roots.length === 0) await buildScaffold();
+}
+
+/* Базовая структура при первом запуске и по кнопке в сервисе. */
+async function buildScaffold(){
+  const have = new Map((await repo.listChildren(null)).map(n => [n.name, n]));
+  const mk = async (name, data) => {
+    if(have.has(name)) return have.get(name).id;
+    return await createNode(null, Object.assign({name, kind:'category'}, data));
+  };
+
+  const dev = await mk('Развитие', {unit:'часов'});
+  await mk('Финансы', {mode:'money'});
+  await mk('Книги', {mode:'books'});
+  await mk('Здоровье', {});
+
+  /* вложенные разделы развития */
+  const kids = new Set((await repo.listChildren(dev)).map(n => n.name));
+  for(const name of ['Языки', 'Тренировки', 'Право', 'Технологии'])
+    if(!kids.has(name)) await createNode(dev, {name, kind:'category'});
+
+  /* курение: норма и срок ставятся в «Изменить» */
+  if(!have.has('Сигареты'))
+    await createNode(null, {
+      name:'Сигареты', kind:'category', mode:'quit',
+      plan:10, deadline:addDays(todayISO(), 90),
+      note:'Открой «Изменить» и поставь свою норму в день и дату отказа.'
+    });
+
+  return true;
 }
 
 /* ------------------------------ данные ------------------------- */
@@ -1526,6 +1620,8 @@ async function render(){
 
 let editState = {mode:'add', kind:'category', catMode:'plain', dir:-1, target:null, node:null};
 
+const isQuitContext = () => editState.catMode === 'quit';
+
 function syncEditFields(){
   const cat = editState.kind === 'category';
   const inMoney = isMoney();
@@ -1546,10 +1642,11 @@ function syncEditFields(){
   $('daysWrap').style.display    = (!cat && !moneyEntry && !bookEntry && !noteEntry && settings.schedule === 'days')
                                    ? 'block' : 'none';
 
-  const plainCat = cat && editState.catMode === 'plain' && !inMoney && !inBooks;
+  const plainCat = cat && editState.catMode === 'plain' && !inMoney && !inBooks && !isQuitContext();
   $('modeWrap').style.display   = (cat && !inMoney) ? 'block' : 'none';
   $('unitWrap').style.display   = plainCat ? 'block' : 'none';
   $('targetWrap').style.display = plainCat ? 'block' : 'none';
+  $('volumeWrap').style.display = plainCat ? 'block' : 'none';
 
   const t = editState.target != null ? index.byId.get(editState.target) : null;
   $('fTarget').textContent = t ? t.name : 'Не выбрано';
@@ -2344,6 +2441,30 @@ $('reviewClose').onclick = closeReview;
 const dayDiff = (a, b) =>
   Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000);
 
+/* «2 ч 15 мин» из минут */
+function humanGap(min){
+  if(min == null) return '—';
+  const m = Math.round(min);
+  if(m < 60) return m + ' мин';
+  const hh = Math.floor(m / 60), mm = m % 60;
+  return hh + ' ч' + (mm ? ' ' + mm + ' мин' : '');
+}
+
+const toMin = t => {
+  if(!t || !/^\d{1,2}:\d{2}$/.test(t)) return null;
+  const [a, b] = t.split(':').map(Number);
+  return a * 60 + b;
+};
+
+/* отметки за день, отсортированные по времени, с промежутками */
+function dayTimeline(sets, day){
+  const marks = sets.filter(s => s.date === day && toMin(s.note) !== null)
+                    .map(s => ({t: s.note, min: toMin(s.note), n: Number(s.value) || 1}))
+                    .sort((a, b) => a.min - b.min);
+  marks.forEach((m, i) => { m.gap = i ? m.min - marks[i-1].min : null; });
+  return marks;
+}
+
 function quitParams(node){
   const start = Number(node.plan) || 0;
   const from = (node.created_at || todayISO()).slice(0, 10);
@@ -2436,6 +2557,53 @@ async function renderQuit(){
     qt('Не выкурено', saved) +
     '</div>';
 
+  /* время и промежутки */
+  const sets = await repo.listSets(node.id);
+  const marks = dayTimeline(sets, todayISO());
+  const gaps = marks.map(m => m.gap).filter(g => g != null);
+  const avgGap = gaps.length ? gaps.reduce((a, b) => a + b, 0) / gaps.length : null;
+  const maxGap = gaps.length ? Math.max(...gaps) : null;
+  const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+  const sinceLast = marks.length ? nowMin - marks[marks.length-1].min : null;
+
+  html += '<h3>Сегодня по времени</h3>';
+  if(!marks.length){
+    html += '<div class="hint">Отметок пока нет.</div>';
+  } else {
+    html += '<div class="st-grid">' +
+      qt('Первая', marks[0].t) +
+      qt('Последняя', marks[marks.length-1].t) +
+      qt('С последней', humanGap(sinceLast)) +
+      qt('Средний перерыв', humanGap(avgGap)) +
+      qt('Самый долгий', humanGap(maxGap)) +
+      qt('Отметок', marks.length) +
+      '</div>';
+
+    html += '<div class="q-timeline">';
+    marks.forEach(m => {
+      html += '<span class="q-mark">' + m.t + '</span>';
+      if(m.gap != null) html += '<span class="q-gap">' + humanGap(m.gap) + '</span>';
+    });
+    html += '</div>';
+  }
+
+  /* распределение по часам за весь период */
+  const byHour = new Array(24).fill(0);
+  for(const s of sets){
+    const mn = toMin(s.note);
+    if(mn != null) byHour[Math.floor(mn / 60)] += Number(s.value) || 1;
+  }
+  const hourMax = Math.max(1, ...byHour);
+  if(sets.length){
+    html += '<h3>Когда куришь чаще</h3><div class="q-hours">';
+    byHour.forEach((v, hh) => {
+      html += '<div class="q-hcol">' +
+              '<div class="q-hbar" style="height:' + Math.max(2, Math.round(v / hourMax * 100)) + '%"></div>' +
+              '<div class="q-hnum">' + (hh % 6 === 0 ? hh : '') + '</div></div>';
+    });
+    html += '</div><div class="hint">Часы суток от 0 до 23 за всё время наблюдения.</div>';
+  }
+
   /* график */
   const max = Math.max(1, ...hist.map(d => Math.max(d.fact, d.norm)));
   html += '<h3>Норма и факт</h3><div class="q-chart">';
@@ -2454,11 +2622,19 @@ async function renderQuit(){
   /* последние дни списком */
   html += '<h3>По дням</h3>';
   for(const d of [...hist].reverse().slice(0, 10)){
+    const dm = dayTimeline(sets, d.day);
+    const dg = dm.map(m => m.gap).filter(g => g != null);
+    const avg = dg.length ? dg.reduce((a, b) => a + b, 0) / dg.length : null;
+    const extra = dm.length
+      ? ' · с ' + dm[0].t + ' до ' + dm[dm.length-1].t +
+        (avg != null ? ' · перерыв ' + humanGap(avg) : '')
+      : '';
     html += '<div class="setrow"><span><span>' +
             d.day.split('-').reverse().join('.') + ' · ' + d.fact + ' из ' + d.norm +
             '</span><span class="where ' + (d.diff > 0 ? 'late' : '') + '">' +
             (d.diff > 0 ? 'превышение на ' + d.diff
                         : d.diff === 0 ? 'ровно по норме' : 'меньше нормы на ' + (-d.diff)) +
+            extra +
             '</span></span></div>';
   }
 
@@ -2995,12 +3171,22 @@ async function planRows(){
     const done = a.fact || 0;
     const left = Math.max(0, Number(n.volume) - done);
     const w = weeksLeft(n.deadline);
+    /* ожидаемый прогресс к сегодняшнему дню по линейному графику */
+    const from = (n.created_at || todayISO()).slice(0,10);
+    let expected = null, lag = null, pace = null;
+    if(n.deadline){
+      const total = Math.max(1, dayDiff(from, n.deadline));
+      const passed = Math.max(0, Math.min(total, dayDiff(from, todayISO())));
+      expected = Number(n.volume) * passed / total;
+      lag = expected - done;
+      pace = passed > 0 ? done / passed : null;   // в день фактически
+    }
     rows.push({
-      node: n, done, left, weeks: w,
+      node: n, done, left, weeks: w, expected, lag, pace,
       need: (w && w > 0) ? left / w : null
     });
   }
-  rows.sort((x, y) => (x.weeks ?? 9999) - (y.weeks ?? 9999));
+  rows.sort((x, y) => (y.lag ?? -9999) - (x.lag ?? -9999));
   return rows;
 }
 
@@ -3021,13 +3207,34 @@ async function renderPlan(){
     const d = document.createElement('div');
     d.className = 'setrow';
     const parts = [];
-    parts.push('осталось ' + fmt(r.left) + ' ' + planUnitWord());
+    parts.push('сделано ' + fmt(Math.round(r.done)) + ' из ' + fmt(r.node.volume) + ' ' + planUnitWord());
     if(r.weeks === null) parts.push('без дедлайна');
     else if(r.weeks === 0) parts.push('срок вышел');
     else parts.push(r.weeks + ' нед.');
     if(r.need) parts.push('нужно ' + fmt(Math.round(r.need * 10) / 10) + ' ' + planUnitWord() + '/нед');
-    d.innerHTML = '<span><span>' + r.node.name + '</span>' +
-                  '<span class="where">' + parts.join(' · ') + '</span></span>';
+
+    let lagText = '';
+    if(r.lag != null){
+      const v = Math.round(Math.abs(r.lag));
+      lagText = r.lag > 0.5
+        ? 'отставание ' + v + ' ' + planUnitWord()
+        : (r.lag < -0.5 ? 'опережение ' + v + ' ' + planUnitWord() : 'идёшь по графику');
+    }
+
+    const pctDone = r.node.volume ? Math.min(100, Math.round(r.done / r.node.volume * 100)) : 0;
+    const pctPlan = r.node.volume && r.expected != null
+      ? Math.min(100, Math.round(r.expected / r.node.volume * 100)) : null;
+
+    d.innerHTML = '<span style="flex:1"><span>' + r.node.name + '</span>' +
+                  '<span class="where">' + parts.join(' · ') + '</span>' +
+                  (lagText ? '<span class="where ' + (r.lag > 0.5 ? 'late' : '') + '">' +
+                     lagText + ' · выполнено ' + pctDone + '%' +
+                     (pctPlan != null ? ', по плану должно быть ' + pctPlan + '%' : '') +
+                   '</span>' : '') +
+                  '<span class="pl-bar">' +
+                    '<i style="width:' + pctDone + '%"></i>' +
+                    (pctPlan != null ? '<b style="left:' + pctPlan + '%"></b>' : '') +
+                  '</span></span>';
     if(r.weeks === 0) d.querySelector('.where').classList.add('late');
     list.appendChild(d);
   }
@@ -3109,6 +3316,15 @@ for(const [el, key] of Object.entries(SRS_FIELDS)){
 
 $('openReview').onclick = openReview;
 
+[...document.querySelectorAll('.sv-head')].forEach(b => {
+  b.setAttribute('aria-expanded', 'false');
+  b.onclick = () => {
+    const sec = $(b.dataset.sec);
+    const open = sec.classList.toggle('open');
+    b.setAttribute('aria-expanded', String(open));
+  };
+});
+
 function applyTheme(){
   if(settings.theme === 'red') document.documentElement.removeAttribute('data-theme');
   else document.documentElement.setAttribute('data-theme', settings.theme);
@@ -3168,6 +3384,32 @@ function courseButton(id, title, getCourse, unit, note, label){
     btn.textContent = label;
   };
 }
+
+const LANG_NOTE = 'Программа по образцу советских языковых спецкурсов: ' +
+  'фонетика прежде грамматики, ежедневная норма лексики блоками, ' +
+  'аудирование с голоса и запись под диктовку, перевод в обе стороны, ' +
+  'реферирование, страноведение. Точные программы спецслужб не опубликованы, ' +
+  'поэтому структура собрана по открытым методикам военного и дипломатического обучения.';
+
+courseButton('seedEng', 'Английский язык', () => ENG_COURSE, 'часов',
+  LANG_NOTE, 'Курс: английский');
+courseButton('seedAra', 'Арабский язык', () => ARA_COURSE, 'часов',
+  LANG_NOTE, 'Курс: арабский');
+courseButton('seedSpa', 'Испанский язык', () => SPA_COURSE, 'часов',
+  LANG_NOTE, 'Курс: испанский');
+
+$('seedScaffold').onclick = async () => {
+  const btn = $('seedScaffold');
+  btn.disabled = true; btn.textContent = 'Создаю…';
+  try{
+    await buildScaffold();
+    $('serviceBg').classList.remove('open');
+    path = [];
+    toast('Структура создана');
+    await render();
+  }catch(err){ toast('Не получилось: ' + err.message); }
+  btn.disabled = false; btn.textContent = 'Создать базовую структуру';
+};
 
 courseButton('seedExcel', 'Excel', () => EXCEL_COURSE, 'часов',
   'Академический курс: от модели данных до Power Query, DAX и автоматизации.',
