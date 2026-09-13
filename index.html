@@ -149,6 +149,20 @@
     color:var(--muted);border:1px solid var(--line);font:inherit;cursor:pointer;
   }
   .seg button[aria-pressed="true"]{border-color:var(--accent);color:var(--text)}
+  .seg.wrap{flex-wrap:wrap}
+  .seg.wrap button{flex:1 1 45%;font-size:13px}
+  .badge{
+    font-size:11px;color:var(--muted);border:1px solid var(--line);
+    border-radius:6px;padding:1px 6px;margin-left:6px;
+  }
+  .badge.reading{color:var(--accent);border-color:var(--accent)}
+  .badge.done{color:var(--income);border-color:var(--income)}
+  .filters{display:flex;gap:6px;overflow-x:auto;margin-top:10px;padding-bottom:2px}
+  .filters button{
+    flex:0 0 auto;padding:7px 12px;border-radius:16px;background:var(--bg);
+    color:var(--muted);border:1px solid var(--line);font:inherit;font-size:13px;cursor:pointer;
+  }
+  .filters button[aria-pressed="true"]{border-color:var(--accent);color:var(--text)}
   .themes{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
   .themes button{
     flex:1 1 30%;padding:11px 6px;border-radius:var(--radius);
@@ -199,6 +213,83 @@
   .pick .x{margin-left:auto;color:var(--muted);flex:none}
   .scroll{max-height:52vh;overflow-y:auto;margin-bottom:12px}
 
+  .q-today{
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);padding:16px;margin-bottom:12px;
+  }
+  .q-big{font-size:34px;font-weight:650;font-variant-numeric:tabular-nums}
+  .q-big span{font-size:16px;color:var(--muted);font-weight:400}
+  .q-bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin:12px 0 8px}
+  .q-bar i{display:block;height:100%;background:var(--income);border-radius:4px}
+  .q-bar i.over{background:var(--accent)}
+  .q-note{font-size:13px;color:var(--muted)}
+  .q-chart{
+    display:flex;align-items:flex-end;gap:3px;height:130px;
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);padding:8px 6px;
+  }
+  .q-col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;gap:3px}
+  .q-stack{position:relative;flex:1;display:flex;align-items:flex-end}
+  .q-norm{position:absolute;left:0;right:0;bottom:0;background:var(--line);border-radius:3px 3px 0 0}
+  .q-fact{position:relative;width:100%;background:var(--income);border-radius:3px 3px 0 0}
+  .q-fact.over{background:var(--accent)}
+  .q-day{font-size:9px;color:var(--muted);text-align:center}
+  .q-add{background:var(--accent)!important;color:#fff!important;border-color:var(--accent)!important;font-weight:600}
+  .st-body{flex:1;overflow-y:auto;padding:16px 14px calc(env(safe-area-inset-bottom) + 20px)}
+  .st-body h3{margin:20px 0 10px;font-size:13px;font-weight:600;color:var(--muted)}
+  .st-grid{display:flex;flex-wrap:wrap;gap:8px}
+  .st-tile{
+    flex:1 1 30%;background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);padding:12px 10px;
+  }
+  .st-val{font-size:19px;font-weight:650;font-variant-numeric:tabular-nums}
+  .st-lab{font-size:11px;color:var(--muted);margin-top:3px}
+  .st-stack{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--line)}
+  .st-stack i{display:block;height:100%}
+  .st-stack i.ok,.st-legend i.ok{background:var(--income)}
+  .st-stack i.mid,.st-legend i.mid{background:var(--accent)}
+  .st-stack i.new,.st-legend i.new{background:var(--muted)}
+  .st-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;font-size:12px;color:var(--muted)}
+  .st-legend span{display:flex;align-items:center;gap:5px}
+  .st-legend i{width:9px;height:9px;border-radius:2px;display:block}
+  .st-forecast{
+    display:flex;align-items:flex-end;gap:3px;height:130px;
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);padding:8px 6px;
+  }
+  .st-col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;gap:3px}
+  .st-colnum{font-size:9px;color:var(--muted);text-align:center;min-height:11px}
+  .st-bar{background:var(--accent);border-radius:3px 3px 0 0;min-height:2px}
+  .st-colday{font-size:9px;color:var(--muted);text-align:center;min-height:11px}
+  .rv-body{flex:1;overflow-y:auto;padding:18px 16px 8px}
+  .rv-path{font-size:12px;color:var(--muted);margin-bottom:4px}
+  .rv-name{font-size:15px;color:var(--muted);margin-bottom:16px}
+  .rv-q{
+    font-size:19px;line-height:1.4;font-weight:600;
+    padding:16px;background:var(--surface);
+    border:1px solid var(--line);border-radius:var(--radius);
+  }
+  .rv-theory{
+    margin-top:16px;white-space:pre-wrap;font-size:14px;line-height:1.55;
+    padding:14px;background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);
+  }
+  .rv-controls{
+    padding:10px 12px calc(env(safe-area-inset-bottom) + 12px);
+    border-top:1px solid var(--line);background:var(--surface);
+  }
+  .rv-show{
+    width:100%;padding:15px;border-radius:var(--radius);
+    background:var(--accent);color:#fff;border:none;font:inherit;
+    font-weight:600;cursor:pointer;
+  }
+  .rv-grades{display:flex;gap:6px}
+  .rv-grades button{
+    flex:1;padding:14px 4px;border-radius:var(--radius);font:inherit;font-size:13px;
+    background:var(--bg);color:var(--text);border:1px solid var(--line);cursor:pointer;
+  }
+  .rv-grades button[data-g="0"]{color:var(--accent);border-color:var(--accent)}
+  .rv-grades button[data-g="3"]{color:var(--income);border-color:var(--income)}
   .graph-bg{
     position:fixed;inset:0;background:var(--bg);z-index:25;display:none;
     flex-direction:column;
@@ -250,6 +341,14 @@
     <button class="more" id="service" aria-label="Сервис">⋯</button>
   </div>
   <div class="total" id="total"></div>
+  <div class="filters" id="bookFilters" style="display:none">
+    <button data-f="all" aria-pressed="true">Все</button>
+    <button data-f="reading">Читаю</button>
+    <button data-f="want">Хочу</button>
+    <button data-f="paused">Отложены</button>
+    <button data-f="done">Прочитаны</button>
+    <button data-f="dropped">Брошены</button>
+  </div>
   <div class="months" id="months" style="display:none">
     <button id="prevMonth" aria-label="Предыдущий месяц">‹</button>
     <span id="monthLabel"></span>
@@ -278,9 +377,11 @@
     <div id="catFields">
       <div id="modeWrap">
         <label>Тип категории</label>
-        <div class="seg" id="modes">
+        <div class="seg wrap" id="modes">
           <button data-mode="plain" aria-pressed="true">Обычная</button>
-          <button data-mode="money" aria-pressed="false">Финансовая</button>
+          <button data-mode="money" aria-pressed="false">Финансы</button>
+          <button data-mode="books" aria-pressed="false">Книги</button>
+          <button data-mode="quit" aria-pressed="false">Отказ</button>
         </div>
       </div>
       <div class="field" id="unitWrap">
@@ -329,6 +430,64 @@
       </div>
     </div>
 
+    <div id="bookFields">
+      <div class="field">
+        <label for="fAuthor">Автор</label>
+        <input id="fAuthor" autocomplete="off">
+      </div>
+      <div class="two">
+        <div class="field">
+          <label for="fPages">Страниц всего</label>
+          <input id="fPages" type="number" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label for="fRead">Прочитано</label>
+          <input id="fRead" type="number" inputmode="numeric">
+        </div>
+      </div>
+      <div class="field">
+        <label for="fBookDeadline">Дочитать к</label>
+        <input id="fBookDeadline" type="date">
+      </div>
+      <div class="field">
+        <label for="fGenre">Жанр</label>
+        <input id="fGenre" autocomplete="off" placeholder="роман, право, биография">
+      </div>
+      <label>Статус</label>
+      <div class="seg wrap" id="bookStatus">
+        <button data-s="want">Хочу прочитать</button>
+        <button data-s="reading">Читаю</button>
+        <button data-s="paused">Отложена</button>
+        <button data-s="done">Прочитана</button>
+        <button data-s="dropped">Брошена</button>
+      </div>
+      <div class="field">
+        <label for="fRating">Оценка после прочтения, 1-10</label>
+        <input id="fRating" type="number" inputmode="numeric" min="1" max="10">
+      </div>
+    </div>
+
+    <div id="quitFields">
+      <div class="two">
+        <div class="field">
+          <label for="fQuitStart">Сейчас в день</label>
+          <input id="fQuitStart" type="number" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label for="fQuitDate">Бросить к дате</label>
+          <input id="fQuitDate" type="date">
+        </div>
+      </div>
+      <div class="hint">Норма будет снижаться равномерно от текущего количества до нуля.</div>
+    </div>
+
+    <div id="noteFields">
+      <div class="field">
+        <label for="fPage">Страница</label>
+        <input id="fPage" type="number" inputmode="numeric">
+      </div>
+    </div>
+
     <div id="moneyFields">
       <div class="seg" id="dirs">
         <button data-dir="-1" aria-pressed="true">Расход</button>
@@ -373,7 +532,7 @@
   <div class="sheet">
     <h2 id="quickTitle"></h2>
     <div class="field">
-      <label for="fQuick">Сколько добавить к факту</label>
+      <label for="fQuick" id="quickLabel">Сколько добавить к факту</label>
       <input id="fQuick" type="number" inputmode="decimal">
       <div class="hint" id="quickHint"></div>
     </div>
@@ -388,6 +547,7 @@
   <div class="sheet menu">
     <h2 id="menuTitle"></h2>
     <div class="note" id="menuNote" style="display:none"></div>
+    <button id="menuNotes">Заметки по главам</button>
     <button id="menuLog">Журнал подходов</button>
     <button id="menuLinks">Связи</button>
     <button id="menuEdit">Изменить</button>
@@ -448,6 +608,51 @@
   </div>
 </div>
 
+<div class="graph-bg" id="quitBg">
+  <div class="graph-top">
+    <div>
+      <div class="graph-title" id="quitTitle">Отказ</div>
+      <div class="graph-sub" id="quitSub"></div>
+    </div>
+    <button class="more" id="quitClose" aria-label="Закрыть">✕</button>
+  </div>
+  <div class="st-body" id="quitBody"></div>
+  <div class="rv-controls">
+    <div class="rv-grades">
+      <button id="quitUndo">Убрать последнюю</button>
+      <button id="quitOne" class="q-add">Выкурил одну</button>
+    </div>
+  </div>
+</div>
+
+<div class="graph-bg" id="statsBg">
+  <div class="graph-top">
+    <div class="graph-title" id="statsTitle">Статистика учёбы</div>
+    <button class="more" id="statsClose" aria-label="Закрыть">✕</button>
+  </div>
+  <div class="st-body" id="statsBody"></div>
+</div>
+
+<div class="graph-bg" id="reviewBg">
+  <div class="graph-top">
+    <div>
+      <div class="graph-title">Повторение</div>
+      <div class="graph-sub" id="reviewProgress"></div>
+    </div>
+    <button class="more" id="reviewClose" aria-label="Закрыть">✕</button>
+  </div>
+  <div class="rv-body" id="reviewBody"></div>
+  <div class="rv-controls">
+    <button id="reviewShow" class="rv-show">Показать теорию</button>
+    <div class="rv-grades" id="reviewGrades" style="display:none">
+      <button data-g="0">Снова</button>
+      <button data-g="1">Трудно</button>
+      <button data-g="2">Хорошо</button>
+      <button data-g="3">Легко</button>
+    </div>
+  </div>
+</div>
+
 <div class="graph-bg" id="graphBg">
   <div class="graph-top">
     <div>
@@ -484,7 +689,7 @@
 <div class="sheet-bg" id="serviceBg">
   <div class="sheet menu">
     <h2>Сервис</h2>
-    <div class="hint" id="version">Версия 25</div>
+    <div class="hint" id="version">Версия 30 — трекер отказа от привычки</div>
     <label>Оформление</label>
     <div class="themes" id="themes">
       <button data-t="red">Красная</button>
@@ -506,6 +711,59 @@
     </div>
     <button id="openPlan">План и сроки</button>
     <button id="openGraph">Карта связей</button>
+    <button id="openReview">Повторение</button>
+    <button id="openStats">Статистика учёбы</button>
+
+    <label>Повторения: объём в день</label>
+    <div class="two">
+      <div class="field">
+        <label for="fSrsLimit">Всего карточек</label>
+        <input id="fSrsLimit" type="number" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label for="fSrsNew">Из них новых</label>
+        <input id="fSrsNew" type="number" inputmode="numeric">
+      </div>
+    </div>
+    <label>Порядок карточек</label>
+    <div class="seg" id="srsOrder">
+      <button data-o="due">Просроченные</button>
+      <button data-o="mix">Вперемешку</button>
+      <button data-o="new">Новые</button>
+    </div>
+    <label>Интервалы и лёгкость</label>
+    <div class="two">
+      <div class="field">
+        <label for="fSrsFirst">Первый, дней</label>
+        <input id="fSrsFirst" type="number" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label for="fSrsSecond">Второй, дней</label>
+        <input id="fSrsSecond" type="number" inputmode="decimal">
+      </div>
+    </div>
+    <div class="two">
+      <div class="field">
+        <label for="fSrsEase">Стартовая лёгкость</label>
+        <input id="fSrsEase" type="number" inputmode="decimal" step="0.1">
+      </div>
+      <div class="field">
+        <label for="fSrsEasy">Бонус за «легко»</label>
+        <input id="fSrsEasy" type="number" inputmode="decimal" step="0.1">
+      </div>
+    </div>
+    <div class="two">
+      <div class="field">
+        <label for="fSrsHard">Множитель «трудно»</label>
+        <input id="fSrsHard" type="number" inputmode="decimal" step="0.1">
+      </div>
+      <div class="field">
+        <label for="fSrsMax">Потолок, дней</label>
+        <input id="fSrsMax" type="number" inputmode="numeric">
+      </div>
+    </div>
+    <div class="hint">Модель SM-2: интервал умножается на лёгкость, «снова» сбрасывает счёт и снижает лёгкость.</div>
+
     <label>Режим расписания</label>
     <div class="seg" id="schedModes">
       <button data-s="days">По дням недели</button>
@@ -550,6 +808,15 @@ CREATE TABLE IF NOT EXISTS node (
   note TEXT,
   days TEXT,
   volume REAL,
+  due TEXT,
+  ivl REAL,
+  ease REAL,
+  reps INTEGER NOT NULL DEFAULT 0,
+  lapses INTEGER NOT NULL DEFAULT 0,
+  last_review TEXT,
+  genre TEXT,
+  rating REAL,
+  status TEXT,
   sort INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL
 );
@@ -592,11 +859,22 @@ const NEW_COLUMNS = [
   "ALTER TABLE node ADD COLUMN target_id INTEGER",
   "ALTER TABLE node ADD COLUMN note TEXT",
   "ALTER TABLE node ADD COLUMN days TEXT",
-  "ALTER TABLE node ADD COLUMN volume REAL"
+  "ALTER TABLE node ADD COLUMN volume REAL",
+  "ALTER TABLE node ADD COLUMN due TEXT",
+  "ALTER TABLE node ADD COLUMN ivl REAL",
+  "ALTER TABLE node ADD COLUMN ease REAL",
+  "ALTER TABLE node ADD COLUMN reps INTEGER NOT NULL DEFAULT 0",
+  "ALTER TABLE node ADD COLUMN lapses INTEGER NOT NULL DEFAULT 0",
+  "ALTER TABLE node ADD COLUMN last_review TEXT",
+  "ALTER TABLE node ADD COLUMN genre TEXT",
+  "ALTER TABLE node ADD COLUMN rating REAL",
+  "ALTER TABLE node ADD COLUMN status TEXT"
 ];
 
 const FIELDS = ['parent_id','name','kind','mode','unit','plan','fact','deadline','done',
-                'amount','op_date','direction','target_id','note','days','volume','sort','created_at'];
+                'amount','op_date','direction','target_id','note','days','volume',
+                'due','ivl','ease','reps','lapses','last_review',
+                'genre','rating','status','sort','created_at'];
 
 const SqliteRepo = {
   async init(){
@@ -756,6 +1034,10 @@ async function openDatabase(){
   settings.planUnit = s.planUnit === 'topics' ? 'topics' : 'hours';
   settings.budget = s.budget || '';
   settings.theme = s.theme || 'red';
+  for(const key of Object.keys(SRS_DEFAULTS))
+    settings[key] = s[key] !== undefined && s[key] !== ''
+      ? (key === 'srsOrder' ? s[key] : Number(s[key]))
+      : SRS_DEFAULTS[key];
   applyTheme();
   const roots = await repo.listChildren(null);
   if(roots.length === 0){
@@ -774,6 +1056,9 @@ function createNode(parentId, d){
     amount:d.amount ?? null, op_date:d.op_date ?? null, direction:d.direction ?? null,
     target_id:d.target_id ?? null, note:d.note ?? null,
     days:d.days ?? null, volume:d.volume ?? null,
+    due:d.due ?? null, ivl:d.ivl ?? null, ease:d.ease ?? null,
+    reps:0, lapses:0, last_review:null,
+    genre:d.genre ?? null, rating:d.rating ?? null, status:d.status ?? null,
     sort:Date.now(), created_at:new Date().toISOString()
   });
 }
@@ -875,6 +1160,47 @@ const currentUnit = () => {
   return '';
 };
 const isMoney = () => path.some(p => p.mode === 'money');
+const isBooks = () => path.some(p => p.mode === 'books');
+const isNotes = () => path.length > 0 && path[path.length-1].mode === 'notes';
+
+const STATUS = {
+  want:'Хочу прочитать', reading:'Читаю', paused:'Отложена',
+  done:'Прочитана', dropped:'Брошена'
+};
+let bookFilter = 'all';
+
+[...document.getElementById('bookFilters').children].forEach(b => {
+  b.onclick = () => {
+    bookFilter = b.dataset.f;
+    [...$('bookFilters').children].forEach(x =>
+      x.setAttribute('aria-pressed', String(x.dataset.f === bookFilter)));
+    render();
+  };
+});
+
+/* расчёт по книге: проценты, остаток, требуемый темп */
+function bookStatus(item){
+  if(item.status) return item.status;
+  const total = Number(item.plan) || 0, read = Number(item.fact) || 0;
+  if(total && read >= total) return 'done';
+  if(read > 0) return 'reading';
+  return 'want';
+}
+
+function bookStats(item){
+  const total = Number(item.plan) || 0;
+  const read = Number(item.fact) || 0;
+  const left = Math.max(0, total - read);
+  const pct = total ? Math.min(100, Math.round(read / total * 100)) : 0;
+  let days = null, perDay = null, late = false;
+  if(item.deadline){
+    const ms = new Date(item.deadline + 'T00:00:00') - new Date(todayISO() + 'T00:00:00');
+    days = Math.ceil(ms / 86400000);
+    if(days < 0){ late = left > 0; }
+    else if(left > 0) perDay = Math.ceil(left / Math.max(1, days));
+  }
+  return {total, read, left, pct, days, perDay, late, done: total > 0 && read >= total};
+}
 
 const $ = id => document.getElementById(id);
 const num = v => (v === null || v === undefined || v === '') ? null : Number(v);
@@ -932,8 +1258,10 @@ async function render(){
   }
 
   const moneyView = isMoney();
+  const booksView = isBooks();
   const ym = ymOf(month);
   $('months').style.display = moneyView ? 'flex' : 'none';
+  $('bookFilters').style.display = booksView && !isNotes() ? 'flex' : 'none';
   $('monthLabel').textContent = MONTHS[month.getMonth()] + ' ' + month.getFullYear();
 
   const totalEl = $('total');
@@ -948,6 +1276,25 @@ async function render(){
         'Итог <b>' + (net >= 0 ? '+' : '−') + money(Math.abs(net)) + '</b>';
     } else {
       totalEl.textContent = 'В этом месяце операций нет';
+    }
+  } else if(path.length && booksView){
+    const books = (await repo.listChildren(current())).filter(n => n.kind === 'entry');
+    if(books.length){
+      let pages = 0, read = 0, done = 0, late = 0, reading = 0;
+      for(const bk of books){
+        const b = bookStats(bk);
+        const st = bookStatus(bk);
+        pages += b.total; read += b.read;
+        if(st === 'done') done++;
+        else if(st === 'reading') reading++;
+        if(b.late && st !== 'done' && st !== 'dropped') late++;
+      }
+      const pct = pages ? Math.round(read / pages * 100) : 0;
+      totalEl.innerHTML =
+        'Прочитано <b>' + done + '</b> из <b>' + books.length + '</b> · ' +
+        'в работе <b>' + reading + '</b> · ' +
+        '<b>' + read + '</b> из <b>' + pages + '</b> стр. · <b>' + pct + '%</b>' +
+        (late ? ' · <b class="out">просрочено ' + late + '</b>' : '');
     }
   } else if(path.length){
     const a = await aggregate(current());
@@ -967,6 +1314,9 @@ async function render(){
     items = items.filter(n => n.kind === 'category' ||
                               (n.op_date && n.op_date.startsWith(ym)));
 
+  if(booksView && !isNotes() && bookFilter !== 'all')
+    items = items.filter(n => n.kind === 'category' || bookStatus(n) === bookFilter);
+
   if(items.length === 0){
     const e = document.createElement('div');
     e.className = 'empty';
@@ -981,8 +1331,9 @@ async function render(){
     const row = document.createElement('div');
     row.className = 'row' + (item.done ? ' done' : '');
     const itemMoney = moneyView || item.mode === 'money';
+    const itemBook = !itemMoney && item.kind === 'entry' && (booksView || item.mode === 'books');
 
-    if(item.kind === 'entry' && !itemMoney){
+    if(item.kind === 'entry' && !itemMoney && !itemBook){
       const chk = document.createElement('button');
       chk.className = 'check';
       chk.setAttribute('aria-pressed', item.done ? 'true' : 'false');
@@ -1005,6 +1356,13 @@ async function render(){
     const name = document.createElement('span');
     name.className = 'name';
     name.textContent = item.name;
+    if(itemBook){
+      const st = bookStatus(item);
+      const badge = document.createElement('span');
+      badge.className = 'badge ' + st;
+      badge.textContent = STATUS[st];
+      name.appendChild(badge);
+    }
     if(settings.schedule === 'days' && item.kind === 'entry' && scheduledToday(item)){
       const b = document.createElement('span');
       b.className = 'today';
@@ -1041,9 +1399,41 @@ async function render(){
       meta.textContent = parts.join(' · ');
       body.appendChild(meta);
       body.onclick = () => {
+        if(item.mode === 'quit'){ openQuit(item); return; }
         path.push({id:item.id, name:item.name, unit:item.unit, mode:item.mode});
         render();
       };
+    } else if(itemBook){
+      const b = bookStats(item);
+      const parts = [];
+      if(item.unit) parts.push(item.unit);
+      if(item.genre) parts.push(item.genre);
+      parts.push(b.read + ' из ' + b.total + ' стр. · ' + b.pct + '%');
+      if(item.rating) parts.push('оценка ' + fmt(item.rating) + '/10');
+      const kidsN = index.all.filter(n => n.parent_id === item.id).length;
+      if(kidsN) parts.push(kidsN + ' заметок');
+      const stx = bookStatus(item);
+      if(b.done || stx === 'done' || stx === 'dropped'){ /* срок уже не важен */ }
+      else {
+        parts.push('осталось ' + b.left);
+        if(item.deadline){
+          const d = item.deadline.split('-').reverse().join('.');
+          if(b.late) parts.push('срок ' + d + ' прошёл');
+          else if(b.days === 0) parts.push('дочитать сегодня');
+          else parts.push('до ' + d + ' · ' + b.perDay + ' стр/день');
+        }
+      }
+      meta.textContent = parts.join(' · ');
+      if(b.late) meta.classList.add('late');
+      body.appendChild(meta);
+
+      const bar = document.createElement('div');
+      bar.className = 'bar';
+      const fill = document.createElement('i');
+      fill.style.width = b.pct + '%';
+      bar.appendChild(fill);
+      body.appendChild(bar);
+      body.onclick = () => openMenu(item);
     } else if(itemMoney){
       meta.textContent = item.op_date ? item.op_date.split('-').reverse().join('.') : '';
       body.appendChild(meta);
@@ -1100,6 +1490,13 @@ async function render(){
       sum.className = 'sum ' + (income ? 'in' : 'out');
       sum.textContent = (income ? '+' : '−') + money(item.amount);
       row.appendChild(sum);
+    } else if(itemBook){
+      const plus = document.createElement('button');
+      plus.className = 'plus';
+      plus.textContent = '+';
+      plus.setAttribute('aria-label', 'Отметить страницы: ' + item.name);
+      plus.onclick = e => { e.stopPropagation(); openPages(item); };
+      row.appendChild(plus);
     } else if(hasKids){
       const chev = document.createElement('span');
       chev.className = 'chev';
@@ -1132,15 +1529,24 @@ let editState = {mode:'add', kind:'category', catMode:'plain', dir:-1, target:nu
 function syncEditFields(){
   const cat = editState.kind === 'category';
   const inMoney = isMoney();
+  const inBooks = isBooks();
   const moneyEntry = !cat && (inMoney || (editState.node && editState.node.amount != null));
+  const inNotes = isNotes();
+  const bookEntry = !cat && inBooks && !moneyEntry && !inNotes;
+  const noteEntry = !cat && inNotes;
 
   $('catFields').style.display   = cat ? 'block' : 'none';
-  $('entryFields').style.display = (!cat && !moneyEntry) ? 'block' : 'none';
+  $('entryFields').style.display = (!cat && !moneyEntry && !bookEntry && !noteEntry) ? 'block' : 'none';
   $('moneyFields').style.display = moneyEntry ? 'block' : 'none';
-  $('daysWrap').style.display    = (!cat && !moneyEntry && settings.schedule === 'days')
+  $('bookFields').style.display  = bookEntry ? 'block' : 'none';
+  $('noteFields').style.display  = noteEntry ? 'block' : 'none';
+  $('quitFields').style.display  = (cat && editState.catMode === 'quit') ? 'block' : 'none';
+  [...$('bookStatus').children].forEach(b =>
+    b.setAttribute('aria-pressed', String(b.dataset.s === editState.status)));
+  $('daysWrap').style.display    = (!cat && !moneyEntry && !bookEntry && !noteEntry && settings.schedule === 'days')
                                    ? 'block' : 'none';
 
-  const plainCat = cat && editState.catMode === 'plain' && !inMoney;
+  const plainCat = cat && editState.catMode === 'plain' && !inMoney && !inBooks;
   $('modeWrap').style.display   = (cat && !inMoney) ? 'block' : 'none';
   $('unitWrap').style.display   = plainCat ? 'block' : 'none';
   $('targetWrap').style.display = plainCat ? 'block' : 'none';
@@ -1165,6 +1571,7 @@ function openEditor(mode, node){
     catMode: node ? (node.mode === 'money' ? 'money' : 'plain') : (isMoney() ? 'money' : 'plain'),
     dir: node && Number(node.direction) > 0 ? 1 : -1,
     target: node ? (node.target_id ?? null) : null,
+    status: node ? bookStatus(node) : 'want',
     node: node || null
   };
   $('editTitle').textContent = mode === 'add' ? 'Новое' : 'Изменить';
@@ -1178,6 +1585,15 @@ function openEditor(mode, node){
   $('fUnitOwn').value  = node && node.kind === 'entry' ? (node.unit || '') : '';
   $('fAmount').value   = node && node.amount != null ? node.amount : '';
   $('fDate').value     = node && node.op_date ? node.op_date : today();
+  $('fAuthor').value   = node && node.kind === 'entry' ? (node.unit || '') : '';
+  $('fPages').value    = node && node.plan != null ? node.plan : '';
+  $('fRead').value     = node && node.fact != null ? node.fact : '';
+  $('fBookDeadline').value = node && node.deadline ? node.deadline : '';
+  $('fGenre').value    = node && node.genre ? node.genre : '';
+  $('fRating').value   = node && node.rating != null ? node.rating : '';
+  $('fPage').value     = node && node.plan != null && isNotes() ? node.plan : '';
+  $('fQuitStart').value = node && node.mode === 'quit' && node.plan != null ? node.plan : '';
+  $('fQuitDate').value  = node && node.mode === 'quit' && node.deadline ? node.deadline : '';
   $('fNote').value     = node && node.note ? node.note : '';
   $('fVolume').value   = node && node.volume != null ? node.volume : '';
   $('fCatDeadline').value = node && node.kind === 'category' && node.deadline ? node.deadline : '';
@@ -1202,6 +1618,9 @@ function closeEditor(){ $('editBg').classList.remove('open'); }
 });
 [...$('modes').children].forEach(b => {
   b.onclick = () => { editState.catMode = b.dataset.mode; syncEditFields(); };
+});
+[...$('bookStatus').children].forEach(b => {
+  b.onclick = () => { editState.status = b.dataset.s; syncEditFields(); };
 });
 [...$('dirs').children].forEach(b => {
   b.onclick = () => { editState.dir = Number(b.dataset.dir); syncEditFields(); };
@@ -1235,15 +1654,47 @@ $('editSave').onclick = async () => {
 
   if(cat){
     const isMoneyCat = inMoney || editState.catMode === 'money';
+    const isBookCat = !isMoneyCat && (isBooks() || editState.catMode === 'books');
+    const isQuitCat = !isMoneyCat && !isBookCat && editState.catMode === 'quit';
+    if(isQuitCat){
+      const perDay = num($('fQuitStart').value);
+      if(perDay === null || perDay <= 0){ toast('Укажи, сколько сейчас в день'); return; }
+      if(!$('fQuitDate').value){ toast('Укажи дату отказа'); return; }
+    }
     data = {
       name, kind:'category',
-      mode: isMoneyCat ? 'money' : null,
-      unit: isMoneyCat ? null : ($('fUnit').value.trim() || null),
+      mode: isMoneyCat ? 'money' : (isBookCat ? 'books' : (isQuitCat ? 'quit' : null)),
+      unit: isMoneyCat ? null : (isBookCat ? 'страниц' : ($('fUnit').value.trim() || null)),
       target_id: isMoneyCat ? null : editState.target,
-      volume: isMoneyCat ? null : num($('fVolume').value),
-      deadline: isMoneyCat ? null : ($('fCatDeadline').value || null),
+      plan: isQuitCat ? num($('fQuitStart').value) : null,
+      volume: (isMoneyCat || isQuitCat) ? null : num($('fVolume').value),
+      deadline: isQuitCat ? ($('fQuitDate').value || null)
+              : (isMoneyCat ? null : ($('fCatDeadline').value || null)),
       note: $('fNote').value.trim() || null,
-      plan:null, fact:null, amount:null, op_date:null, direction:null
+      fact:null, amount:null, op_date:null, direction:null
+    };
+  } else if(isNotes()){
+    data = {
+      name, kind:'entry', mode:null, target_id:null, unit:null,
+      note: $('fNote').value.trim() || null,
+      plan: num($('fPage').value),
+      fact: null, deadline:null, days:null, volume:null,
+      amount:null, op_date:null, direction:null
+    };
+  } else if(isBooks() && !(editState.node && editState.node.amount != null)){
+    const pages = num($('fPages').value);
+    if(pages === null || pages <= 0){ toast('Укажи количество страниц'); return; }
+    data = {
+      name, kind:'entry', mode:null, target_id:null,
+      unit: $('fAuthor').value.trim() || null,
+      note: $('fNote').value.trim() || null,
+      plan: pages,
+      fact: num($('fRead').value) ?? 0,
+      deadline: $('fBookDeadline').value || null,
+      genre: $('fGenre').value.trim() || null,
+      rating: num($('fRating').value),
+      status: editState.status,
+      volume:null, days:null, amount:null, op_date:null, direction:null
     };
   } else if(inMoney || (editState.node && editState.node.amount != null)){
     const amount = num($('fAmount').value);
@@ -1286,8 +1737,11 @@ $('editSave').onclick = async () => {
 /* --------------------------- быстрый факт ----------------------- */
 
 let quickNode = null;
+let quickMode = 'fact';
 
 function openQuick(node){
+  quickMode = 'fact';
+  $('quickLabel').textContent = 'Сколько добавить к факту';
   quickNode = node;
   const unit = node.unit || currentUnit();
   $('quickTitle').textContent = node.name;
@@ -1304,11 +1758,41 @@ $('quickCancel').onclick = closeQuick;
 $('quickSave').onclick = async () => {
   const add = num($('fQuick').value);
   if(add === null){ toast('Введи число'); return; }
-  await repo.update(quickNode.id, {fact: (Number(quickNode.fact) || 0) + add});
+  const was = Number(quickNode.fact) || 0;
+  const now = quickMode === 'pages'
+    ? Math.min(Number(quickNode.plan) || Infinity, Math.max(0, was + add))
+    : was + add;
+  await repo.update(quickNode.id, {fact: now});
+  /* страницы пишем и в журнал, чтобы видеть темп чтения */
+  if(quickMode === 'pages' && add > 0){
+    const sets = await repo.listSets(quickNode.id);
+    await repo.addSet({
+      node_id: quickNode.id, date: todayISO(),
+      attempt: sets.filter(s => s.date === todayISO()).length + 1,
+      value: add, rpe: null, note: null
+    });
+  }
   closeQuick();
-  toast('Записано');
+  toast(quickMode === 'pages'
+    ? 'Записано, всего ' + now + ' стр.'
+    : 'Записано');
   render();
 };
+
+/* открытие для книги */
+function openPages(node){
+  quickMode = 'pages';
+  quickNode = node;
+  const b = bookStats(node);
+  $('quickTitle').textContent = node.name;
+  $('quickLabel').textContent = 'Сколько страниц прочитал';
+  $('fQuick').value = '';
+  $('quickHint').textContent =
+    'Сейчас ' + b.read + ' из ' + b.total + ' · осталось ' + b.left +
+    (b.perDay ? ' · темп ' + b.perDay + ' стр/день' : '');
+  $('quickBg').classList.add('open');
+  setTimeout(() => $('fQuick').focus(), 50);
+}
 $('fQuick').addEventListener('keydown', e => { if(e.key === 'Enter') $('quickSave').click(); });
 
 /* ------------------------------ связи --------------------------- */
@@ -1524,13 +2008,20 @@ function openMenu(node){
   $('menuNote').style.display = node.note ? 'block' : 'none';
   /* связи только у обычных записей */
   const plainEntry = node.kind === 'entry' && node.amount == null;
+  const bookNode = plainEntry && (isBooks() || node.mode === 'books');
+  $('menuNotes').style.display = bookNode ? 'block' : 'none';
   $('menuLinks').style.display = node.amount == null ? 'block' : 'none';
-  $('menuLog').style.display   = plainEntry ? 'block' : 'none';
+  $('menuLog').style.display   = (plainEntry && !bookNode && !isNotes()) ? 'block' : 'none';
   $('menuBg').classList.add('open');
 }
 function closeMenu(){ $('menuBg').classList.remove('open'); }
 
 $('menuCancel').onclick = closeMenu;
+$('menuNotes').onclick = async () => {
+  closeMenu();
+  path.push({id:menuNode.id, name:menuNode.name, unit:null, mode:'notes'});
+  await render();
+};
 $('menuLog').onclick = () => { closeMenu(); openLog(menuNode); };
 $('menuLinks').onclick = () => { closeMenu(); openLinks(menuNode); };
 $('menuEdit').onclick = () => { closeMenu(); openEditor('edit', menuNode); };
@@ -1551,7 +2042,7 @@ $('menuDelete').onclick = async () => {
 
 if(window.Capacitor && window.Capacitor.Plugins.App){
   window.Capacitor.Plugins.App.addListener('backButton', () => {
-    for(const id of ['pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg']){
+    for(const id of ['pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg']){
       if($(id).classList.contains('open')){ $(id).classList.remove('open'); return; }
     }
     if(path.length){ path.pop(); render(); return; }
@@ -1651,6 +2142,499 @@ async function fillKzTheory(){
   }
   return {done, missed};
 }
+
+/* ===================== учебный слой =============================
+   Интервальные повторения по модели SM-2 с настраиваемыми
+   параметрами. Вопросы берутся из блока «ПРОВЕРЬ СЕБЯ» в заметке
+   темы, поэтому отдельная база вопросов не нужна.
+==================================================================*/
+
+const SRS_DEFAULTS = {
+  srsFirst: 1,        // первый интервал, дней
+  srsSecond: 6,       // второй интервал, дней
+  srsEase: 2.5,       // стартовая лёгкость
+  srsEaseMin: 1.3,    // нижняя граница лёгкости
+  srsHard: 1.2,       // множитель для «трудно»
+  srsEasyBonus: 1.3,  // бонус за «легко»
+  srsLimit: 20,       // карточек в день
+  srsNewLimit: 10,    // новых карточек в день
+  srsOrder: 'due',    // 'due' — сначала просроченные, 'new' — сначала новые, 'mix'
+  srsShowTheory: 1,   // показывать теорию перед ответом
+  srsMaxIvl: 365      // потолок интервала, дней
+};
+
+const srsNum = k => Number(settings[k] ?? SRS_DEFAULTS[k]);
+
+/* --------- разбор вопросов из заметки --------- */
+function questionsOf(node){
+  if(!node || !node.note) return [];
+  const m = node.note.split(/ПРОВЕРЬ СЕБЯ\s*\n/);
+  if(m.length < 2) return [];
+  return m[1].split('\n')
+    .map(s => s.trim())
+    .filter(Boolean)
+    .map(s => s.replace(/^\d+[.)]\s*/, ''))
+    .filter(s => s.length > 5);
+}
+
+function theoryOf(node){
+  if(!node || !node.note) return '';
+  return node.note.split(/ПРОВЕРЬ СЕБЯ\s*\n/)[0].trim();
+}
+
+const isStudyCard = n => n.kind === 'entry' && n.amount == null && questionsOf(n).length > 0;
+
+/* --------- расчёт следующего показа --------- */
+function addDays(iso, days){
+  const d = new Date(iso + 'T00:00:00');
+  d.setDate(d.getDate() + Math.round(days));
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0,10);
+}
+
+/* grade: 0 снова, 1 трудно, 2 хорошо, 3 легко */
+function schedule(card, grade){
+  let ease = Number(card.ease) || srsNum('srsEase');
+  let ivl  = Number(card.ivl) || 0;
+  let reps = Number(card.reps) || 0;
+  let lapses = Number(card.lapses) || 0;
+
+  if(grade === 0){
+    lapses++; reps = 0; ivl = 0;
+    ease = Math.max(srsNum('srsEaseMin'), ease - 0.2);
+  } else if(grade === 1){
+    ease = Math.max(srsNum('srsEaseMin'), ease - 0.15);
+    ivl = reps === 0 ? srsNum('srsFirst') : Math.max(1, ivl * srsNum('srsHard'));
+    reps++;
+  } else {
+    if(reps === 0) ivl = srsNum('srsFirst');
+    else if(reps === 1) ivl = srsNum('srsSecond');
+    else ivl = ivl * ease;
+    if(grade === 3){
+      ease = ease + 0.15;
+      ivl = ivl * srsNum('srsEasyBonus');
+    }
+    reps++;
+  }
+
+  ivl = Math.min(ivl, srsNum('srsMaxIvl'));
+  const today = todayISO();
+  return {
+    ease: Math.round(ease * 100) / 100,
+    ivl: Math.round(ivl * 100) / 100,
+    reps, lapses,
+    last_review: today,
+    due: ivl < 1 ? today : addDays(today, ivl)
+  };
+}
+
+/* --------- очередь на сегодня --------- */
+function dueCards(){
+  const today = todayISO();
+  const scope = current();
+  const inScope = n => {
+    if(scope === null) return true;
+    let p = n;
+    while(p){
+      if(p.id === scope) return true;
+      p = p.parent_id != null ? index.byId.get(p.parent_id) : null;
+    }
+    return false;
+  };
+
+  const all = index.all.filter(n => isStudyCard(n) && inScope(n));
+  const fresh = all.filter(n => !n.due).slice(0, srsNum('srsNewLimit'));
+  const ready = all.filter(n => n.due && n.due <= today)
+                   .sort((a, b) => (a.due < b.due ? -1 : 1));
+
+  let queue;
+  if(settings.srsOrder === 'new') queue = [...fresh, ...ready];
+  else if(settings.srsOrder === 'mix'){
+    queue = [];
+    const a = [...ready], b = [...fresh];
+    while(a.length || b.length){
+      if(a.length) queue.push(a.shift());
+      if(b.length) queue.push(b.shift());
+    }
+  } else queue = [...ready, ...fresh];
+
+  return {queue: queue.slice(0, srsNum('srsLimit')), total: all.length,
+          readyCount: ready.length, freshCount: all.filter(n => !n.due).length};
+}
+
+/* --------- экран повторения --------- */
+const review = {queue: [], pos: 0, card: null, question: '', shown: false, done: 0};
+
+async function openReview(){
+  $('serviceBg').classList.remove('open');
+  await reindex();
+  const d = dueCards();
+  review.queue = d.queue;
+  review.pos = 0;
+  review.done = 0;
+  $('reviewBg').classList.add('open');
+  nextCard();
+}
+function closeReview(){ $('reviewBg').classList.remove('open'); render(); }
+
+function nextCard(){
+  if(review.pos >= review.queue.length){
+    $('reviewBody').innerHTML =
+      '<div class="empty">На сегодня всё. Повторено карточек: ' + review.done + '.</div>';
+    $('reviewGrades').style.display = 'none';
+    $('reviewShow').style.display = 'none';
+    $('reviewProgress').textContent = '';
+    return;
+  }
+  review.card = review.queue[review.pos];
+  const qs = questionsOf(review.card);
+  const n = Number(review.card.reps) || 0;
+  review.question = qs[n % qs.length];
+  review.shown = false;
+  renderCard();
+}
+
+function renderCard(){
+  const c = review.card;
+  const node = index.byId.get(c.id) || c;
+  const body = $('reviewBody');
+  $('reviewProgress').textContent =
+    (review.pos + 1) + ' из ' + review.queue.length +
+    (c.due ? ' · интервал ' + fmt(c.ivl || 0) + ' дн.' : ' · новая');
+
+  let html = '<div class="rv-path">' + (nodePath(node) || '') + '</div>' +
+             '<div class="rv-name">' + node.name + '</div>' +
+             '<div class="rv-q">' + review.question + '</div>';
+
+  if(review.shown){
+    const t = theoryOf(node);
+    html += '<div class="rv-theory">' + t.replace(/</g, '&lt;') + '</div>';
+  }
+  body.innerHTML = html;
+  body.scrollTop = 0;
+  $('reviewShow').style.display = review.shown ? 'none' : 'block';
+  $('reviewGrades').style.display = review.shown ? 'flex' : 'none';
+}
+
+$('reviewShow').onclick = () => { review.shown = true; renderCard(); };
+$('reviewClose').onclick = closeReview;
+
+[...$('reviewGrades').children].forEach(b => {
+  b.onclick = async () => {
+    const grade = Number(b.dataset.g);
+    const patch = schedule(review.card, grade);
+    await repo.update(review.card.id, patch);
+    Object.assign(review.card, patch);
+    review.done++;
+    if(grade === 0){
+      /* «снова» — вернуть карточку в конец очереди этого сеанса */
+      review.queue.push(review.card);
+    }
+    review.pos++;
+    await reindex();
+    nextCard();
+  };
+});
+
+/* ===================== отказ от привычки =========================
+   Категория с типом «отказ» хранит стартовую норму и дату отказа.
+   Норма на день считается линейным снижением от старта до нуля,
+   факт складывается из отметок, которые пишутся в журнал.
+==================================================================*/
+
+const dayDiff = (a, b) =>
+  Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000);
+
+function quitParams(node){
+  const start = Number(node.plan) || 0;
+  const from = (node.created_at || todayISO()).slice(0, 10);
+  const to = node.deadline || null;
+  const total = to ? Math.max(1, dayDiff(from, to)) : null;
+  return {start, from, to, total};
+}
+
+/* норма на конкретный день */
+function quitNorm(node, day){
+  const p = quitParams(node);
+  if(!p.to) return p.start;
+  const passed = dayDiff(p.from, day);
+  if(passed <= 0) return p.start;
+  if(passed >= p.total) return 0;
+  return Math.round(p.start * (1 - passed / p.total));
+}
+
+async function quitHistory(node, days){
+  const sets = await repo.listSets(node.id);
+  const byDay = new Map();
+  for(const s of sets)
+    byDay.set(s.date, (byDay.get(s.date) || 0) + (Number(s.value) || 0));
+
+  const out = [];
+  for(let i = days - 1; i >= 0; i--){
+    const day = addDays(todayISO(), -i);
+    const p = quitParams(node);
+    if(dayDiff(p.from, day) < 0) continue;
+    const norm = quitNorm(node, day);
+    const fact = byDay.get(day) || 0;
+    out.push({day, norm, fact, diff: fact - norm});
+  }
+  return out;
+}
+
+/* --------- экран --------- */
+let quitNode = null;
+
+async function openQuit(node){
+  quitNode = node;
+  $('quitBg').classList.add('open');
+  await renderQuit();
+}
+function closeQuit(){ $('quitBg').classList.remove('open'); render(); }
+
+async function renderQuit(){
+  await reindex();
+  const node = index.byId.get(quitNode.id) || quitNode;
+  quitNode = node;
+  const p = quitParams(node);
+  const hist = await quitHistory(node, 21);
+  const today = hist.length ? hist[hist.length-1] : {norm: p.start, fact: 0, diff: 0};
+
+  $('quitTitle').textContent = node.name;
+
+  const left = Math.max(0, today.norm - today.fact);
+  const over = Math.max(0, today.fact - today.norm);
+  let sub = 'Норма сегодня ' + today.norm + ' · выкурено ' + today.fact;
+  if(p.to){
+    const d = dayDiff(todayISO(), p.to);
+    sub += d > 0 ? ' · до нуля ' + d + ' дн.' : ' · срок наступил';
+  }
+  $('quitSub').textContent = sub;
+
+  const pct = today.norm ? Math.min(100, Math.round(today.fact / today.norm * 100)) : (today.fact ? 100 : 0);
+  let html = '<div class="q-today">' +
+    '<div class="q-big">' + today.fact + ' <span>из ' + today.norm + '</span></div>' +
+    '<div class="q-bar"><i style="width:' + pct + '%" class="' + (over ? 'over' : '') + '"></i></div>' +
+    '<div class="q-note">' +
+      (over ? 'Превышение на ' + over
+            : left ? 'Ещё можно ' + left : 'Норма исчерпана') +
+    '</div></div>';
+
+  /* итоги */
+  const totalFact = hist.reduce((s, d) => s + d.fact, 0);
+  const totalNorm = hist.reduce((s, d) => s + d.norm, 0);
+  const baseline = p.start * hist.length;
+  const saved = Math.max(0, baseline - totalFact);
+  const good = hist.filter(d => d.diff <= 0).length;
+  let streak = 0;
+  for(let i = hist.length - 1; i >= 0; i--){
+    if(hist[i].diff <= 0) streak++; else break;
+  }
+
+  html += '<div class="st-grid">' +
+    qt('За ' + hist.length + ' дн.', totalFact + ' из ' + totalNorm) +
+    qt('В пределах нормы', good + ' дн.') +
+    qt('Серия', streak + ' дн.') +
+    qt('Не выкурено', saved) +
+    '</div>';
+
+  /* график */
+  const max = Math.max(1, ...hist.map(d => Math.max(d.fact, d.norm)));
+  html += '<h3>Норма и факт</h3><div class="q-chart">';
+  for(const d of hist){
+    const hf = Math.round(d.fact / max * 100);
+    const hn = Math.round(d.norm / max * 100);
+    html += '<div class="q-col">' +
+            '<div class="q-stack">' +
+              '<div class="q-norm" style="height:' + Math.max(2, hn) + '%"></div>' +
+              '<div class="q-fact ' + (d.diff > 0 ? 'over' : '') + '" style="height:' + Math.max(2, hf) + '%"></div>' +
+            '</div>' +
+            '<div class="q-day">' + d.day.slice(8) + '</div></div>';
+  }
+  html += '</div><div class="hint">Тусклый столбик — норма, яркий — факт. Красный означает превышение.</div>';
+
+  /* последние дни списком */
+  html += '<h3>По дням</h3>';
+  for(const d of [...hist].reverse().slice(0, 10)){
+    html += '<div class="setrow"><span><span>' +
+            d.day.split('-').reverse().join('.') + ' · ' + d.fact + ' из ' + d.norm +
+            '</span><span class="where ' + (d.diff > 0 ? 'late' : '') + '">' +
+            (d.diff > 0 ? 'превышение на ' + d.diff
+                        : d.diff === 0 ? 'ровно по норме' : 'меньше нормы на ' + (-d.diff)) +
+            '</span></span></div>';
+  }
+
+  $('quitBody').innerHTML = html;
+
+  function qt(label, value){
+    return '<div class="st-tile"><div class="st-val">' + value +
+           '</div><div class="st-lab">' + label + '</div></div>';
+  }
+}
+
+async function addSmoke(n){
+  const sets = await repo.listSets(quitNode.id);
+  await repo.addSet({
+    node_id: quitNode.id, date: todayISO(),
+    attempt: sets.filter(s => s.date === todayISO()).length + 1,
+    value: n, rpe: null,
+    note: new Date().toTimeString().slice(0,5)
+  });
+  await renderQuit();
+}
+
+$('quitOne').onclick = () => addSmoke(1);
+$('quitUndo').onclick = async () => {
+  const sets = await repo.listSets(quitNode.id);
+  const todays = sets.filter(s => s.date === todayISO());
+  if(!todays.length){ toast('Сегодня отметок нет'); return; }
+  await repo.removeSet(todays[0].id);
+  toast('Последняя отметка убрана');
+  await renderQuit();
+};
+$('quitClose').onclick = closeQuit;
+
+/* ======================== статистика учёбы =======================
+   Считается по состоянию карточек: сколько изучено, как
+   распределены интервалы, что чаще всего проваливается и какая
+   нагрузка ждёт на ближайшие две недели.
+==================================================================*/
+
+function studyStats(){
+  const today = todayISO();
+  const scope = current();
+  const inScope = n => {
+    if(scope === null) return true;
+    let p = n;
+    while(p){
+      if(p.id === scope) return true;
+      p = p.parent_id != null ? index.byId.get(p.parent_id) : null;
+    }
+    return false;
+  };
+
+  const cards = index.all.filter(n => isStudyCard(n) && inScope(n));
+  const started = cards.filter(n => n.due);
+  const fresh = cards.length - started.length;
+  const overdue = started.filter(n => n.due < today).length;
+  const dueToday = started.filter(n => n.due === today).length;
+
+  /* зрелость: молодые — интервал меньше трёх недель */
+  const young = started.filter(n => (Number(n.ivl) || 0) < 21).length;
+  const mature = started.length - young;
+
+  const reps = cards.reduce((s, n) => s + (Number(n.reps) || 0), 0);
+  const lapses = cards.reduce((s, n) => s + (Number(n.lapses) || 0), 0);
+  const easeVals = started.map(n => Number(n.ease) || srsNum('srsEase'));
+  const ease = easeVals.length
+    ? easeVals.reduce((a, b) => a + b, 0) / easeVals.length : 0;
+  const ivlVals = started.map(n => Number(n.ivl) || 0);
+  const avgIvl = ivlVals.length ? ivlVals.reduce((a, b) => a + b, 0) / ivlVals.length : 0;
+
+  /* прогноз на 14 дней */
+  const forecast = [];
+  for(let i = 0; i < 14; i++){
+    const day = addDays(today, i);
+    const n = started.filter(c => (i === 0 ? c.due <= day : c.due === day)).length;
+    forecast.push({day, n});
+  }
+
+  /* проблемные темы: больше всего провалов */
+  const hard = cards.filter(n => (Number(n.lapses) || 0) > 0)
+    .sort((a, b) => (b.lapses - a.lapses) || ((a.ease || 9) - (b.ease || 9)))
+    .slice(0, 8);
+
+  return {total: cards.length, fresh, started: started.length, overdue, dueToday,
+          young, mature, reps, lapses, ease, avgIvl, forecast, hard};
+}
+
+function renderStats(){
+  const s = studyStats();
+  const box = $('statsBody');
+
+  if(s.total === 0){
+    box.innerHTML = '<div class="empty">В этом разделе нет тем с вопросами для повторения.</div>';
+    return;
+  }
+
+  const pct = n => s.total ? Math.round(n / s.total * 100) : 0;
+  const retention = s.reps ? Math.round((1 - s.lapses / s.reps) * 100) : null;
+
+  let html = '';
+
+  html += '<div class="st-grid">' +
+    tile('Всего тем', s.total) +
+    tile('Изучается', s.started + ' · ' + pct(s.started) + '%') +
+    tile('Не начато', s.fresh) +
+    tile('К повторению', s.overdue + s.dueToday) +
+    '</div>';
+
+  html += '<h3>Состав</h3>' +
+    bar([
+      {label:'Зрелые', n:s.mature, cls:'ok'},
+      {label:'Молодые', n:s.young, cls:'mid'},
+      {label:'Новые', n:s.fresh, cls:'new'}
+    ], s.total);
+
+  html += '<h3>Качество</h3><div class="st-grid">' +
+    tile('Повторений', s.reps) +
+    tile('Провалов', s.lapses) +
+    tile('Удержание', retention === null ? '—' : retention + '%') +
+    tile('Средняя лёгкость', s.ease ? s.ease.toFixed(2) : '—') +
+    tile('Средний интервал', s.avgIvl ? fmt(Math.round(s.avgIvl)) + ' дн.' : '—') +
+    tile('Просрочено', s.overdue) +
+    '</div>';
+
+  const max = Math.max(1, ...s.forecast.map(f => f.n));
+  html += '<h3>Нагрузка на две недели</h3><div class="st-forecast">';
+  s.forecast.forEach((f, i) => {
+    const h = Math.round(f.n / max * 100);
+    const d = f.day.slice(8) + '.' + f.day.slice(5,7);
+    html += '<div class="st-col" title="' + d + '">' +
+            '<div class="st-colnum">' + (f.n || '') + '</div>' +
+            '<div class="st-bar" style="height:' + Math.max(2, h) + '%"></div>' +
+            '<div class="st-colday">' + (i % 2 === 0 ? d.slice(0,2) : '') + '</div>' +
+            '</div>';
+  });
+  html += '</div><div class="hint">Первый столбец включает всё просроченное.</div>';
+
+  if(s.hard.length){
+    html += '<h3>Чаще всего проваливаются</h3>';
+    for(const n of s.hard){
+      html += '<div class="setrow"><span><span>' + n.name + '</span>' +
+              '<span class="where">' + (nodePath(n) || '') + ' · провалов ' + n.lapses +
+              ' · лёгкость ' + (Number(n.ease) || srsNum('srsEase')).toFixed(2) +
+              '</span></span></div>';
+    }
+  }
+
+  box.innerHTML = html;
+
+  function tile(label, value){
+    return '<div class="st-tile"><div class="st-val">' + value +
+           '</div><div class="st-lab">' + label + '</div></div>';
+  }
+  function bar(parts, total){
+    let out = '<div class="st-stack">';
+    for(const p of parts){
+      const w = total ? (p.n / total * 100) : 0;
+      if(w > 0) out += '<i class="' + p.cls + '" style="width:' + w + '%"></i>';
+    }
+    out += '</div><div class="st-legend">';
+    for(const p of parts)
+      out += '<span><i class="' + p.cls + '"></i>' + p.label + ' ' + p.n + '</span>';
+    return out + '</div>';
+  }
+}
+
+async function openStats(){
+  $('serviceBg').classList.remove('open');
+  await reindex();
+  $('statsTitle').textContent = path.length
+    ? 'Статистика: ' + path[path.length-1].name : 'Статистика учёбы';
+  renderStats();
+  $('statsBg').classList.add('open');
+}
+$('openStats').onclick = openStats;
+$('statsClose').onclick = () => $('statsBg').classList.remove('open');
 
 /* ------------------------- карта связей -------------------------
    Граф узлов: вложенность рисуется тонкими линиями, связи «ведёт к» —
@@ -2093,6 +3077,38 @@ $('openPlan').onclick = async () => {
 };
 $('planClose').onclick = () => $('planBg').classList.remove('open');
 
+const SRS_FIELDS = {
+  fSrsLimit:'srsLimit', fSrsNew:'srsNewLimit', fSrsFirst:'srsFirst',
+  fSrsSecond:'srsSecond', fSrsEase:'srsEase', fSrsEasy:'srsEasyBonus',
+  fSrsHard:'srsHard', fSrsMax:'srsMaxIvl'
+};
+
+function syncSrs(){
+  for(const [el, key] of Object.entries(SRS_FIELDS))
+    $(el).value = settings[key] ?? SRS_DEFAULTS[key];
+  [...$('srsOrder').children].forEach(b =>
+    b.setAttribute('aria-pressed', String(b.dataset.o === (settings.srsOrder || 'due'))));
+}
+
+for(const [el, key] of Object.entries(SRS_FIELDS)){
+  $(el).addEventListener('change', async () => {
+    const v = $(el).value.trim();
+    settings[key] = v === '' ? SRS_DEFAULTS[key] : Number(v);
+    await repo.setSetting(key, String(settings[key]));
+    toast('Сохранено');
+  });
+}
+
+[...$('srsOrder').children].forEach(b => {
+  b.onclick = async () => {
+    settings.srsOrder = b.dataset.o;
+    await repo.setSetting('srsOrder', settings.srsOrder);
+    syncSrs();
+  };
+});
+
+$('openReview').onclick = openReview;
+
 function applyTheme(){
   if(settings.theme === 'red') document.documentElement.removeAttribute('data-theme');
   else document.documentElement.setAttribute('data-theme', settings.theme);
@@ -2126,6 +3142,7 @@ function syncSched(){
 $('service').onclick = () => {
   syncSched();
   applyTheme();
+  syncSrs();
   syncPlanUnits();
   $('fBudget').value = settings.budget || '';
   $('serviceBg').classList.add('open');
