@@ -879,7 +879,7 @@
       <button id="fillSpaTheory">Испанский: залить теорию</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 41 — теория испанского, модули 1-2</div>
+    <div class="hint sv-version" id="version">Версия 43 — исправлена защита от дублей курсов</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -2224,19 +2224,26 @@ async function seedTraining(){
    с оценкой в часах. Объём направления считается как сумма часов. */
 /* Универсальная загрузка курса: модули с источниками, внутри темы с часами. */
 async function seedCourse(title, course, unit, note){
-  const root = current();
+  const rootId = current();
   let hours = 0;
   course.forEach(([, , topics]) => topics.forEach(t => hours += t[1]));
 
-  const top = await createNode(root, {
-    name:title, kind:'category', unit:unit, volume:hours, note:note
-  });
+  /* повторное нажатие не создаёт дубль корня курса — довставляет только то, чего не хватает */
+  const existingRoots = new Map((await repo.listChildren(rootId)).map(n => [n.name, n]));
+  const topId = existingRoots.has(title)
+    ? existingRoots.get(title).id
+    : await createNode(rootId, {name:title, kind:'category', unit:unit, volume:hours, note:note});
 
   let added = 0;
+  const existingMods = new Map((await repo.listChildren(topId)).map(n => [n.name, n]));
   for(const [name, src, topics] of course){
-    const mod = await createNode(top, {name, kind:'category', note:'Источники: ' + src});
+    const modId = existingMods.has(name)
+      ? existingMods.get(name).id
+      : await createNode(topId, {name, kind:'category', note:'Источники: ' + src});
+    const existingTopics = new Set((await repo.listChildren(modId)).map(n => n.name));
     for(const [topic, hrs, what] of topics){
-      await createNode(mod, {name:topic, kind:'entry', plan:hrs, fact:0, note:what});
+      if(existingTopics.has(topic)) continue;
+      await createNode(modId, {name:topic, kind:'entry', plan:hrs, fact:0, note:what});
       added++;
     }
   }
