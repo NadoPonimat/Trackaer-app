@@ -239,6 +239,16 @@
   .pick .x{margin-left:auto;color:var(--muted);flex:none}
   .scroll{max-height:52vh;overflow-y:auto;margin-bottom:12px}
 
+  .reader-body{
+    flex:1;overflow-y:auto;padding:18px 16px calc(env(safe-area-inset-bottom) + 20px);
+    white-space:pre-wrap;
+  }
+  .reader-body.font-s{font-size:14px;line-height:1.6}
+  .reader-body.font-m{font-size:17px;line-height:1.65}
+  .reader-body.font-l{font-size:21px;line-height:1.7}
+  #readerFontS{font-size:13px}
+  #readerFontM{font-size:16px}
+  #readerFontL{font-size:19px}
   .q-today{
     background:var(--surface);border:1px solid var(--line);
     border-radius:var(--radius);padding:16px;margin-bottom:12px;
@@ -597,7 +607,7 @@
 <div class="sheet-bg" id="menuBg">
   <div class="sheet menu">
     <h2 id="menuTitle"></h2>
-    <div class="note" id="menuNote" style="display:none"></div>
+    <button id="menuReadNote" style="display:none">Читать заметку</button>
     <button id="menuNotes">Заметки по главам</button>
     <button id="menuLog">Журнал подходов</button>
     <button id="menuLinks">Связи</button>
@@ -656,6 +666,22 @@
     </div>
     <h3>История</h3>
     <div class="scroll" id="logList"></div>
+  </div>
+</div>
+
+<div class="graph-bg" id="readerBg">
+  <div class="graph-top">
+    <div>
+      <div class="graph-title" id="readerTitle"></div>
+      <div class="graph-sub" id="readerSub"></div>
+    </div>
+    <button class="more" id="readerClose" aria-label="Закрыть">✕</button>
+  </div>
+  <div class="reader-body" id="readerBody"></div>
+  <div class="graph-bottom">
+    <button id="readerFontS">А</button>
+    <button id="readerFontM">А</button>
+    <button id="readerFontL">А</button>
   </div>
 </div>
 
@@ -852,7 +878,7 @@
       <button id="fillAraTheory">Арабский: залить теорию</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 39 — теория арабского, модули 1-2</div>
+    <div class="hint sv-version" id="version">Версия 40 — полноэкранная читалка с размером шрифта</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -1115,6 +1141,7 @@ async function openDatabase(){
   settings.planUnit = s.planUnit === 'topics' ? 'topics' : 'hours';
   settings.budget = s.budget || '';
   settings.theme = s.theme || 'red';
+  settings.readerFont = s.readerFont || 'm';
   for(const key of Object.keys(SRS_DEFAULTS))
     settings[key] = s[key] !== undefined && s[key] !== ''
       ? (key === 'srsOrder' ? s[key] : Number(s[key]))
@@ -2114,8 +2141,7 @@ let menuNode = null;
 function openMenu(node){
   menuNode = node;
   $('menuTitle').textContent = node.name;
-  $('menuNote').textContent = node.note || '';
-  $('menuNote').style.display = node.note ? 'block' : 'none';
+  $('menuReadNote').style.display = node.note ? 'block' : 'none';
   /* связи только у обычных записей */
   const plainEntry = node.kind === 'entry' && node.amount == null;
   const bookNode = plainEntry && (isBooks() || node.mode === 'books');
@@ -2127,6 +2153,7 @@ function openMenu(node){
 function closeMenu(){ $('menuBg').classList.remove('open'); }
 
 $('menuCancel').onclick = closeMenu;
+$('menuReadNote').onclick = () => { closeMenu(); openReader(menuNode); };
 $('menuNotes').onclick = async () => {
   closeMenu();
   path.push({id:menuNode.id, name:menuNode.name, unit:null, mode:'notes'});
@@ -2152,7 +2179,7 @@ $('menuDelete').onclick = async () => {
 
 if(window.Capacitor && window.Capacitor.Plugins.App){
   window.Capacitor.Plugins.App.addListener('backButton', () => {
-    for(const id of ['pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg']){
+    for(const id of ['pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg']){
       if($(id).classList.contains('open')){ $(id).classList.remove('open'); return; }
     }
     if(path.length){ path.pop(); render(); return; }
@@ -3577,6 +3604,39 @@ $('seedTraining').onclick = async () => {
   btn.disabled = false;
   btn.textContent = 'Загрузить программу тренировок';
 };
+
+/* ------------------------- полноэкранная читалка ------------------ */
+
+const READER_SIZES = {s:'font-s', m:'font-m', l:'font-l'};
+
+function applyReaderFont(){
+  const size = settings.readerFont || 'm';
+  const body = $('readerBody');
+  body.classList.remove('font-s','font-m','font-l');
+  body.classList.add(READER_SIZES[size] || 'font-m');
+  ['readerFontS','readerFontM','readerFontL'].forEach(id =>
+    $(id).setAttribute('aria-pressed', 'false'));
+  const btn = {s:'readerFontS', m:'readerFontM', l:'readerFontL'}[size];
+  if(btn) $(btn).setAttribute('aria-pressed', 'true');
+}
+
+function openReader(node){
+  $('readerTitle').textContent = node.name;
+  $('readerSub').textContent = nodePath(node) || '';
+  $('readerBody').textContent = node.note || '';
+  applyReaderFont();
+  $('readerBg').classList.add('open');
+}
+function closeReader(){ $('readerBg').classList.remove('open'); }
+
+$('readerClose').onclick = closeReader;
+['readerFontS','readerFontM','readerFontL'].forEach((id, i) => {
+  $(id).onclick = async () => {
+    settings.readerFont = ['s','m','l'][i];
+    await repo.setSetting('readerFont', settings.readerFont);
+    applyReaderFont();
+  };
+});
 
 /* ------------------------------ старт --------------------------- */
 
