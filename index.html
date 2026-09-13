@@ -844,7 +844,7 @@
       <button id="fillEngTheory">Английский: залить теорию</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 35 — теория английского, модули 1-2</div>
+    <div class="hint sv-version" id="version">Версия 36 — теория вынесена по курсам</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -852,6 +852,9 @@
 <div class="toast" id="toast"></div>
 
 <script src="data.js"></script>
+<script src="theory-kz.js"></script>
+<script src="theory-sql.js"></script>
+<script src="theory-eng.js"></script>
 <script>
 /* =====================================================================
    Хранилище: на телефоне SQLite, в браузере localStorage.
@@ -2232,7 +2235,7 @@ async function fillKzTheory(){
     if(n.kind === 'entry' && !byName.has(n.name)) byName.set(n.name, n);
 
   let done = 0, missed = 0;
-  for(const [name, text] of KZ_THEORY){
+  for(const [name, text] of theorySet('KZ_THEORY')){
     const node = byName.get(name);
     if(!node){ missed++; continue; }
     await repo.update(node.id, {note: text});
@@ -2246,6 +2249,9 @@ async function fillKzTheory(){
    параметрами. Вопросы берутся из блока «ПРОВЕРЬ СЕБЯ» в заметке
    темы, поэтому отдельная база вопросов не нужна.
 ==================================================================*/
+
+/* набор теории может отсутствовать, если файл не залит */
+const theorySet = name => (typeof window[name] !== 'undefined' ? window[name] : []);
 
 const SRS_DEFAULTS = {
   srsFirst: 1,        // первый интервал, дней
@@ -3451,7 +3457,7 @@ function theoryButton(id, arr, label){
     btn.textContent = label;
   };
 }
-theoryButton('fillEngTheory', () => ENG_THEORY, 'Английский: залить теорию');
+theoryButton('fillEngTheory', () => theorySet('ENG_THEORY'), 'Английский: залить теорию');
 
 $('fillSqlTheory').onclick = async () => {
   const btn = $('fillSqlTheory');
@@ -3459,7 +3465,7 @@ $('fillSqlTheory').onclick = async () => {
   btn.disabled = true;
   btn.textContent = 'Заливаю…';
   try{
-    const r = await fillTheoryFrom(SQL_THEORY);
+    const r = await fillTheoryFrom(theorySet('SQL_THEORY'));
     $('serviceBg').classList.remove('open');
     toast('Тем с теорией: ' + r.done + (r.missed ? ', не найдено ' + r.missed : ''));
     await render();
