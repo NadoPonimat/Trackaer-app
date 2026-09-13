@@ -841,9 +841,10 @@
       <button id="seedExcel">Курс: Excel</button>
       <button id="seedSql">Курс: SQL</button>
       <button id="fillSqlTheory">SQL: залить теорию</button>
+      <button id="fillEngTheory">Английский: залить теорию</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 34 — языки, базовая структура, отставание в плане</div>
+    <div class="hint sv-version" id="version">Версия 35 — теория английского, модули 1-2</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -3433,6 +3434,24 @@ async function fillTheoryFrom(arr){
   }
   return {done, missed};
 }
+
+function theoryButton(id, arr, label){
+  $(id).onclick = async () => {
+    const btn = $(id);
+    if(btn.disabled) return;
+    btn.disabled = true;
+    btn.textContent = 'Заливаю…';
+    try{
+      const r = await fillTheoryFrom(arr());
+      $('serviceBg').classList.remove('open');
+      toast('Тем с теорией: ' + r.done + (r.missed ? ', не найдено ' + r.missed : ''));
+      await render();
+    }catch(err){ toast('Не получилось: ' + err.message); }
+    btn.disabled = false;
+    btn.textContent = label;
+  };
+}
+theoryButton('fillEngTheory', () => ENG_THEORY, 'Английский: залить теорию');
 
 $('fillSqlTheory').onclick = async () => {
   const btn = $('fillSqlTheory');
