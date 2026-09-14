@@ -900,9 +900,10 @@
       <button id="fillAraTheory">Арабский: залить теорию</button>
       <button id="fillSpaTheory">Испанский: залить теорию</button>
       <button id="fillExcelTheory">Excel: залить теорию</button>
+      <button id="seedMartial">Курс: боевая система (комбо)</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 45 — таблица связей рядом с картой</div>
+    <div class="hint sv-version" id="version">Версия 46 — курс боевой системы (структура)</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -3581,6 +3582,13 @@ $('seedScaffold').onclick = async () => {
   }catch(err){ toast('Не получилось: ' + err.message); }
   btn.disabled = false; btn.textContent = 'Создать базовую структуру';
 };
+
+courseButton('seedMartial', 'Боевая система: самбо + Кадочников + удары', () => MARTIAL_COURSE, 'часов',
+  'Комбинированная программа: боевое самбо и система Кадочникова (контроль, броски, биомеханика) ' +
+  'плюс ударная база бокса, муай-тай и китайского дуаньда цюань. Темы с пометкой ТРЕБУЕТ ПАРТНЁРА ' +
+  'нельзя отработать в одиночку — нужен партнёр, маты и, для болевых и удушающих приёмов, ' +
+  'обязательный контроль и постепенное наращивание реализма.',
+  'Курс: боевая система (комбо)');
 
 courseButton('seedExcel', 'Excel', () => EXCEL_COURSE, 'часов',
   'Академический курс: от модели данных до Power Query, DAX и автоматизации.',
