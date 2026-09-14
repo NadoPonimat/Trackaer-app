@@ -316,6 +316,24 @@
   .st-colnum{font-size:9px;color:var(--muted);text-align:center;min-height:11px}
   .st-bar{background:var(--accent);border-radius:3px 3px 0 0;min-height:2px}
   .st-colday{font-size:9px;color:var(--muted);text-align:center;min-height:11px}
+  .table-body{flex:1;overflow:auto;padding:10px 12px calc(env(safe-area-inset-bottom) + 16px)}
+  .rel-table{width:100%;border-collapse:collapse;font-size:13px}
+  .rel-table th{
+    text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);
+    color:var(--muted);font-weight:600;position:sticky;top:0;background:var(--bg);
+    white-space:nowrap;
+  }
+  .rel-table td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  .rel-table tr:active{background:var(--surface)}
+  .rel-name{font-weight:600;color:var(--text)}
+  .rel-path{font-size:11px;color:var(--muted);margin-top:1px}
+  .rel-badge{
+    display:inline-block;font-size:10px;padding:1px 6px;border-radius:5px;
+    border:1px solid var(--line);color:var(--muted);margin-right:3px;white-space:nowrap;
+  }
+  .rel-badge.cat{color:var(--accent);border-color:var(--accent)}
+  .rel-badge.link{color:var(--accent);border-color:var(--accent)}
+  .rel-empty-cell{color:var(--muted)}
   .rv-body{flex:1;overflow-y:auto;padding:18px 16px 8px}
   .rv-path{font-size:12px;color:var(--muted);margin-bottom:4px}
   .rv-name{font-size:15px;color:var(--muted);margin-bottom:16px}
@@ -739,13 +757,17 @@
     <button class="more" id="graphClose" aria-label="Закрыть">✕</button>
   </div>
   <canvas id="graphCanvas"></canvas>
-  <div class="graph-bottom">
+  <div class="table-body" id="tableBody" style="display:none"></div>
+  <div class="graph-bottom" id="graphControls">
     <button id="graphTree" aria-pressed="true">Вложенность</button>
     <button id="graphLinks" aria-pressed="true">Связи</button>
     <button id="graphZoomOut" aria-label="Отдалить">−</button>
     <button id="graphFit">Уместить</button>
     <button id="graphZoomIn" aria-label="Приблизить">+</button>
     <button id="graphReset">Пересобрать</button>
+  </div>
+  <div class="graph-bottom">
+    <button id="graphAsTable">Показать таблицей</button>
   </div>
   <div class="graph-card" id="graphCard" style="display:none">
     <div class="graph-card-name" id="graphCardName"></div>
@@ -880,7 +902,7 @@
       <button id="fillExcelTheory">Excel: залить теорию</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 44 — теория Excel, модуль 1</div>
+    <div class="hint sv-version" id="version">Версия 45 — таблица связей рядом с картой</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -3161,9 +3183,63 @@ function openGraphScreen(){
     buildGraph();
     selectGraphNode(null);
     drawGraph();
+    setTableMode(false);
   });
 }
 function closeGraphScreen(){ $('graphBg').classList.remove('open'); }
+
+/* ---- та же карта связей, показанная строками таблицы ---- */
+let tableMode = false;
+
+function renderRelTable(){
+  const rows = graph.nodes.slice().sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+  const linkCount = new Map();
+  for(const e of graph.edges){
+    if(e.kind !== 'link') continue;
+    linkCount.set(e.a.id, (linkCount.get(e.a.id) || 0) + 1);
+    linkCount.set(e.b.id, (linkCount.get(e.b.id) || 0) + 1);
+  }
+
+  let html = '<table class="rel-table"><thead><tr>' +
+    '<th>Название</th><th>Тип</th><th>Связей</th><th>Путь</th>' +
+    '</tr></thead><tbody>';
+
+  for(const p of rows){
+    const node = index.byId.get(p.id);
+    const kindLabel = p.kind === 'category'
+      ? '<span class="rel-badge cat">категория</span>'
+      : (p.money ? 'финансы' : 'запись');
+    const links = linkCount.get(p.id) || 0;
+    const path = node ? (nodePath(node) || '—') : '—';
+    html += '<tr data-id="' + p.id + '">' +
+      '<td><div class="rel-name">' + p.name + '</div></td>' +
+      '<td>' + kindLabel + '</td>' +
+      '<td>' + (links ? '<span class="rel-badge link">' + links + '</span>' : '<span class="rel-empty-cell">—</span>') + '</td>' +
+      '<td class="rel-path">' + path + '</td>' +
+      '</tr>';
+  }
+  html += '</tbody></table>';
+  if(!rows.length) html = '<div class="empty">Здесь пока пусто.</div>';
+
+  $('tableBody').innerHTML = html;
+  [...$('tableBody').querySelectorAll('tr[data-id]')].forEach(tr => {
+    tr.onclick = () => {
+      const p = graph.nodes.find(n => n.id === Number(tr.dataset.id));
+      if(p){ setTableMode(false); selectGraphNode(p); }
+    };
+  });
+}
+
+function setTableMode(on){
+  tableMode = on;
+  $('tableBody').style.display = on ? 'block' : 'none';
+  $('graphCanvas').style.display = on ? 'none' : 'block';
+  $('graphControls').style.display = on ? 'none' : 'flex';
+  $('graphAsTable').textContent = on ? 'Показать картой' : 'Показать таблицей';
+  if(on) renderRelTable();
+}
+
+$('graphAsTable').onclick = () => setTableMode(!tableMode);
 
 $('openGraph').onclick = openGraphScreen;
 $('graphClose').onclick = closeGraphScreen;
@@ -3178,7 +3254,7 @@ $('graphLinks').onclick = () => {
   $('graphLinks').setAttribute('aria-pressed', String(graph.showLinks));
   drawGraph();
 };
-$('graphReset').onclick = () => { buildGraph(); drawGraph(); };
+$('graphReset').onclick = () => { buildGraph(); drawGraph(); if(tableMode) renderRelTable(); };
 
 function zoomStep(factor){
   const w = graphCanvas.width / devicePixelRatio, h = graphCanvas.height / devicePixelRatio;
