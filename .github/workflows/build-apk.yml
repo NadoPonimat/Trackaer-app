@@ -14,6 +14,8 @@ jobs:
       - uses: actions/setup-java@v4
         with: {distribution: temurin, java-version: '21'}
       - uses: android-actions/setup-android@v3
+      with:
+          packages: platform-tools
       - run: mkdir -p www && cp index.html *.js www/
       - run: mkdir -p assets && cp icon.png assets/icon.png && cp icon-foreground.png assets/icon-foreground.png && cp icon-background.png assets/icon-background.png && cp splash.png assets/splash.png
       - run: npm install
