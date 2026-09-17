@@ -334,6 +334,38 @@
   .rel-badge.cat{color:var(--accent);border-color:var(--accent)}
   .rel-badge.link{color:var(--accent);border-color:var(--accent)}
   .rel-empty-cell{color:var(--muted)}
+
+  select{
+    width:100%;padding:13px 12px;background:var(--bg);color:var(--text);
+    border:1px solid var(--line);border-radius:var(--radius);font:inherit;
+  }
+  .pr-body{flex:1;overflow-y:auto;padding:16px 12px calc(env(safe-area-inset-bottom) + 90px)}
+  .pr-sub-row{
+    display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:10px;
+  }
+  .pr-sub-row .field{flex:1;margin-bottom:0}
+  .pr-sub-row .field + .field{margin-top:8px}
+  .pr-sub-remove{
+    background:none;border:none;color:var(--muted);font-size:20px;line-height:1;
+    padding:4px 2px;cursor:pointer;flex:none;
+  }
+  .pr-add-row{
+    width:100%;padding:11px;margin-bottom:14px;border-radius:var(--radius);
+    background:var(--bg);border:1px dashed var(--line);color:var(--muted);font:inherit;cursor:pointer;
+  }
+  .pr-verdict{font-size:12px;color:var(--accent);margin-top:2px}
+  .people-graph-body{flex:1;position:relative;overflow:hidden;touch-action:none}
+  .people-graph-body canvas{width:100%;height:100%;display:block}
+  .pg-panel{
+    position:absolute;left:12px;right:12px;bottom:12px;
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px;max-height:45vh;overflow-y:auto;display:none;
+  }
+  .pg-panel.open{display:block}
+  .pg-panel h4{margin:0 0 8px;font-size:15px}
+  .pg-panel .pg-conn{font-size:13px;color:var(--muted);margin-bottom:6px}
+  .pg-panel .pg-conn b{color:var(--text);font-weight:600}
   .rv-body{flex:1;overflow-y:auto;padding:18px 16px 8px}
   .rv-path{font-size:12px;color:var(--muted);margin-bottom:4px}
   .rv-name{font-size:15px;color:var(--muted);margin-bottom:16px}
@@ -703,6 +735,84 @@
   </div>
 </div>
 
+<div class="graph-bg" id="peopleBg">
+  <div class="graph-top">
+    <div>
+      <div class="graph-title">Люди</div>
+      <div class="graph-sub" id="peopleCount"></div>
+    </div>
+    <button class="more" id="peopleGraphOpen" aria-label="Карта связей людей">🕸</button>
+    <button class="more" id="peopleClose" aria-label="Закрыть">✕</button>
+  </div>
+  <div class="pr-body" id="peopleList"></div>
+  <button class="fab" id="peopleAdd">+ Человек</button>
+</div>
+
+<div class="graph-bg" id="personEditBg">
+  <div class="graph-top">
+    <div>
+      <div class="graph-title" id="personEditTitle">Новый человек</div>
+      <div class="graph-sub">Анкета</div>
+    </div>
+    <button class="more" id="personDelete" aria-label="Удалить" style="display:none">🗑</button>
+    <button class="more" id="personEditClose" aria-label="Закрыть">✕</button>
+  </div>
+  <div class="pr-body" id="personEditBody">
+    <div class="field">
+      <label>Имя</label>
+      <input id="pName" placeholder="Как зовут">
+    </div>
+    <div class="field">
+      <label>Телефон</label>
+      <input id="pPhone" placeholder="+7 ..." inputmode="tel">
+    </div>
+    <div class="field">
+      <label>Место работы / учёбы</label>
+      <input id="pWork" placeholder="Где работает или учится">
+    </div>
+    <div class="field">
+      <label>График работы / учёбы</label>
+      <input id="pSchedule" placeholder="Например: будни 9–18">
+    </div>
+    <div class="field">
+      <label>Моё отношение к человеку</label>
+      <select id="pAttitude"></select>
+    </div>
+    <div class="field">
+      <label>Заметка об отношении (необязательно)</label>
+      <textarea id="pAttitudeNote" rows="2" placeholder="Свободный текст"></textarea>
+    </div>
+
+    <h3>Увлечения и вкусы</h3>
+    <div id="pHobbies"></div>
+    <button class="pr-add-row" id="pHobbyAdd">+ добавить увлечение</button>
+
+    <h3>Поступки в мой адрес</h3>
+    <div id="pActions"></div>
+    <button class="pr-add-row" id="pActionAdd">+ добавить поступок</button>
+
+    <div class="field">
+      <label>Прочие заметки</label>
+      <textarea id="pNotes" rows="3" placeholder="Что угодно ещё"></textarea>
+    </div>
+  </div>
+  <button class="fab" id="personSave">Сохранить</button>
+</div>
+
+<div class="graph-bg" id="peopleGraphBg">
+  <div class="graph-top">
+    <div>
+      <div class="graph-title">Карта связей: люди</div>
+      <div class="graph-sub" id="peopleGraphSub"></div>
+    </div>
+    <button class="more" id="peopleGraphClose" aria-label="Закрыть">✕</button>
+  </div>
+  <div class="people-graph-body">
+    <canvas id="peopleGraphCanvas"></canvas>
+    <div class="pg-panel" id="pgPanel"></div>
+  </div>
+</div>
+
 <div class="graph-bg" id="quitBg">
   <div class="graph-top">
     <div>
@@ -797,6 +907,7 @@
       <button id="openReview">Повторение</button>
       <button id="openStats">Статистика учёбы</button>
       <button id="openGraph">Карта связей</button>
+      <button id="openPeople">Люди</button>
     </div>
 
     <button class="sv-head" data-sec="secTheme">Оформление</button>
@@ -904,7 +1015,7 @@
       <button id="seedMartial">Курс: боевая система (комбо)</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 47 — теория боевой системы, модуль 1</div>
+    <div class="hint sv-version" id="version">Версия 48 — раздел «Люди» с анкетами и картой связей</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -1167,6 +1278,7 @@ async function openDatabase(){
   await repo.init();
   const s = await repo.getSettings();
   settings.schedule = s.schedule === 'free' ? 'free' : 'days';
+  await loadPeople();
   settings.planUnit = s.planUnit === 'topics' ? 'topics' : 'hours';
   settings.budget = s.budget || '';
   settings.theme = s.theme || 'red';
@@ -2208,7 +2320,7 @@ $('menuDelete').onclick = async () => {
 
 if(window.Capacitor && window.Capacitor.Plugins.App){
   window.Capacitor.Plugins.App.addListener('backButton', () => {
-    for(const id of ['pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg']){
+    for(const id of ['pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg']){
       if($(id).classList.contains('open')){ $(id).classList.remove('open'); return; }
     }
     if(path.length){ path.pop(); render(); return; }
@@ -3243,6 +3355,377 @@ function setTableMode(on){
 }
 
 $('graphAsTable').onclick = () => setTableMode(!tableMode);
+
+/* ===================== ЛЮДИ ===================== */
+
+const VERDICTS = ['ненавидит','не любит','скорее нет чем да','нейтрально',
+                   'скорее да чем нет','любит','обожает'];
+
+let PEOPLE = [];
+let peopleSeq = 0;
+let editingPersonId = null;
+
+async function loadPeople(){
+  const s = await repo.getSettings();
+  try{ PEOPLE = s.people ? JSON.parse(s.people) : []; }
+  catch(e){ PEOPLE = []; }
+  peopleSeq = PEOPLE.reduce((m, p) => Math.max(m, p.id), 0);
+}
+async function savePeople(){
+  await repo.setSetting('people', JSON.stringify(PEOPLE));
+}
+
+function verdictSelectHtml(id, value, extraClass){
+  const opts = VERDICTS.map(v =>
+    '<option' + (v === value ? ' selected' : '') + '>' + v + '</option>').join('');
+  return '<select id="' + id + '" class="' + (extraClass||'') + '">' + opts + '</select>';
+}
+
+/* ---------- список людей ---------- */
+
+function renderPeopleList(){
+  const wrap = $('peopleList');
+  $('peopleCount').textContent = PEOPLE.length
+    ? PEOPLE.length + (PEOPLE.length === 1 ? ' человек' : ' человек в списке')
+    : '';
+  if(!PEOPLE.length){
+    wrap.innerHTML = '<div class="empty">Пока никого не добавлено.</div>';
+    return;
+  }
+  const sorted = PEOPLE.slice().sort((a,b) => a.name.localeCompare(b.name, 'ru'));
+  wrap.innerHTML = sorted.map(p => {
+    const bits = [];
+    if(p.work) bits.push(p.work);
+    if(p.attitude) bits.push(p.attitude);
+    return '<div class="row" data-id="' + p.id + '">' +
+      '<div class="body">' +
+        '<span class="name">' + (p.name || '(без имени)') + '</span>' +
+        (bits.length ? '<span class="meta">' + bits.join(' · ') + '</span>' : '') +
+      '</div>' +
+      '<span class="chev">›</span>' +
+    '</div>';
+  }).join('');
+  [...wrap.querySelectorAll('.row[data-id]')].forEach(row => {
+    row.onclick = () => openPersonEditor(Number(row.dataset.id));
+  });
+}
+
+function openPeopleScreen(){
+  $('serviceBg').classList.remove('open');
+  $('peopleBg').classList.add('open');
+  renderPeopleList();
+}
+function closePeopleScreen(){ $('peopleBg').classList.remove('open'); }
+
+$('openPeople').onclick = openPeopleScreen;
+$('peopleClose').onclick = closePeopleScreen;
+$('peopleAdd').onclick = () => openPersonEditor(null);
+
+/* ---------- редактор анкеты ---------- */
+
+let draftHobbies = [];
+let draftActions = [];
+
+function renderHobbiesEditor(){
+  $('pHobbies').innerHTML = draftHobbies.map((h, i) =>
+    '<div class="pr-sub-row" data-i="' + i + '">' +
+      '<div style="flex:1">' +
+        '<div class="field"><input class="hb-name" placeholder="Что именно (например: капучино с корицей)" value="' +
+          (h.name || '').replace(/"/g,'&quot;') + '"></div>' +
+        '<div class="field">' + verdictSelectHtml('', h.verdict, 'hb-verdict') + '</div>' +
+      '</div>' +
+      '<button class="pr-sub-remove" data-remove-hobby="' + i + '">✕</button>' +
+    '</div>'
+  ).join('');
+  [...$('pHobbies').querySelectorAll('[data-remove-hobby]')].forEach(btn => {
+    btn.onclick = () => { draftHobbies.splice(Number(btn.dataset.removeHobby), 1); renderHobbiesEditor(); };
+  });
+}
+function collectHobbiesFromDom(){
+  const rows = [...$('pHobbies').querySelectorAll('.pr-sub-row')];
+  draftHobbies = rows.map(row => ({
+    name: row.querySelector('.hb-name').value.trim(),
+    verdict: row.querySelector('.hb-verdict').value
+  })).filter(h => h.name);
+}
+$('pHobbyAdd').onclick = () => {
+  collectHobbiesFromDom();
+  draftHobbies.push({name:'', verdict:'нейтрально'});
+  renderHobbiesEditor();
+};
+
+function renderActionsEditor(){
+  $('pActions').innerHTML = draftActions.map((a, i) =>
+    '<div class="pr-sub-row" data-i="' + i + '">' +
+      '<div style="flex:1">' +
+        '<div class="field"><input class="ac-date" type="date" value="' + (a.date || '') + '"></div>' +
+        '<div class="field"><input class="ac-desc" placeholder="Что сделал(а)" value="' +
+          (a.desc || '').replace(/"/g,'&quot;') + '"></div>' +
+        '<div class="field">' + verdictSelectHtml('', a.rating, 'ac-rating') + '</div>' +
+      '</div>' +
+      '<button class="pr-sub-remove" data-remove-action="' + i + '">✕</button>' +
+    '</div>'
+  ).join('');
+  [...$('pActions').querySelectorAll('[data-remove-action]')].forEach(btn => {
+    btn.onclick = () => { draftActions.splice(Number(btn.dataset.removeAction), 1); renderActionsEditor(); };
+  });
+}
+function collectActionsFromDom(){
+  const rows = [...$('pActions').querySelectorAll('.pr-sub-row')];
+  draftActions = rows.map(row => ({
+    date: row.querySelector('.ac-date').value,
+    desc: row.querySelector('.ac-desc').value.trim(),
+    rating: row.querySelector('.ac-rating').value
+  })).filter(a => a.desc);
+}
+$('pActionAdd').onclick = () => {
+  collectActionsFromDom();
+  draftActions.push({date:'', desc:'', rating:'нейтрально'});
+  renderActionsEditor();
+};
+
+function openPersonEditor(id){
+  editingPersonId = id;
+  const p = id ? PEOPLE.find(x => x.id === id) : null;
+  $('personEditTitle').textContent = p ? p.name : 'Новый человек';
+  $('personDelete').style.display = p ? 'inline-block' : 'none';
+  $('pName').value = p ? p.name || '' : '';
+  $('pPhone').value = p ? p.phone || '' : '';
+  $('pWork').value = p ? p.work || '' : '';
+  $('pSchedule').value = p ? p.schedule || '' : '';
+  $('pAttitude').innerHTML = VERDICTS.map(v =>
+    '<option' + (p && v === p.attitude ? ' selected' : (!p && v==='нейтрально' ? ' selected' : '')) + '>' + v + '</option>').join('');
+  $('pAttitudeNote').value = p ? p.attitudeNote || '' : '';
+  $('pNotes').value = p ? p.notes || '' : '';
+  draftHobbies = p && p.hobbies ? p.hobbies.slice() : [];
+  draftActions = p && p.actions ? p.actions.slice() : [];
+  renderHobbiesEditor();
+  renderActionsEditor();
+  $('peopleBg').classList.remove('open');
+  $('personEditBg').classList.add('open');
+}
+function closePersonEditor(){ $('personEditBg').classList.remove('open'); $('peopleBg').classList.add('open'); renderPeopleList(); }
+
+$('personEditClose').onclick = closePersonEditor;
+
+$('personSave').onclick = async () => {
+  const name = $('pName').value.trim();
+  if(!name){ $('pName').focus(); return; }
+  collectHobbiesFromDom();
+  collectActionsFromDom();
+  const data = {
+    name,
+    phone: $('pPhone').value.trim(),
+    work: $('pWork').value.trim(),
+    schedule: $('pSchedule').value.trim(),
+    attitude: $('pAttitude').value,
+    attitudeNote: $('pAttitudeNote').value.trim(),
+    notes: $('pNotes').value.trim(),
+    hobbies: draftHobbies,
+    actions: draftActions
+  };
+  if(editingPersonId){
+    const p = PEOPLE.find(x => x.id === editingPersonId);
+    Object.assign(p, data);
+  } else {
+    PEOPLE.push({id: ++peopleSeq, ...data});
+  }
+  await savePeople();
+  closePersonEditor();
+};
+
+$('personDelete').onclick = async () => {
+  if(!editingPersonId) return;
+  PEOPLE = PEOPLE.filter(x => x.id !== editingPersonId);
+  await savePeople();
+  closePersonEditor();
+};
+
+/* ---------- карта связей людей ---------- */
+
+function peopleSharedItems(a, b){
+  const shared = [];
+  const norm = s => (s || '').trim().toLowerCase();
+  const aHobbies = new Map((a.hobbies||[]).map(h => [norm(h.name), h.name]));
+  (b.hobbies||[]).forEach(h => {
+    const k = norm(h.name);
+    if(k && aHobbies.has(k)) shared.push('увлечение: ' + aHobbies.get(k));
+  });
+  if(a.work && b.work && norm(a.work) === norm(b.work)){
+    shared.push('место работы/учёбы: ' + a.work);
+  }
+  return shared;
+}
+
+let pg = {nodes:[], edges:[], w:0, h:0, ox:0, oy:0, scale:1, selected:null};
+
+function buildPeopleGraph(){
+  pg.nodes = PEOPLE.map(p => ({
+    id: p.id, name: p.name, x: Math.random()*400, y: Math.random()*400, vx:0, vy:0
+  }));
+  pg.edges = [];
+  for(let i=0;i<PEOPLE.length;i++){
+    for(let j=i+1;j<PEOPLE.length;j++){
+      const shared = peopleSharedItems(PEOPLE[i], PEOPLE[j]);
+      shared.forEach((label, k) => {
+        pg.edges.push({a: PEOPLE[i].id, b: PEOPLE[j].id, label, offset: k});
+      });
+    }
+  }
+  /* простая физика: отталкивание всех от всех, притяжение по рёбрам */
+  for(let step=0; step<180; step++){
+    for(let i=0;i<pg.nodes.length;i++){
+      for(let j=i+1;j<pg.nodes.length;j++){
+        const n1=pg.nodes[i], n2=pg.nodes[j];
+        let dx=n1.x-n2.x, dy=n1.y-n2.y;
+        let dist=Math.sqrt(dx*dx+dy*dy)||0.01;
+        const force = 2200/(dist*dist);
+        dx/=dist; dy/=dist;
+        n1.vx += dx*force; n1.vy += dy*force;
+        n2.vx -= dx*force; n2.vy -= dy*force;
+      }
+    }
+    const edgeCount = new Map();
+    pg.edges.forEach(e => edgeCount.set(e.a+'-'+e.b, (edgeCount.get(e.a+'-'+e.b)||0)+1));
+    pg.edges.forEach(e => {
+      const n1 = pg.nodes.find(n=>n.id===e.a), n2 = pg.nodes.find(n=>n.id===e.b);
+      if(!n1||!n2) return;
+      let dx=n2.x-n1.x, dy=n2.y-n1.y;
+      const dist=Math.sqrt(dx*dx+dy*dy)||0.01;
+      const target = 110;
+      const force = (dist-target)*0.01;
+      dx/=dist; dy/=dist;
+      n1.vx += dx*force; n1.vy += dy*force;
+      n2.vx -= dx*force; n2.vy -= dy*force;
+    });
+    pg.nodes.forEach(n => {
+      n.x += n.vx; n.y += n.vy;
+      n.vx *= 0.8; n.vy *= 0.8;
+    });
+  }
+}
+
+function drawPeopleGraph(){
+  const canvas = $('peopleGraphCanvas');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width*dpr; canvas.height = rect.height*dpr;
+  canvas.style.width = rect.width+'px'; canvas.style.height = rect.height+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,rect.width,rect.height);
+
+  if(!pg.nodes.length){
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted');
+    ctx.font = '14px sans-serif';
+    ctx.fillText('Добавьте хотя бы двух людей, чтобы увидеть связи.', 16, 30);
+    return;
+  }
+
+  const xs = pg.nodes.map(n=>n.x), ys = pg.nodes.map(n=>n.y);
+  const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
+  const pad = 50;
+  const scaleX = (rect.width-pad*2)/Math.max(1,maxX-minX);
+  const scaleY = (rect.height-pad*2)/Math.max(1,maxY-minY);
+  const scale = Math.min(scaleX, scaleY, 2.2);
+  const ox = rect.width/2 - (minX+maxX)/2*scale;
+  const oy = rect.height/2 - (minY+maxY)/2*scale;
+  pg.scale = scale; pg.ox = ox; pg.oy = oy;
+
+  const css = getComputedStyle(document.documentElement);
+  const lineColor = css.getPropertyValue('--accent').trim() || '#e02826';
+  const textColor = css.getPropertyValue('--text').trim() || '#fff';
+  const dimColor = css.getPropertyValue('--muted').trim() || '#888';
+
+  /* рёбра: параллельные линии со смещением, если несколько общих пунктов */
+  const pairOffsets = new Map();
+  pg.edges.forEach(e => {
+    const n1 = pg.nodes.find(n=>n.id===e.a), n2 = pg.nodes.find(n=>n.id===e.b);
+    if(!n1||!n2) return;
+    const key = e.a+'-'+e.b;
+    const idx = pairOffsets.get(key) || 0;
+    pairOffsets.set(key, idx+1);
+    const x1=n1.x*scale+ox, y1=n1.y*scale+oy, x2=n2.x*scale+ox, y2=n2.y*scale+oy;
+    const dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy)||1;
+    const nx=-dy/len, ny=dx/len;
+    const spread = (idx - 1)*6;
+    ctx.strokeStyle = lineColor;
+    ctx.globalAlpha = 0.55;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(x1+nx*spread, y1+ny*spread);
+    ctx.lineTo(x2+nx*spread, y2+ny*spread);
+    ctx.stroke();
+  });
+  ctx.globalAlpha = 1;
+
+  pg.nodes.forEach(n => {
+    const x=n.x*scale+ox, y=n.y*scale+oy;
+    const isSel = pg.selected === n.id;
+    ctx.beginPath();
+    ctx.arc(x,y, isSel ? 9 : 7, 0, Math.PI*2);
+    ctx.fillStyle = isSel ? lineColor : dimColor;
+    ctx.fill();
+    ctx.fillStyle = textColor;
+    ctx.font = (isSel?'600 ':'') + '13px sans-serif';
+    ctx.fillText(n.name, x+12, y+4);
+  });
+}
+
+function findPeopleNodeAt(clientX, clientY){
+  const canvas = $('peopleGraphCanvas');
+  const rect = canvas.getBoundingClientRect();
+  const x = clientX-rect.left, y = clientY-rect.top;
+  for(const n of pg.nodes){
+    const nx = n.x*pg.scale+pg.ox, ny = n.y*pg.scale+pg.oy;
+    if(Math.hypot(nx-x, ny-y) < 16) return n;
+  }
+  return null;
+}
+
+function showPeopleNodePanel(personId){
+  pg.selected = personId;
+  const person = PEOPLE.find(p => p.id === personId);
+  const panel = $('pgPanel');
+  if(!person){ panel.classList.remove('open'); return; }
+  const lines = [];
+  PEOPLE.forEach(other => {
+    if(other.id === personId) return;
+    const shared = peopleSharedItems(person, other);
+    if(shared.length){
+      lines.push('<div class="pg-conn"><b>' + other.name + '</b> — ' + shared.join(', ') + '</div>');
+    }
+  });
+  panel.innerHTML = '<h4>' + person.name + '</h4>' +
+    (lines.length ? lines.join('') : '<div class="pg-conn">Общих пунктов с остальными пока нет.</div>');
+  panel.classList.add('open');
+  drawPeopleGraph();
+}
+
+function openPeopleGraphScreen(){
+  $('peopleBg').classList.remove('open');
+  $('peopleGraphBg').classList.add('open');
+  $('pgPanel').classList.remove('open');
+  pg.selected = null;
+  buildPeopleGraph();
+  const totalEdges = pg.edges.length;
+  $('peopleGraphSub').textContent = PEOPLE.length + ' человек · ' + totalEdges +
+    (totalEdges === 1 ? ' связь' : ' связей');
+  requestAnimationFrame(drawPeopleGraph);
+}
+function closePeopleGraphScreen(){
+  $('peopleGraphBg').classList.remove('open');
+  $('peopleBg').classList.add('open');
+}
+$('peopleGraphOpen').onclick = openPeopleGraphScreen;
+$('peopleGraphClose').onclick = closePeopleGraphScreen;
+$('peopleGraphCanvas').addEventListener('click', (ev) => {
+  const n = findPeopleNodeAt(ev.clientX, ev.clientY);
+  if(n) showPeopleNodePanel(n.id);
+  else { pg.selected=null; $('pgPanel').classList.remove('open'); drawPeopleGraph(); }
+});
+
+/* ===================== /ЛЮДИ ===================== */
 
 $('openGraph').onclick = openGraphScreen;
 $('graphClose').onclick = closeGraphScreen;
