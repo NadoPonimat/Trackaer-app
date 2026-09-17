@@ -366,6 +366,19 @@
   .pg-panel h4{margin:0 0 8px;font-size:15px}
   .pg-panel .pg-conn{font-size:13px;color:var(--muted);margin-bottom:6px}
   .pg-panel .pg-conn b{color:var(--text);font-weight:600}
+
+  #bookReaderBody .fb2-section{margin-bottom:18px}
+  #bookReaderBody .fb2-title{margin:0 0 10px;font-size:1.3em;text-align:center}
+  #bookReaderBody .fb2-subtitle{margin:14px 0 6px;color:var(--muted)}
+  #bookReaderBody .fb2-poem{margin:14px 0;font-style:italic}
+  #bookReaderBody .fb2-stanza{margin:0 0 10px}
+  #bookReaderBody .fb2-author{text-align:right;color:var(--muted);font-size:0.9em}
+  #bookReaderBody .fb2-epigraph{margin:14px 0;padding-left:14px;border-left:2px solid var(--line);color:var(--muted)}
+  #bookReaderBody img{max-width:100%;height:auto;display:block;margin:10px auto}
+  #bookReaderBody p{margin:0 0 12px}
+  #bookPdfWrap{display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:10px}
+  #bookPdfCanvas{max-width:100%}
+
   .rv-body{flex:1;overflow-y:auto;padding:18px 16px 8px}
   .rv-path{font-size:12px;color:var(--muted);margin-bottom:4px}
   .rv-name{font-size:15px;color:var(--muted);margin-bottom:16px}
@@ -813,6 +826,46 @@
   </div>
 </div>
 
+<div class="graph-bg" id="booksBg">
+  <div class="graph-top">
+    <div>
+      <div class="graph-title">Книги (файлы)</div>
+      <div class="graph-sub" id="booksCount"></div>
+    </div>
+    <button class="more" id="booksClose" aria-label="Закрыть">✕</button>
+  </div>
+  <div class="pr-body" id="booksList"></div>
+  <input type="file" id="bookFileInput" accept=".fb2,.epub,.pdf,application/epub+zip,application/pdf" style="display:none">
+  <button class="fab" id="booksAdd">+ Добавить книгу</button>
+</div>
+
+<div class="graph-bg" id="bookReaderBg">
+  <div class="graph-top">
+    <div>
+      <div class="graph-title" id="bookReaderTitle"></div>
+      <div class="graph-sub" id="bookReaderSub"></div>
+    </div>
+    <button class="more" id="bookDelete" aria-label="Удалить">🗑</button>
+    <button class="more" id="bookReaderClose" aria-label="Закрыть">✕</button>
+  </div>
+  <div class="reader-body" id="bookReaderBody" style="display:none"></div>
+  <div class="people-graph-body" id="bookPdfWrap" style="display:none">
+    <canvas id="bookPdfCanvas"></canvas>
+  </div>
+  <div class="graph-bottom" id="bookTextControls" style="display:none">
+    <button id="bookFontS">А</button>
+    <button id="bookFontM">А</button>
+    <button id="bookFontL">А</button>
+    <button id="bookChapPrev">‹ Глава</button>
+    <button id="bookChapNext">Глава ›</button>
+  </div>
+  <div class="graph-bottom" id="bookPdfControls" style="display:none">
+    <button id="bookPagePrev">‹ Стр.</button>
+    <button id="bookPageInfo" disabled></button>
+    <button id="bookPageNext">Стр. ›</button>
+  </div>
+</div>
+
 <div class="graph-bg" id="quitBg">
   <div class="graph-top">
     <div>
@@ -908,6 +961,7 @@
       <button id="openStats">Статистика учёбы</button>
       <button id="openGraph">Карта связей</button>
       <button id="openPeople">Люди</button>
+      <button id="openBooks">Книги</button>
     </div>
 
     <button class="sv-head" data-sec="secTheme">Оформление</button>
@@ -1015,7 +1069,7 @@
       <button id="seedMartial">Курс: боевая система (комбо)</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 48 — раздел «Люди» с анкетами и картой связей</div>
+    <div class="hint sv-version" id="version">Версия 49 — читалка книг: FB2, EPUB, PDF</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -1030,6 +1084,8 @@
 <script src="theory-spa.js"></script>
 <script src="theory-excel.js"></script>
 <script src="theory-martial.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.2/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
 /* =====================================================================
    Хранилище: на телефоне SQLite, в браузере localStorage.
@@ -1279,6 +1335,7 @@ async function openDatabase(){
   const s = await repo.getSettings();
   settings.schedule = s.schedule === 'free' ? 'free' : 'days';
   await loadPeople();
+  await loadBooksIndex();
   settings.planUnit = s.planUnit === 'topics' ? 'topics' : 'hours';
   settings.budget = s.budget || '';
   settings.theme = s.theme || 'red';
@@ -2320,7 +2377,7 @@ $('menuDelete').onclick = async () => {
 
 if(window.Capacitor && window.Capacitor.Plugins.App){
   window.Capacitor.Plugins.App.addListener('backButton', () => {
-    for(const id of ['pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg']){
+    for(const id of ['pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookReaderBg']){
       if($(id).classList.contains('open')){ $(id).classList.remove('open'); return; }
     }
     if(path.length){ path.pop(); render(); return; }
@@ -3726,6 +3783,381 @@ $('peopleGraphCanvas').addEventListener('click', (ev) => {
 });
 
 /* ===================== /ЛЮДИ ===================== */
+
+/* ===================== КНИГИ (FB2 / EPUB / PDF) ===================== */
+
+let BOOKS = [];
+let booksSeq = 0;
+let currentBook = null;   /* {id, format, ...распарсенное состояние} */
+
+async function loadBooksIndex(){
+  const s = await repo.getSettings();
+  try{ BOOKS = s.books_index ? JSON.parse(s.books_index) : []; }
+  catch(e){ BOOKS = []; }
+  booksSeq = BOOKS.reduce((m,b) => Math.max(m,b.id), 0);
+}
+async function saveBooksIndex(){ await repo.setSetting('books_index', JSON.stringify(BOOKS)); }
+
+function detectFormat(filename){
+  const ext = filename.toLowerCase().split('.').pop();
+  if(ext === 'fb2') return 'fb2';
+  if(ext === 'epub') return 'epub';
+  if(ext === 'pdf') return 'pdf';
+  return null;
+}
+
+function renderBooksList(){
+  $('booksCount').textContent = BOOKS.length ? BOOKS.length + ' книг(и) загружено' : '';
+  if(!BOOKS.length){
+    $('booksList').innerHTML = '<div class="empty">Пока ни одной книги не загружено.<br>Поддерживаются FB2, EPUB, PDF.</div>';
+    return;
+  }
+  const sorted = BOOKS.slice().sort((a,b) => (b.addedAt||0) - (a.addedAt||0));
+  $('booksList').innerHTML = sorted.map(b => {
+    const meta = [b.format.toUpperCase()];
+    if(b.author) meta.push(b.author);
+    return '<div class="row" data-id="' + b.id + '">' +
+      '<div class="body">' +
+        '<span class="name">' + (b.title || b.filename) + '</span>' +
+        '<span class="meta">' + meta.join(' · ') + '</span>' +
+      '</div>' +
+      '<span class="chev">›</span>' +
+    '</div>';
+  }).join('');
+  [...$('booksList').querySelectorAll('.row[data-id]')].forEach(row => {
+    row.onclick = () => openBookReader(Number(row.dataset.id));
+  });
+}
+
+function openBooksScreen(){
+  $('serviceBg').classList.remove('open');
+  $('booksBg').classList.add('open');
+  renderBooksList();
+}
+$('openBooks').onclick = openBooksScreen;
+$('booksClose').onclick = () => $('booksBg').classList.remove('open');
+$('booksAdd').onclick = () => $('bookFileInput').click();
+
+$('bookFileInput').onchange = async (ev) => {
+  const file = ev.target.files[0];
+  ev.target.value = '';
+  if(!file) return;
+  const format = detectFormat(file.name);
+  if(!format){ toast('Поддерживаются только FB2, EPUB и PDF'); return; }
+  const dataUrl = await new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+  const base64 = dataUrl.split(',')[1];
+  const id = ++booksSeq;
+  await repo.setSetting('book_data_' + id, base64);
+  const entry = {id, format, filename: file.name, title: file.name.replace(/\.[^.]+$/,''),
+                 author:'', addedAt: Date.now(), pos: 0};
+  BOOKS.push(entry);
+  await saveBooksIndex();
+  renderBooksList();
+  openBookReader(id);
+};
+
+async function deleteCurrentBook(){
+  if(!currentBook) return;
+  BOOKS = BOOKS.filter(b => b.id !== currentBook.id);
+  await saveBooksIndex();
+  await repo.setSetting('book_data_' + currentBook.id, '');
+  closeBookReader();
+  renderBooksList();
+}
+$('bookDelete').onclick = deleteCurrentBook;
+
+/* ---------- вспомогательные функции base64 <-> байты ---------- */
+
+function base64ToBytes(b64){
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for(let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+/* ---------- FB2 ---------- */
+
+function fb2QueryAll(root, name){
+  const out = [];
+  (function walk(node){
+    if(node.nodeType === 1 && node.localName === name) out.push(node);
+    for(const child of node.children || []) walk(child);
+  })(root);
+  return out;
+}
+function fb2Query(root, name){ return fb2QueryAll(root, name)[0] || null; }
+function escapeHtmlText(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function fb2NodeToHtml(node, binaries){
+  let out = '';
+  for(const child of node.childNodes){
+    if(child.nodeType === 3){ out += escapeHtmlText(child.textContent); continue; }
+    if(child.nodeType !== 1) continue;
+    const name = child.localName;
+    switch(name){
+      case 'section': out += '<div class="fb2-section">' + fb2NodeToHtml(child,binaries) + '</div>'; break;
+      case 'title': out += '<h2 class="fb2-title">' + fb2NodeToHtml(child,binaries) + '</h2>'; break;
+      case 'subtitle': out += '<h4 class="fb2-subtitle">' + fb2NodeToHtml(child,binaries) + '</h4>'; break;
+      case 'p': out += '<p>' + fb2NodeToHtml(child,binaries) + '</p>'; break;
+      case 'empty-line': out += '<br>'; break;
+      case 'emphasis': out += '<em>' + fb2NodeToHtml(child,binaries) + '</em>'; break;
+      case 'strong': out += '<strong>' + fb2NodeToHtml(child,binaries) + '</strong>'; break;
+      case 'strikethrough': out += '<s>' + fb2NodeToHtml(child,binaries) + '</s>'; break;
+      case 'epigraph': out += '<blockquote class="fb2-epigraph">' + fb2NodeToHtml(child,binaries) + '</blockquote>'; break;
+      case 'cite': out += '<blockquote>' + fb2NodeToHtml(child,binaries) + '</blockquote>'; break;
+      case 'poem': out += '<div class="fb2-poem">' + fb2NodeToHtml(child,binaries) + '</div>'; break;
+      case 'stanza': out += '<p class="fb2-stanza">' + fb2NodeToHtml(child,binaries) + '</p>'; break;
+      case 'v': out += fb2NodeToHtml(child,binaries) + '<br>'; break;
+      case 'text-author': out += '<p class="fb2-author">— ' + fb2NodeToHtml(child,binaries) + '</p>'; break;
+      case 'image': {
+        const href = (child.getAttributeNS && child.getAttributeNS('http://www.w3.org/1999/xlink','href'))
+          || child.getAttribute('l:href') || child.getAttribute('xlink:href') || '';
+        const id = href.replace(/^#/,'');
+        if(binaries[id]) out += '<img src="' + binaries[id] + '" style="max-width:100%">';
+        break;
+      }
+      default: out += fb2NodeToHtml(child,binaries);
+    }
+  }
+  return out;
+}
+
+function parseFb2(base64){
+  const bytes = base64ToBytes(base64);
+  const text = new TextDecoder('utf-8').decode(bytes);
+  const doc = new DOMParser().parseFromString(text, 'application/xml');
+  const titleInfo = fb2Query(doc.documentElement, 'title-info');
+  const titleEl = titleInfo && fb2Query(titleInfo, 'book-title');
+  const authorEl = titleInfo && fb2Query(titleInfo, 'author');
+  const author = authorEl
+    ? [fb2Query(authorEl,'first-name'), fb2Query(authorEl,'middle-name'), fb2Query(authorEl,'last-name')]
+        .filter(Boolean).map(n => n.textContent).join(' ')
+    : '';
+  const binaries = {};
+  fb2QueryAll(doc.documentElement, 'binary').forEach(b => {
+    binaries[b.getAttribute('id')] = 'data:' + (b.getAttribute('content-type')||'image/jpeg') +
+                                      ';base64,' + b.textContent.replace(/\s+/g,'');
+  });
+  const bodies = fb2QueryAll(doc.documentElement, 'body').filter(b => !b.getAttribute('name'));
+  const mainBody = bodies[0] || fb2QueryAll(doc.documentElement, 'body')[0];
+  return {
+    title: titleEl ? titleEl.textContent : '',
+    author,
+    html: mainBody ? fb2NodeToHtml(mainBody, binaries) : '<p>Не удалось разобрать текст книги.</p>'
+  };
+}
+
+/* ---------- EPUB ---------- */
+
+function resolveZipPath(dir, rel){
+  if(!dir) return rel.replace(/^\.\//,'');
+  const parts = dir.split('/');
+  rel.split('/').forEach(seg => {
+    if(seg === '..') parts.pop();
+    else if(seg !== '.') parts.push(seg);
+  });
+  return parts.join('/');
+}
+
+async function openEpub(base64){
+  const zip = await JSZip.loadAsync(base64ToBytes(base64));
+  const containerXml = await zip.file('META-INF/container.xml').async('text');
+  const containerDoc = new DOMParser().parseFromString(containerXml, 'application/xml');
+  const opfPath = containerDoc.getElementsByTagName('rootfile')[0].getAttribute('full-path');
+  const opfDir = opfPath.split('/').slice(0,-1).join('/');
+  const opfXml = await zip.file(opfPath).async('text');
+  const opfDoc = new DOMParser().parseFromString(opfXml, 'application/xml');
+  const manifestItems = {};
+  [...opfDoc.getElementsByTagName('item')].forEach(it => {
+    manifestItems[it.getAttribute('id')] = (opfDir ? opfDir + '/' : '') + it.getAttribute('href');
+  });
+  const spineIds = [...opfDoc.getElementsByTagName('itemref')].map(it => it.getAttribute('idref'));
+  const chapterPaths = spineIds.map(id => manifestItems[id]).filter(Boolean);
+  const titleEl = opfDoc.getElementsByTagName('dc:title')[0];
+  const creatorEl = opfDoc.getElementsByTagName('dc:creator')[0];
+  return {zip, chapterPaths, title: titleEl ? titleEl.textContent : '', author: creatorEl ? creatorEl.textContent : ''};
+}
+
+async function renderEpubChapter(epub, index){
+  const path = epub.chapterPaths[index];
+  const dir = path.split('/').slice(0,-1).join('/');
+  const raw = await epub.zip.file(path).async('text');
+  let bodyHtml = raw;
+  try{
+    const doc = new DOMParser().parseFromString(raw, 'application/xhtml+xml');
+    const body = doc.getElementsByTagName('body')[0];
+    if(body) bodyHtml = body.innerHTML;
+  }catch(e){ /* оставляем как есть, если разбор не удался */ }
+  const refs = [...bodyHtml.matchAll(/(src|href)="([^"]+)"/g)];
+  for(const m of refs){
+    const rel = m[2];
+    if(/^(https?:|data:|#)/.test(rel)) continue;
+    const full = resolveZipPath(dir, rel.split('#')[0]);
+    const file = epub.zip.file(full);
+    if(!file) continue;
+    const b64 = await file.async('base64');
+    const ext = full.split('.').pop().toLowerCase();
+    const mime = ext==='png'?'image/png':ext==='svg'?'image/svg+xml':ext==='gif'?'image/gif':'image/jpeg';
+    bodyHtml = bodyHtml.split(m[0]).join(m[1] + '="data:' + mime + ';base64,' + b64 + '"');
+  }
+  return bodyHtml;
+}
+
+/* ---------- PDF ---------- */
+
+if(typeof pdfjsLib !== 'undefined'){
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+async function openPdf(base64){
+  const doc = await pdfjsLib.getDocument({data: base64ToBytes(base64)}).promise;
+  return doc;
+}
+
+async function renderPdfPage(pdfDoc, pageNum){
+  const page = await pdfDoc.getPage(pageNum);
+  const canvas = $('bookPdfCanvas');
+  const wrap = $('bookPdfWrap');
+  const targetWidth = wrap.clientWidth || 360;
+  const baseViewport = page.getViewport({scale: 1});
+  const scale = targetWidth / baseViewport.width;
+  const viewport = page.getViewport({scale});
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = viewport.width * dpr;
+  canvas.height = viewport.height * dpr;
+  canvas.style.width = viewport.width + 'px';
+  canvas.style.height = viewport.height + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  await page.render({canvasContext: ctx, viewport}).promise;
+}
+
+/* ---------- общий читатель ---------- */
+
+function applyBookFont(){
+  const size = settings.readerFont || 'm';
+  const body = $('bookReaderBody');
+  body.classList.remove('font-s','font-m','font-l');
+  body.classList.add(READER_SIZES[size] || 'font-m');
+}
+['bookFontS','bookFontM','bookFontL'].forEach((id, i) => {
+  $(id).onclick = async () => {
+    settings.readerFont = ['s','m','l'][i];
+    await repo.setSetting('readerFont', settings.readerFont);
+    applyBookFont();
+  };
+});
+
+async function openBookReader(id){
+  const entry = BOOKS.find(b => b.id === id);
+  if(!entry) return;
+  const base64 = (await repo.getSettings())['book_data_' + id];
+  if(!base64){ toast('Файл книги не найден'); return; }
+
+  currentBook = {id, format: entry.format};
+  $('bookReaderTitle').textContent = entry.title || entry.filename;
+  $('booksBg').classList.remove('open');
+  $('bookReaderBg').classList.add('open');
+
+  $('bookReaderBody').style.display = 'none';
+  $('bookPdfWrap').style.display = 'none';
+  $('bookTextControls').style.display = 'none';
+  $('bookPdfControls').style.display = 'none';
+
+  if(entry.format === 'fb2'){
+    const parsed = parseFb2(base64);
+    if(parsed.title && !entry.title.length){ entry.title = parsed.title; }
+    if(parsed.author && !entry.author){ entry.author = parsed.author; await saveBooksIndex(); }
+    $('bookReaderSub').textContent = entry.author || '';
+    $('bookReaderBody').innerHTML = parsed.html;
+    $('bookReaderBody').style.display = 'block';
+    $('bookTextControls').style.display = 'flex';
+    $('bookChapPrev').style.display = 'none';
+    $('bookChapNext').style.display = 'none';
+    applyBookFont();
+    $('bookReaderBody').scrollTop = entry.pos || 0;
+  }
+
+  if(entry.format === 'epub'){
+    const epub = await openEpub(base64);
+    currentBook.epub = epub;
+    currentBook.chapterIndex = entry.chapterIndex || 0;
+    if(epub.title && !entry.title){ entry.title = epub.title; }
+    if(epub.author && !entry.author){ entry.author = epub.author; }
+    await saveBooksIndex();
+    $('bookReaderSub').textContent = entry.author || '';
+    $('bookTextControls').style.display = 'flex';
+    $('bookChapPrev').style.display = 'inline-block';
+    $('bookChapNext').style.display = 'inline-block';
+    await showEpubChapter();
+  }
+
+  if(entry.format === 'pdf'){
+    const pdfDoc = await openPdf(base64);
+    currentBook.pdfDoc = pdfDoc;
+    currentBook.page = entry.pos || 1;
+    $('bookReaderSub').textContent = '';
+    $('bookPdfWrap').style.display = 'block';
+    $('bookPdfControls').style.display = 'flex';
+    await showPdfPage();
+  }
+}
+
+async function showEpubChapter(){
+  const entry = BOOKS.find(b => b.id === currentBook.id);
+  const html = await renderEpubChapter(currentBook.epub, currentBook.chapterIndex);
+  $('bookReaderBody').innerHTML = html;
+  $('bookReaderBody').style.display = 'block';
+  applyBookFont();
+  $('bookReaderSub').textContent = (entry.author ? entry.author + ' · ' : '') +
+    'глава ' + (currentBook.chapterIndex+1) + ' из ' + currentBook.epub.chapterPaths.length;
+  entry.chapterIndex = currentBook.chapterIndex;
+  await saveBooksIndex();
+}
+$('bookChapPrev').onclick = () => {
+  if(!currentBook || currentBook.format !== 'epub') return;
+  if(currentBook.chapterIndex > 0){ currentBook.chapterIndex--; showEpubChapter(); }
+};
+$('bookChapNext').onclick = () => {
+  if(!currentBook || currentBook.format !== 'epub') return;
+  if(currentBook.chapterIndex < currentBook.epub.chapterPaths.length-1){ currentBook.chapterIndex++; showEpubChapter(); }
+};
+
+async function showPdfPage(){
+  const entry = BOOKS.find(b => b.id === currentBook.id);
+  await renderPdfPage(currentBook.pdfDoc, currentBook.page);
+  $('bookPageInfo').textContent = currentBook.page + ' / ' + currentBook.pdfDoc.numPages;
+  entry.pos = currentBook.page;
+  await saveBooksIndex();
+}
+$('bookPagePrev').onclick = () => {
+  if(!currentBook || currentBook.format !== 'pdf') return;
+  if(currentBook.page > 1){ currentBook.page--; showPdfPage(); }
+};
+$('bookPageNext').onclick = () => {
+  if(!currentBook || currentBook.format !== 'pdf') return;
+  if(currentBook.page < currentBook.pdfDoc.numPages){ currentBook.page++; showPdfPage(); }
+};
+
+function closeBookReader(){
+  if(currentBook && currentBook.format === 'fb2'){
+    const entry = BOOKS.find(b => b.id === currentBook.id);
+    if(entry){ entry.pos = $('bookReaderBody').scrollTop; saveBooksIndex(); }
+  }
+  $('bookReaderBg').classList.remove('open');
+  $('booksBg').classList.add('open');
+  currentBook = null;
+  renderBooksList();
+}
+$('bookReaderClose').onclick = closeBookReader;
+
+/* ===================== /КНИГИ ===================== */
 
 $('openGraph').onclick = openGraphScreen;
 $('graphClose').onclick = closeGraphScreen;
