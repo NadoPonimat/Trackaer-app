@@ -453,8 +453,56 @@
   .toast.show{opacity:1}
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
+<style>
+  #ddSplash{
+    position:fixed;inset:0;z-index:9999;background:#0a0a0a;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+    transition:opacity .5s ease;
+  }
+  #ddSplash.hide{opacity:0;pointer-events:none}
+  #ddHorns{overflow:visible}
+  #ddHorns .horn{
+    fill:none;stroke:#e02826;stroke-width:5;stroke-linecap:round;
+    stroke-dasharray:140;stroke-dashoffset:140;
+    animation:ddDraw 900ms ease-out forwards;
+    filter:drop-shadow(0 0 6px rgba(224,40,38,.7));
+  }
+  #ddHorns .horn-r{animation-delay:150ms}
+  @keyframes ddDraw{ to{stroke-dashoffset:0} }
+
+  #ddTitle{
+    font:800 34px/1 Arial, sans-serif;letter-spacing:6px;color:#e02826;
+    text-shadow:0 0 10px rgba(224,40,38,.8), 0 0 24px rgba(224,40,38,.4);
+    opacity:0;animation:ddFlicker 1400ms ease-in 700ms forwards;
+  }
+  @keyframes ddFlicker{
+    0%{opacity:0}
+    8%{opacity:1}
+    12%{opacity:.2}
+    18%{opacity:1}
+    22%{opacity:.3}
+    30%{opacity:1}
+    100%{opacity:1}
+  }
+
+  #ddLine{
+    width:0;height:2px;background:#e02826;
+    box-shadow:0 0 8px rgba(224,40,38,.8);
+    animation:ddLineGrow 600ms ease-out 1300ms forwards;
+  }
+  @keyframes ddLineGrow{ to{width:140px} }
+</style>
 </head>
 <body>
+<div id="ddSplash">
+  <svg id="ddHorns" viewBox="0 0 200 90" width="140">
+    <path class="horn horn-l" d="M100 88 C 78 60, 68 30, 82 6" />
+    <path class="horn horn-r" d="M100 88 C 122 60, 132 30, 118 6" />
+  </svg>
+  <div id="ddTitle">БМ</div>
+  <div id="ddLine"></div>
+</div>
+
 
 <header>
   <nav class="crumbs" id="crumbs"></nav>
@@ -1069,7 +1117,7 @@
       <button id="seedMartial">Курс: боевая система (комбо)</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 50 — читалка: расширенный выбор файла и понятные ошибки</div>
+    <div class="hint sv-version" id="version">Версия 52 — сплэш: текст БМ</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -4671,12 +4719,23 @@ $('readerClose').onclick = closeReader;
 /* ------------------------------ старт --------------------------- */
 
 (async () => {
+  const splashStart = Date.now();
+  const MIN_SPLASH_MS = 2000;
   try{
     await openDatabase();
     await render();
   }catch(err){
     $('list').innerHTML = '<div class="empty">База не открылась: ' + err.message + '</div>';
   }
+  const elapsed = Date.now() - splashStart;
+  const wait = Math.max(0, MIN_SPLASH_MS - elapsed);
+  setTimeout(() => {
+    const splash = $('ddSplash');
+    if(splash){
+      splash.classList.add('hide');
+      setTimeout(() => splash.remove(), 550);
+    }
+  }, wait);
 })();
 </script>
 </body>
