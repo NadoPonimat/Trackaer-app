@@ -835,7 +835,7 @@
     <button class="more" id="booksClose" aria-label="Закрыть">✕</button>
   </div>
   <div class="pr-body" id="booksList"></div>
-  <input type="file" id="bookFileInput" accept=".fb2,.epub,.pdf,application/epub+zip,application/pdf" style="display:none">
+  <input type="file" id="bookFileInput" accept=".fb2,.epub,.pdf,application/epub+zip,application/pdf,application/octet-stream,*/*" style="display:none">
   <button class="fab" id="booksAdd">+ Добавить книгу</button>
 </div>
 
@@ -1069,7 +1069,7 @@
       <button id="seedMartial">Курс: боевая система (комбо)</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 49 — читалка книг: FB2, EPUB, PDF</div>
+    <div class="hint sv-version" id="version">Версия 50 — читалка: расширенный выбор файла и понятные ошибки</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -3842,23 +3842,27 @@ $('bookFileInput').onchange = async (ev) => {
   const file = ev.target.files[0];
   ev.target.value = '';
   if(!file) return;
-  const format = detectFormat(file.name);
-  if(!format){ toast('Поддерживаются только FB2, EPUB и PDF'); return; }
-  const dataUrl = await new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(r.result);
-    r.onerror = reject;
-    r.readAsDataURL(file);
-  });
-  const base64 = dataUrl.split(',')[1];
-  const id = ++booksSeq;
-  await repo.setSetting('book_data_' + id, base64);
-  const entry = {id, format, filename: file.name, title: file.name.replace(/\.[^.]+$/,''),
-                 author:'', addedAt: Date.now(), pos: 0};
-  BOOKS.push(entry);
-  await saveBooksIndex();
-  renderBooksList();
-  openBookReader(id);
+  try{
+    const format = detectFormat(file.name);
+    if(!format){ toast('Не распознан формат файла: ' + file.name + ' (нужны .fb2, .epub или .pdf)'); return; }
+    const dataUrl = await new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result);
+      r.onerror = () => reject(new Error('Не удалось прочитать файл'));
+      r.readAsDataURL(file);
+    });
+    const base64 = dataUrl.split(',')[1];
+    const id = ++booksSeq;
+    await repo.setSetting('book_data_' + id, base64);
+    const entry = {id, format, filename: file.name, title: file.name.replace(/\.[^.]+$/,''),
+                   author:'', addedAt: Date.now(), pos: 0};
+    BOOKS.push(entry);
+    await saveBooksIndex();
+    renderBooksList();
+    await openBookReader(id);
+  }catch(err){
+    toast('Не получилось добавить книгу: ' + (err && err.message ? err.message : 'неизвестная ошибка'));
+  }
 };
 
 async function deleteCurrentBook(){
@@ -4060,6 +4064,17 @@ async function openBookReader(id){
   const base64 = (await repo.getSettings())['book_data_' + id];
   if(!base64){ toast('Файл книги не найден'); return; }
 
+  try{
+    await openBookReaderInner(entry, base64);
+  }catch(err){
+    toast('Не получилось открыть книгу: ' + (err && err.message ? err.message : 'файл повреждён или не поддерживается'));
+    $('booksBg').classList.add('open');
+    $('bookReaderBg').classList.remove('open');
+  }
+}
+
+async function openBookReaderInner(entry, base64){
+  const id = entry.id;
   currentBook = {id, format: entry.format};
   $('bookReaderTitle').textContent = entry.title || entry.filename;
   $('booksBg').classList.remove('open');
