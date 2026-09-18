@@ -908,6 +908,29 @@
   </div>
 </div>
 
+<div class="graph-bg" id="harmfulBg">
+  <div class="graph-top">
+    <div>
+      <div class="graph-title">Вредные приложения</div>
+      <div class="graph-sub" id="harmfulSub"></div>
+    </div>
+    <button class="more" id="harmfulClose" aria-label="Закрыть">✕</button>
+  </div>
+  <div class="pr-body" id="harmfulBody">
+    <div id="harmfulApps"></div>
+
+    <div class="pr-sub-row" style="margin-top:6px">
+      <div class="field" style="margin-bottom:0">
+        <input id="harmfulNewApp" placeholder="Название приложения (например: YouTube Shorts)">
+      </div>
+      <button class="pr-sub-remove" id="harmfulAddApp" style="font-size:15px">+</button>
+    </div>
+
+    <h3>История входов</h3>
+    <div id="harmfulHistory"></div>
+  </div>
+</div>
+
 <div class="graph-bg" id="quitBg">
   <div class="graph-top">
     <div>
@@ -1004,6 +1027,7 @@
       <button id="openGraph">Карта связей</button>
       <button id="openPeople">Люди</button>
       <button id="openBooks">Книги</button>
+      <button id="openHarmful">Вредные приложения</button>
     </div>
 
     <button class="sv-head" data-sec="secTheme">Оформление</button>
@@ -1111,7 +1135,7 @@
       <button id="seedMartial">Курс: боевая система (комбо)</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 53 — сплэш: радар, укрупнён в 3.5 раза</div>
+    <div class="hint sv-version" id="version">Версия 54 — учёт входов во вредные приложения</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -1378,6 +1402,7 @@ async function openDatabase(){
   settings.schedule = s.schedule === 'free' ? 'free' : 'days';
   await loadPeople();
   await loadBooksIndex();
+  await loadHarmful();
   settings.planUnit = s.planUnit === 'topics' ? 'topics' : 'hours';
   settings.budget = s.budget || '';
   settings.theme = s.theme || 'red';
@@ -2419,7 +2444,7 @@ $('menuDelete').onclick = async () => {
 
 if(window.Capacitor && window.Capacitor.Plugins.App){
   window.Capacitor.Plugins.App.addListener('backButton', () => {
-    for(const id of ['pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookReaderBg']){
+    for(const id of ['pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookReaderBg','harmfulBg']){
       if($(id).classList.contains('open')){ $(id).classList.remove('open'); return; }
     }
     if(path.length){ path.pop(); render(); return; }
@@ -4215,6 +4240,194 @@ function closeBookReader(){
 $('bookReaderClose').onclick = closeBookReader;
 
 /* ===================== /КНИГИ ===================== */
+
+/* ===================== ВРЕДНЫЕ ПРИЛОЖЕНИЯ ===================== */
+
+let HARMFUL_APPS = [];
+let HARMFUL_LOG = [];
+let harmfulSeq = 0;
+let harmfulTickTimer = null;
+
+async function loadHarmful(){
+  const s = await repo.getSettings();
+  try{ HARMFUL_APPS = s.harmful_apps ? JSON.parse(s.harmful_apps) : ['Instagram','TikTok']; }
+  catch(e){ HARMFUL_APPS = ['Instagram','TikTok']; }
+  try{ HARMFUL_LOG = s.harmful_log ? JSON.parse(s.harmful_log) : []; }
+  catch(e){ HARMFUL_LOG = []; }
+  harmfulSeq = HARMFUL_LOG.reduce((m,e) => Math.max(m, e.id), 0);
+}
+async function saveHarmfulApps(){ await repo.setSetting('harmful_apps', JSON.stringify(HARMFUL_APPS)); }
+async function saveHarmfulLog(){ await repo.setSetting('harmful_log', JSON.stringify(HARMFUL_LOG)); }
+
+function activeHarmfulSession(app){
+  return HARMFUL_LOG.find(e => e.app === app && e.exit == null);
+}
+function fmtHarmfulDuration(ms){
+  const totalMin = Math.round(ms/60000);
+  const h = Math.floor(totalMin/60), m = totalMin%60;
+  return h ? (h + ' ч ' + m + ' мин') : (m + ' мин');
+}
+function fmtHarmfulClock(ms){
+  const s = Math.floor(ms/1000);
+  const hh = String(Math.floor(s/3600)).padStart(2,'0');
+  const mm = String(Math.floor((s%3600)/60)).padStart(2,'0');
+  const ss = String(s%60).padStart(2,'0');
+  return hh+':'+mm+':'+ss;
+}
+function harmfulWeeklyStats(app){
+  const weekAgo = Date.now() - 7*24*3600*1000;
+  const entries = HARMFUL_LOG.filter(e => e.app===app && e.enter>=weekAgo && e.exit!=null);
+  const totalMs = entries.reduce((s,e) => s+(e.exit-e.enter), 0);
+  return {count: entries.length, totalMs};
+}
+
+function renderHarmfulApps(){
+  if(!HARMFUL_APPS.length){
+    $('harmfulApps').innerHTML = '<div class="empty">Добавь первое приложение ниже.</div>';
+    return;
+  }
+  $('harmfulApps').innerHTML = HARMFUL_APPS.map(app => {
+    const active = activeHarmfulSession(app);
+    const stats = harmfulWeeklyStats(app);
+    const label = (active ? 'Вышел из ' : 'Зашёл в ') + app;
+    const elapsed = active ? fmtHarmfulClock(Date.now()-active.enter) : '';
+    const a = app.replace(/"/g,'&quot;');
+    return '<div class="pr-sub-row" style="flex-direction:column;align-items:stretch">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center">' +
+        '<b>' + app + '</b>' +
+        '<button class="pr-sub-remove" data-remove-happ="' + a + '">✕</button>' +
+      '</div>' +
+      (active ? '<div class="pr-verdict" style="font-size:18px;margin:4px 0">' + elapsed + '</div>' : '') +
+      '<button data-toggle-happ="' + a + '" style="margin-top:8px;padding:12px;border-radius:10px;' +
+        'border:1px solid var(--line);background:' + (active ? '#3a1414' : 'var(--bg)') + ';' +
+        'color:' + (active ? '#ff8a80' : 'var(--text)') + '">' + label + '</button>' +
+      '<div class="meta" style="margin-top:6px">За неделю: ' + stats.count + ' вх. · ' +
+        fmtHarmfulDuration(stats.totalMs) + '</div>' +
+    '</div>';
+  }).join('');
+
+  [...$('harmfulApps').querySelectorAll('[data-toggle-happ]')].forEach(btn => {
+    btn.onclick = () => toggleHarmfulSession(btn.dataset.toggleHapp);
+  });
+  [...$('harmfulApps').querySelectorAll('[data-remove-happ]')].forEach(btn => {
+    btn.onclick = async () => {
+      HARMFUL_APPS = HARMFUL_APPS.filter(a => a !== btn.dataset.removeHapp);
+      await saveHarmfulApps();
+      renderHarmfulApps();
+    };
+  });
+}
+
+function renderHarmfulHistory(){
+  const sorted = HARMFUL_LOG.filter(e => e.exit!=null).slice().sort((a,b) => b.enter-a.enter).slice(0,30);
+  if(!sorted.length){
+    $('harmfulHistory').innerHTML = '<div class="empty">Пока нет завершённых входов.</div>';
+    return;
+  }
+  $('harmfulHistory').innerHTML = sorted.map(e => {
+    const d = new Date(e.enter);
+    const dateStr = d.toLocaleDateString('ru-RU') + ' ' + d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+    return '<div class="row"><div class="body"><span class="name">' + e.app + '</span>' +
+      '<span class="meta">' + dateStr + ' · ' + fmtHarmfulDuration(e.exit-e.enter) + '</span></div></div>';
+  }).join('');
+}
+
+async function toggleHarmfulSession(app){
+  const active = activeHarmfulSession(app);
+  if(active){
+    active.exit = Date.now();
+    await saveHarmfulLog();
+    await analyzeAndScheduleWarnings(app);
+  } else {
+    HARMFUL_LOG.push({id: ++harmfulSeq, app, enter: Date.now(), exit: null});
+    await saveHarmfulLog();
+  }
+  renderHarmfulApps();
+  renderHarmfulHistory();
+}
+
+$('harmfulAddApp').onclick = async () => {
+  const name = $('harmfulNewApp').value.trim();
+  if(!name) return;
+  if(!HARMFUL_APPS.includes(name)) HARMFUL_APPS.push(name);
+  $('harmfulNewApp').value = '';
+  await saveHarmfulApps();
+  renderHarmfulApps();
+};
+
+function openHarmfulScreen(){
+  $('serviceBg').classList.remove('open');
+  $('harmfulBg').classList.add('open');
+  renderHarmfulApps();
+  renderHarmfulHistory();
+  if(harmfulTickTimer) clearInterval(harmfulTickTimer);
+  harmfulTickTimer = setInterval(() => {
+    if(HARMFUL_LOG.some(e => e.exit==null)) renderHarmfulApps();
+  }, 1000);
+  requestHarmfulNotifPermission();
+}
+$('openHarmful').onclick = openHarmfulScreen;
+$('harmfulClose').onclick = () => {
+  $('harmfulBg').classList.remove('open');
+  if(harmfulTickTimer){ clearInterval(harmfulTickTimer); harmfulTickTimer = null; }
+};
+
+/* ---------- шаблон входов и локальные уведомления ---------- */
+/* Работает только если в сборку добавлен @capacitor/local-notifications.
+   Без него весь учёт входов работает как обычно, просто без напоминаний. */
+
+function harmfulNotifPlugin(){
+  return (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) || null;
+}
+async function requestHarmfulNotifPermission(){
+  const plugin = harmfulNotifPlugin();
+  if(!plugin) return;
+  try{ await plugin.requestPermissions(); }catch(e){}
+}
+function harmfulNotifId(app){
+  let h = 0;
+  for(let i=0;i<app.length;i++) h = (h*31 + app.charCodeAt(i)) >>> 0;
+  return 90000000 + (h % 900000);
+}
+
+async function analyzeAndScheduleWarnings(app){
+  const plugin = harmfulNotifPlugin();
+  if(!plugin) return;
+  const notifId = harmfulNotifId(app);
+  const weekAgo = Date.now() - 7*24*3600*1000;
+  const entries = HARMFUL_LOG.filter(e => e.app===app && e.exit!=null && e.enter>=weekAgo);
+  const firstEver = HARMFUL_LOG.filter(e => e.app===app)
+    .reduce((min,e) => Math.min(min, e.enter), Infinity);
+  const hasWeekOfHistory = firstEver !== Infinity && (Date.now()-firstEver) >= 7*24*3600*1000;
+
+  if(!hasWeekOfHistory || entries.length < 3){
+    try{ await plugin.cancel({notifications:[{id:notifId}]}); }catch(e){}
+    return;
+  }
+
+  const byHour = {};
+  entries.forEach(e => {
+    const h = new Date(e.enter).getHours();
+    byHour[h] = (byHour[h]||0) + 1;
+  });
+  let bestHour = null, bestCount = 0;
+  Object.keys(byHour).forEach(h => {
+    if(byHour[h] > bestCount){ bestCount = byHour[h]; bestHour = Number(h); }
+  });
+  if(bestHour === null || bestCount < 3) return;
+
+  try{
+    await plugin.cancel({notifications:[{id:notifId}]});
+    await plugin.schedule({notifications:[{
+      id: notifId,
+      title: 'Обычно ты сейчас заходишь в ' + app,
+      body: 'Загляни лучше в Трекер — есть чем позаниматься вместо этого.',
+      schedule: {on:{hour:bestHour, minute:0}, repeats:true}
+    }]});
+  }catch(e){ /* нет разрешения или плагина в этой сборке — тихо пропускаем */ }
+}
+
+/* ===================== /ВРЕДНЫЕ ПРИЛОЖЕНИЯ ===================== */
 
 $('openGraph').onclick = openGraphScreen;
 $('graphClose').onclick = closeGraphScreen;
