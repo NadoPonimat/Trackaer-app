@@ -994,8 +994,12 @@
     <button id="graphZoomIn" aria-label="Приблизить">+</button>
     <button id="graphReset">Пересобрать</button>
   </div>
+  <div class="people-graph-body" id="graph3dBody" style="display:none">
+    <div id="graph3dPanel" class="pg-panel"></div>
+  </div>
   <div class="graph-bottom">
-    <button id="graphAsTable">Показать таблицей</button>
+    <button id="graphAsTable">Таблица</button>
+    <button id="graphAs3d">3D</button>
   </div>
   <div class="graph-card" id="graphCard" style="display:none">
     <div class="graph-card-name" id="graphCardName"></div>
@@ -1137,7 +1141,7 @@
       <button id="seedFirstAid">Курс: первая медицинская помощь</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 55 — курс первой помощи (структура + модуль 1)</div>
+    <div class="hint sv-version" id="version">Версия 56 — 3D-режим карты связей</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -1155,6 +1159,7 @@
 <script src="theory-firstaid.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.2/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 /* =====================================================================
    Хранилище: на телефоне SQLite, в браузере localStorage.
@@ -3425,13 +3430,12 @@ function openGraphScreen(){
     buildGraph();
     selectGraphNode(null);
     drawGraph();
-    setTableMode(false);
+    setViewMode('graph');
   });
 }
 function closeGraphScreen(){ $('graphBg').classList.remove('open'); }
 
 /* ---- та же карта связей, показанная строками таблицы ---- */
-let tableMode = false;
 
 function renderRelTable(){
   const rows = graph.nodes.slice().sort((a, b) => a.name.localeCompare(b.name, 'ru'));
@@ -3467,21 +3471,235 @@ function renderRelTable(){
   [...$('tableBody').querySelectorAll('tr[data-id]')].forEach(tr => {
     tr.onclick = () => {
       const p = graph.nodes.find(n => n.id === Number(tr.dataset.id));
-      if(p){ setTableMode(false); selectGraphNode(p); }
+      if(p){ setViewMode('graph'); selectGraphNode(p); }
     };
   });
 }
 
-function setTableMode(on){
-  tableMode = on;
-  $('tableBody').style.display = on ? 'block' : 'none';
-  $('graphCanvas').style.display = on ? 'none' : 'block';
-  $('graphControls').style.display = on ? 'none' : 'flex';
-  $('graphAsTable').textContent = on ? 'Показать картой' : 'Показать таблицей';
-  if(on) renderRelTable();
+/* ---- 3D-режим карты связей (Three.js) ---- */
+
+let g3d = null; /* {renderer, scene, camera, container, meshes:Map, edgeMesh, labelSprites:[], theta, phi, dist, targetTheta, targetPhi} */
+
+function build3DPositions(){
+  const nodes = graph.nodes;
+  nodes.forEach(p => {
+    p._x3 = (Math.random()-0.5) * 300;
+    p._y3 = (Math.random()-0.5) * 300;
+    p._z3 = (Math.random()-0.5) * 300;
+    p._vx3 = 0; p._vy3 = 0; p._vz3 = 0;
+  });
+  const edges = graph.edges.filter(e => (e.kind==='tree' && graph.showTree) || (e.kind==='link' && graph.showLinks));
+  for(let step=0; step<130; step++){
+    for(let i=0;i<nodes.length;i++){
+      for(let j=i+1;j<nodes.length;j++){
+        const n1=nodes[i], n2=nodes[j];
+        let dx=n1._x3-n2._x3, dy=n1._y3-n2._y3, dz=n1._z3-n2._z3;
+        let dist=Math.sqrt(dx*dx+dy*dy+dz*dz)||0.01;
+        const force = 4200/(dist*dist);
+        dx/=dist; dy/=dist; dz/=dist;
+        n1._vx3+=dx*force; n1._vy3+=dy*force; n1._vz3+=dz*force;
+        n2._vx3-=dx*force; n2._vy3-=dy*force; n2._vz3-=dz*force;
+      }
+    }
+    edges.forEach(e => {
+      const n1=e.a, n2=e.b;
+      let dx=n2._x3-n1._x3, dy=n2._y3-n1._y3, dz=n2._z3-n1._z3;
+      const dist=Math.sqrt(dx*dx+dy*dy+dz*dz)||0.01;
+      const target = e.kind==='tree' ? 60 : 90;
+      const force = (dist-target)*0.02;
+      dx/=dist; dy/=dist; dz/=dist;
+      n1._vx3+=dx*force; n1._vy3+=dy*force; n1._vz3+=dz*force;
+      n2._vx3-=dx*force; n2._vy3-=dy*force; n2._vz3-=dz*force;
+    });
+    nodes.forEach(p => {
+      p._x3+=p._vx3; p._y3+=p._vy3; p._z3+=p._vz3;
+      p._vx3*=0.75; p._vy3*=0.75; p._vz3*=0.75;
+    });
+  }
 }
 
-$('graphAsTable').onclick = () => setTableMode(!tableMode);
+function make3DLabelSprite(text, color){
+  const canvas = document.createElement('canvas');
+  canvas.width = 256; canvas.height = 64;
+  const cx = canvas.getContext('2d');
+  cx.font = '28px system-ui, sans-serif';
+  cx.fillStyle = color;
+  cx.textAlign = 'center';
+  cx.fillText(text.length > 24 ? text.slice(0,23)+'…' : text, 128, 40);
+  const tex = new THREE.CanvasTexture(canvas);
+  const mat = new THREE.SpriteMaterial({map: tex, transparent: true, depthTest: false});
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(48, 12, 1);
+  return sprite;
+}
+
+function init3DGraph(){
+  const container = $('graph3dBody');
+  container.innerHTML = '<div id="graph3dPanel" class="pg-panel"></div>';
+  build3DPositions();
+
+  const cAccent = themeColor('--accent', '#E02826');
+  const cIncome = themeColor('--income', '#3FA96B');
+  const cLine   = themeColor('--line', '#3A1A1D');
+  const cMuted  = themeColor('--muted', '#9A7B7C');
+  const cText   = themeColor('--text', '#F2E9E6');
+
+  const scene = new THREE.Scene();
+  const rect = container.getBoundingClientRect();
+  const camera = new THREE.PerspectiveCamera(55, rect.width/rect.height, 1, 3000);
+  const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+  renderer.setPixelRatio(window.devicePixelRatio || 1);
+  renderer.setSize(rect.width, rect.height);
+  container.insertBefore(renderer.domElement, container.firstChild);
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+  const dl = new THREE.DirectionalLight(0xffffff, 0.6);
+  dl.position.set(1,1,1);
+  scene.add(dl);
+
+  const meshes = new Map();
+  graph.nodes.forEach(p => {
+    const r = 3 + Math.min(4, p.deg*0.4) + (p.kind==='category'?1.5:0);
+    const color = p.money ? cIncome : p.kind==='category' ? cAccent : cMuted;
+    const geo = new THREE.SphereGeometry(r, 14, 14);
+    const mat = new THREE.MeshStandardMaterial({color, roughness:0.5});
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(p._x3, p._y3, p._z3);
+    mesh.userData.node = p;
+    scene.add(mesh);
+    meshes.set(p.id, mesh);
+
+    if(p.kind==='category' || p.deg>=4){
+      const sprite = make3DLabelSprite(p.name, cText);
+      sprite.position.set(p._x3, p._y3 + r + 8, p._z3);
+      scene.add(sprite);
+    }
+  });
+
+  const edgeVerts = [];
+  const edgeColors = [];
+  const colTree = new THREE.Color(cLine);
+  const colLink = new THREE.Color(cAccent);
+  graph.edges.forEach(e => {
+    if(e.kind==='tree' && !graph.showTree) return;
+    if(e.kind==='link' && !graph.showLinks) return;
+    edgeVerts.push(e.a._x3, e.a._y3, e.a._z3, e.b._x3, e.b._y3, e.b._z3);
+    const c = e.kind==='link' ? colLink : colTree;
+    edgeColors.push(c.r,c.g,c.b, c.r,c.g,c.b);
+  });
+  const edgeGeo = new THREE.BufferGeometry();
+  edgeGeo.setAttribute('position', new THREE.Float32BufferAttribute(edgeVerts, 3));
+  edgeGeo.setAttribute('color', new THREE.Float32BufferAttribute(edgeColors, 3));
+  const edgeMat = new THREE.LineBasicMaterial({vertexColors:true, transparent:true, opacity:0.7});
+  const edgeLines = new THREE.LineSegments(edgeGeo, edgeMat);
+  scene.add(edgeLines);
+
+  g3d = {
+    renderer, scene, camera, container, meshes,
+    theta: 0.6, phi: 1.1, dist: 420,
+    dragging:false, lastX:0, lastY:0, pinchDist:null,
+    selected: null
+  };
+  update3DCamera();
+  render3DFrame();
+
+  container.onpointerdown = (ev) => {
+    container.setPointerCapture(ev.pointerId);
+    g3d.dragging = true;
+    g3d.lastX = ev.clientX; g3d.lastY = ev.clientY;
+  };
+  container.onpointermove = (ev) => {
+    if(!g3d.dragging) return;
+    const dx = ev.clientX - g3d.lastX, dy = ev.clientY - g3d.lastY;
+    g3d.lastX = ev.clientX; g3d.lastY = ev.clientY;
+    g3d.theta -= dx * 0.006;
+    g3d.phi = Math.max(0.15, Math.min(Math.PI-0.15, g3d.phi - dy * 0.006));
+    update3DCamera();
+    render3DFrame();
+  };
+  container.onpointerup = () => { g3d.dragging = false; };
+  container.onclick = (ev) => {
+    const rect2 = container.getBoundingClientRect();
+    const mx = ((ev.clientX-rect2.left)/rect2.width)*2 - 1;
+    const my = -((ev.clientY-rect2.top)/rect2.height)*2 + 1;
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera({x:mx, y:my}, g3d.camera);
+    const hits = raycaster.intersectObjects([...g3d.meshes.values()]);
+    if(hits.length){
+      show3DNodePanel(hits[0].object.userData.node);
+    } else {
+      $('graph3dPanel').classList.remove('open');
+    }
+  };
+  container.onwheel = (ev) => {
+    ev.preventDefault();
+    g3d.dist = Math.max(100, Math.min(1200, g3d.dist + ev.deltaY*0.6));
+    update3DCamera();
+    render3DFrame();
+  };
+}
+
+function update3DCamera(){
+  const {theta, phi, dist} = g3d;
+  g3d.camera.position.set(
+    dist*Math.sin(phi)*Math.cos(theta),
+    dist*Math.cos(phi),
+    dist*Math.sin(phi)*Math.sin(theta)
+  );
+  g3d.camera.lookAt(0,0,0);
+}
+function render3DFrame(){
+  if(g3d) g3d.renderer.render(g3d.scene, g3d.camera);
+}
+
+function show3DNodePanel(p){
+  const node = index.byId.get(p.id);
+  $('graph3dPanel').innerHTML =
+    '<h4>' + p.name + '</h4>' +
+    '<div class="pg-conn">' + (node ? (nodePath(node) || 'корень') : '') + '</div>' +
+    '<button id="graph3dOpenBtn" style="margin-top:8px;width:100%;padding:10px;border-radius:10px;' +
+      'border:1px solid var(--line);background:var(--bg);color:var(--text)">Открыть в карте</button>';
+  $('graph3dPanel').classList.add('open');
+  $('graph3dOpenBtn').onclick = () => {
+    setViewMode('graph');
+    selectGraphNode(p);
+  };
+}
+
+function destroy3DGraph(){
+  if(!g3d) return;
+  g3d.renderer.dispose();
+  if(g3d.renderer.domElement && g3d.renderer.domElement.parentNode){
+    g3d.renderer.domElement.parentNode.removeChild(g3d.renderer.domElement);
+  }
+  g3d = null;
+}
+
+let viewMode = 'graph'; /* 'graph' | 'table' | '3d' */
+
+function setViewMode(mode){
+  if(mode === '3d' && (typeof THREE === 'undefined')){
+    toast('3D-библиотека не загрузилась — нужен интернет хотя бы один раз при запуске');
+    return;
+  }
+  if(viewMode === '3d' && mode !== '3d') destroy3DGraph();
+
+  viewMode = mode;
+  $('tableBody').style.display   = mode === 'table' ? 'block' : 'none';
+  $('graph3dBody').style.display = mode === '3d'    ? 'block' : 'none';
+  $('graphCanvas').style.display = mode === 'graph' ? 'block' : 'none';
+  $('graphControls').style.display = mode === 'graph' ? 'flex' : 'none';
+
+  $('graphAsTable').setAttribute('aria-pressed', mode === 'table');
+  $('graphAs3d').setAttribute('aria-pressed', mode === '3d');
+  $('graphAsTable').textContent = mode === 'table' ? 'Показать картой' : 'Таблица';
+
+  if(mode === 'table') renderRelTable();
+  if(mode === '3d') init3DGraph();
+}
+
+$('graphAsTable').onclick = () => setViewMode(viewMode === 'table' ? 'graph' : 'table');
+$('graphAs3d').onclick = () => setViewMode(viewMode === '3d' ? 'graph' : '3d');
 
 /* ===================== ЛЮДИ ===================== */
 
@@ -4445,7 +4663,7 @@ $('graphLinks').onclick = () => {
   $('graphLinks').setAttribute('aria-pressed', String(graph.showLinks));
   drawGraph();
 };
-$('graphReset').onclick = () => { buildGraph(); drawGraph(); if(tableMode) renderRelTable(); };
+$('graphReset').onclick = () => { buildGraph(); drawGraph(); if(viewMode==='table') renderRelTable(); if(viewMode==='3d') init3DGraph(); };
 
 function zoomStep(factor){
   const w = graphCanvas.width / devicePixelRatio, h = graphCanvas.height / devicePixelRatio;
