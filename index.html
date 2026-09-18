@@ -1132,10 +1132,12 @@
       <button id="fillSpaTheory">Испанский: залить теорию</button>
       <button id="fillExcelTheory">Excel: залить теорию</button>
       <button id="fillMartialTheory">Боевая система: залить теорию</button>
+      <button id="fillFirstAidTheory">Первая помощь: залить теорию</button>
       <button id="seedMartial">Курс: боевая система (комбо)</button>
+      <button id="seedFirstAid">Курс: первая медицинская помощь</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 54 — учёт входов во вредные приложения</div>
+    <div class="hint sv-version" id="version">Версия 55 — курс первой помощи (структура + модуль 1)</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -1150,6 +1152,7 @@
 <script src="theory-spa.js"></script>
 <script src="theory-excel.js"></script>
 <script src="theory-martial.js"></script>
+<script src="theory-firstaid.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.2/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
@@ -4770,6 +4773,12 @@ $('seedScaffold').onclick = async () => {
   btn.disabled = false; btn.textContent = 'Создать базовую структуру';
 };
 
+courseButton('seedFirstAid', 'Первая медицинская помощь', () => FIRSTAID_COURSE, 'часов',
+  'Академический курс первой помощи: базовые алгоритмы, реанимация, кровотечения и травмы, ' +
+  'ожоги и отравления, действия с полной аптечкой, с ограниченными подручными средствами и вовсе без них, ' +
+  'плюс отдельные разделы по конкретным катастрофам — пожар, наводнение, землетрясение, ураганы и тайфуны.',
+  'Курс: первая медицинская помощь');
+
 courseButton('seedMartial', 'Боевая система: самбо + Кадочников + удары', () => MARTIAL_COURSE, 'часов',
   'Комбинированная программа: боевое самбо и система Кадочникова (контроль, броски, биомеханика) ' +
   'плюс ударная база бокса, муай-тай и китайского дуаньда цюань. Темы с пометкой ТРЕБУЕТ ПАРТНЁРА ' +
@@ -4821,6 +4830,7 @@ theoryButton('fillAraTheory', () => theorySet('ARA_THEORY'), 'Арабский: 
 theoryButton('fillSpaTheory', () => theorySet('SPA_THEORY'), 'Испанский: залить теорию');
 theoryButton('fillExcelTheory', () => theorySet('EXCEL_THEORY'), 'Excel: залить теорию');
 theoryButton('fillMartialTheory', () => theorySet('MARTIAL_THEORY'), 'Боевая система: залить теорию');
+theoryButton('fillFirstAidTheory', () => theorySet('FIRSTAID_THEORY'), 'Первая помощь: залить теорию');
 
 $('fillSqlTheory').onclick = async () => {
   const btn = $('fillSqlTheory');
