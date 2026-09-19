@@ -1137,11 +1137,13 @@
       <button id="fillExcelTheory">Excel: залить теорию</button>
       <button id="fillMartialTheory">Боевая система: залить теорию</button>
       <button id="fillFirstAidTheory">Первая помощь: залить теорию</button>
+      <button id="fillParkourTheory">Паркур и акробатика: залить теорию</button>
       <button id="seedMartial">Курс: боевая система (комбо)</button>
       <button id="seedFirstAid">Курс: первая медицинская помощь</button>
+      <button id="seedParkour">Курс: паркур и акробатика</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 56 — 3D-режим карты связей</div>
+    <div class="hint sv-version" id="version">Версия 58 — 3D фикс (пинч-зум), курс паркур/акробатика, боевая система и первая помощь завершены</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -1156,6 +1158,7 @@
 <script src="theory-spa.js"></script>
 <script src="theory-excel.js"></script>
 <script src="theory-martial.js"></script>
+<script src="theory-parkour.js"></script>
 <script src="theory-firstaid.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.2/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -3550,6 +3553,7 @@ function init3DGraph(){
   const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
   renderer.setPixelRatio(window.devicePixelRatio || 1);
   renderer.setSize(rect.width, rect.height);
+  renderer.domElement.style.touchAction = 'none';
   container.insertBefore(renderer.domElement, container.firstChild);
 
   scene.add(new THREE.AmbientLight(0xffffff, 0.9));
@@ -3594,30 +3598,82 @@ function init3DGraph(){
   const edgeLines = new THREE.LineSegments(edgeGeo, edgeMat);
   scene.add(edgeLines);
 
+  let maxR = 100;
+  graph.nodes.forEach(p => {
+    const r = Math.sqrt(p._x3*p._x3 + p._y3*p._y3 + p._z3*p._z3);
+    if(r > maxR) maxR = r;
+  });
+  const ZOOM_MIN = 25, ZOOM_MAX = 2600;
+  const initialDist = Math.max(220, Math.min(1800, maxR * 2.4));
+
   g3d = {
     renderer, scene, camera, container, meshes,
-    theta: 0.6, phi: 1.1, dist: 420,
-    dragging:false, lastX:0, lastY:0, pinchDist:null,
+    theta: 0.6, phi: 1.1, dist: initialDist,
+    dragging:false, lastX:0, lastY:0,
+    pointers: new Map(), pinchStartDist:null, pinchStartCamDist:null,
     selected: null
   };
   update3DCamera();
   render3DFrame();
 
+  container.style.touchAction = 'none';
+
+  function activePointers(){ return [...g3d.pointers.values()]; }
+
   container.onpointerdown = (ev) => {
     container.setPointerCapture(ev.pointerId);
-    g3d.dragging = true;
-    g3d.lastX = ev.clientX; g3d.lastY = ev.clientY;
+    g3d.pointers.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+    if(g3d.pointers.size === 1){
+      g3d.dragging = true;
+      g3d.lastX = ev.clientX; g3d.lastY = ev.clientY;
+    } else if(g3d.pointers.size === 2){
+      g3d.dragging = false;
+      const [p1,p2] = activePointers();
+      g3d.pinchStartDist = Math.hypot(p1.x-p2.x, p1.y-p2.y) || 1;
+      g3d.pinchStartCamDist = g3d.dist;
+    }
   };
   container.onpointermove = (ev) => {
-    if(!g3d.dragging) return;
-    const dx = ev.clientX - g3d.lastX, dy = ev.clientY - g3d.lastY;
-    g3d.lastX = ev.clientX; g3d.lastY = ev.clientY;
-    g3d.theta -= dx * 0.006;
-    g3d.phi = Math.max(0.15, Math.min(Math.PI-0.15, g3d.phi - dy * 0.006));
-    update3DCamera();
-    render3DFrame();
+    if(!g3d.pointers.has(ev.pointerId)) return;
+    g3d.pointers.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+
+    if(g3d.pointers.size >= 2){
+      const [p1,p2] = activePointers();
+      const dist = Math.hypot(p1.x-p2.x, p1.y-p2.y) || 1;
+      if(g3d.pinchStartDist){
+        const scale = g3d.pinchStartDist / dist;
+        g3d.dist = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, g3d.pinchStartCamDist * scale));
+        update3DCamera();
+        render3DFrame();
+      }
+      return;
+    }
+
+    if(g3d.dragging){
+      const dx = ev.clientX - g3d.lastX, dy = ev.clientY - g3d.lastY;
+      g3d.lastX = ev.clientX; g3d.lastY = ev.clientY;
+      g3d.theta -= dx * 0.006;
+      g3d.phi = Math.max(0.05, Math.min(Math.PI-0.05, g3d.phi - dy * 0.006));
+      update3DCamera();
+      render3DFrame();
+    }
   };
-  container.onpointerup = () => { g3d.dragging = false; };
+  function releasePointer(ev){
+    g3d.pointers.delete(ev.pointerId);
+    if(g3d.pointers.size === 1){
+      const remaining = activePointers()[0];
+      g3d.dragging = true;
+      g3d.lastX = remaining.x; g3d.lastY = remaining.y;
+      g3d.pinchStartDist = null;
+    } else if(g3d.pointers.size === 0){
+      g3d.dragging = false;
+      g3d.pinchStartDist = null;
+    } else {
+      g3d.pinchStartDist = null;
+    }
+  }
+  container.onpointerup = releasePointer;
+  container.onpointercancel = releasePointer;
   container.onclick = (ev) => {
     const rect2 = container.getBoundingClientRect();
     const mx = ((ev.clientX-rect2.left)/rect2.width)*2 - 1;
@@ -3633,7 +3689,7 @@ function init3DGraph(){
   };
   container.onwheel = (ev) => {
     ev.preventDefault();
-    g3d.dist = Math.max(100, Math.min(1200, g3d.dist + ev.deltaY*0.6));
+    g3d.dist = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, g3d.dist + ev.deltaY*0.6));
     update3DCamera();
     render3DFrame();
   };
@@ -5004,6 +5060,13 @@ courseButton('seedMartial', 'Боевая система: самбо + Кадо�
   'обязательный контроль и постепенное наращивание реализма.',
   'Курс: боевая система (комбо)');
 
+courseButton('seedParkour', 'Паркур и акробатика', () => PARKOUR_COURSE, 'часов',
+  'Академическая программа паркура и акробатики для самостоятельного изучения: приземления, ' +
+  'прыжковая техника, опорные прыжки, лазание, акробатика на земле и в воздухе, скорость и слитность ' +
+  'движения, физическая подготовка и психология риска. Элементы вращений (сальто) отмечены как ' +
+  'требующие страховки на первых этапах — остальное полностью самостоятельно.',
+  'Курс: паркур и акробатика');
+
 courseButton('seedExcel', 'Excel', () => EXCEL_COURSE, 'часов',
   'Академический курс: от модели данных до Power Query, DAX и автоматизации.',
   'Загрузить курс: Excel');
@@ -5049,6 +5112,7 @@ theoryButton('fillSpaTheory', () => theorySet('SPA_THEORY'), 'Испанский
 theoryButton('fillExcelTheory', () => theorySet('EXCEL_THEORY'), 'Excel: залить теорию');
 theoryButton('fillMartialTheory', () => theorySet('MARTIAL_THEORY'), 'Боевая система: залить теорию');
 theoryButton('fillFirstAidTheory', () => theorySet('FIRSTAID_THEORY'), 'Первая помощь: залить теорию');
+theoryButton('fillParkourTheory', () => theorySet('PARKOUR_THEORY'), 'Паркур и акробатика: залить теорию');
 
 $('fillSqlTheory').onclick = async () => {
   const btn = $('fillSqlTheory');
