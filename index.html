@@ -1141,9 +1141,11 @@
       <button id="seedMartial">Курс: боевая система (комбо)</button>
       <button id="seedFirstAid">Курс: первая медицинская помощь</button>
       <button id="seedParkour">Курс: паркур и акробатика</button>
+      <button id="fillSurveillanceTheory">Слежка и контрнаблюдение: залить теорию</button>
+      <button id="seedSurveillance">Курс: слежка и контрнаблюдение</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 58 — 3D фикс (пинч-зум), курс паркур/акробатика, боевая система и первая помощь завершены</div>
+    <div class="hint sv-version" id="version">Версия 59 — Excel-курс завершён (54/54), курс слежки и контрнаблюдения (историко-академический, 48/48)</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -1160,6 +1162,7 @@
 <script src="theory-martial.js"></script>
 <script src="theory-parkour.js"></script>
 <script src="theory-firstaid.js"></script>
+<script src="theory-surveillance.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.2/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -5067,6 +5070,15 @@ courseButton('seedParkour', 'Паркур и акробатика', () => PARKOU
   'требующие страховки на первых этапах — остальное полностью самостоятельно.',
   'Курс: паркур и акробатика');
 
+courseButton('seedSurveillance', 'Слежка и контрнаблюдение', () => SURVEILLANCE_COURSE, 'часов',
+  'Историко-академический курс о слежке и контрнаблюдении: история и организация спецслужб, ' +
+  'правовые и этические основы, наблюдательность и память, историко-теоретический разбор пешего и ' +
+  'транспортного наблюдения, личная безопасность и распознавание слежки за собой, психология обмана, ' +
+  'технические средства и OSINT, аналитическая работа, исторические кейсы Холодной войны и ' +
+  'профессиональные применения (частный сыск, журналистика, корпоративная безопасность). ' +
+  'Материал целиком основан на открытых источниках и историографии, с явным акцентом на законность и этику.',
+  'Курс: слежка и контрнаблюдение');
+
 courseButton('seedExcel', 'Excel', () => EXCEL_COURSE, 'часов',
   'Академический курс: от модели данных до Power Query, DAX и автоматизации.',
   'Загрузить курс: Excel');
@@ -5113,6 +5125,7 @@ theoryButton('fillExcelTheory', () => theorySet('EXCEL_THEORY'), 'Excel: зал�
 theoryButton('fillMartialTheory', () => theorySet('MARTIAL_THEORY'), 'Боевая система: залить теорию');
 theoryButton('fillFirstAidTheory', () => theorySet('FIRSTAID_THEORY'), 'Первая помощь: залить теорию');
 theoryButton('fillParkourTheory', () => theorySet('PARKOUR_THEORY'), 'Паркур и акробатика: залить теорию');
+theoryButton('fillSurveillanceTheory', () => theorySet('SURVEILLANCE_THEORY'), 'Слежка и контрнаблюдение: залить теорию');
 
 $('fillSqlTheory').onclick = async () => {
   const btn = $('fillSqlTheory');
