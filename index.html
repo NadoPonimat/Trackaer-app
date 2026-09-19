@@ -434,6 +434,10 @@
     flex:0 0 44px;font-size:18px;font-weight:600;padding:11px 0;
   }
   .graph-bottom button#graphFit{flex:0 0 84px}
+  .graph-bottom button#graph3dZoomIn,.graph-bottom button#graph3dZoomOut{
+    flex:0 0 44px;font-size:18px;font-weight:600;padding:11px 0;
+  }
+  .graph-bottom button#graph3dFit{flex:0 0 84px}
   .graph-bottom button[aria-pressed="true"]{border-color:var(--accent);color:var(--text)}
   .graph-card{
     position:absolute;left:12px;right:12px;
@@ -996,6 +1000,14 @@
   </div>
   <div class="people-graph-body" id="graph3dBody" style="display:none">
     <div id="graph3dPanel" class="pg-panel"></div>
+  </div>
+  <div class="graph-bottom" id="graph3dControls" style="display:none">
+    <button id="graph3dTree" aria-pressed="true">Вложенность</button>
+    <button id="graph3dLinks" aria-pressed="true">Связи</button>
+    <button id="graph3dZoomOut" aria-label="Отдалить">−</button>
+    <button id="graph3dFit">Уместить</button>
+    <button id="graph3dZoomIn" aria-label="Приблизить">+</button>
+    <button id="graph3dReset">Пересобрать</button>
   </div>
   <div class="graph-bottom">
     <button id="graphAsTable">Таблица</button>
@@ -3491,6 +3503,7 @@ function renderRelTable(){
 /* ---- 3D-режим карты связей (Three.js) ---- */
 
 let g3d = null; /* {renderer, scene, camera, container, meshes:Map, edgeMesh, labelSprites:[], theta, phi, dist, targetTheta, targetPhi} */
+const ZOOM3D_MIN = 25, ZOOM3D_MAX = 2600;
 
 function build3DPositions(){
   const nodes = graph.nodes;
@@ -3612,12 +3625,14 @@ function init3DGraph(){
     const r = Math.sqrt(p._x3*p._x3 + p._y3*p._y3 + p._z3*p._z3);
     if(r > maxR) maxR = r;
   });
-  const ZOOM_MIN = 25, ZOOM_MAX = 2600;
+  const initialTheta = 0.6, initialPhi = 1.1;
   const initialDist = Math.max(220, Math.min(1800, maxR * 2.4));
 
   g3d = {
     renderer, scene, camera, container, meshes,
-    theta: 0.6, phi: 1.1, dist: initialDist,
+    edgeLines, edgeMat,
+    theta: initialTheta, phi: initialPhi, dist: initialDist,
+    initialTheta, initialPhi, initialDist,
     dragging:false, lastX:0, lastY:0,
     pointers: new Map(), pinchStartDist:null, pinchStartCamDist:null,
     selected: null
@@ -3651,7 +3666,7 @@ function init3DGraph(){
       const dist = Math.hypot(p1.x-p2.x, p1.y-p2.y) || 1;
       if(g3d.pinchStartDist){
         const scale = g3d.pinchStartDist / dist;
-        g3d.dist = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, g3d.pinchStartCamDist * scale));
+        g3d.dist = Math.max(ZOOM3D_MIN, Math.min(ZOOM3D_MAX, g3d.pinchStartCamDist * scale));
         update3DCamera();
         render3DFrame();
       }
@@ -3698,10 +3713,60 @@ function init3DGraph(){
   };
   container.onwheel = (ev) => {
     ev.preventDefault();
-    g3d.dist = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, g3d.dist + ev.deltaY*0.6));
+    g3d.dist = Math.max(ZOOM3D_MIN, Math.min(ZOOM3D_MAX, g3d.dist + ev.deltaY*0.6));
     update3DCamera();
     render3DFrame();
   };
+}
+
+function zoom3DStep(factor){
+  if(!g3d) return;
+  g3d.dist = Math.max(ZOOM3D_MIN, Math.min(ZOOM3D_MAX, g3d.dist * factor));
+  update3DCamera();
+  render3DFrame();
+}
+
+function reset3DView(){
+  if(!g3d) return;
+  g3d.theta = g3d.initialTheta;
+  g3d.phi = g3d.initialPhi;
+  g3d.dist = g3d.initialDist;
+  update3DCamera();
+  render3DFrame();
+}
+
+function rebuild3DEdges(){
+  if(!g3d) return;
+  const edgeVerts = [];
+  const edgeColors = [];
+  const colTree = new THREE.Color(themeColor('--line', '#3A1A1D'));
+  const colLink = new THREE.Color(themeColor('--accent', '#E02826'));
+  graph.edges.forEach(e => {
+    if(e.kind==='tree' && !graph.showTree) return;
+    if(e.kind==='link' && !graph.showLinks) return;
+    edgeVerts.push(e.a._x3, e.a._y3, e.a._z3, e.b._x3, e.b._y3, e.b._z3);
+    const c = e.kind==='link' ? colLink : colTree;
+    edgeColors.push(c.r,c.g,c.b, c.r,c.g,c.b);
+  });
+  g3d.scene.remove(g3d.edgeLines);
+  g3d.edgeLines.geometry.dispose();
+  const edgeGeo = new THREE.BufferGeometry();
+  edgeGeo.setAttribute('position', new THREE.Float32BufferAttribute(edgeVerts, 3));
+  edgeGeo.setAttribute('color', new THREE.Float32BufferAttribute(edgeColors, 3));
+  const edgeLines = new THREE.LineSegments(edgeGeo, g3d.edgeMat);
+  g3d.scene.add(edgeLines);
+  g3d.edgeLines = edgeLines;
+  render3DFrame();
+}
+
+function resize3DGraph(){
+  if(!g3d) return;
+  const rect = g3d.container.getBoundingClientRect();
+  if(rect.width < 2 || rect.height < 2) return;
+  g3d.camera.aspect = rect.width / rect.height;
+  g3d.camera.updateProjectionMatrix();
+  g3d.renderer.setSize(rect.width, rect.height);
+  render3DFrame();
 }
 
 function update3DCamera(){
@@ -3752,6 +3817,7 @@ function setViewMode(mode){
   viewMode = mode;
   $('tableBody').style.display   = mode === 'table' ? 'block' : 'none';
   $('graph3dBody').style.display = mode === '3d'    ? 'block' : 'none';
+  $('graph3dControls').style.display = mode === '3d' ? 'flex' : 'none';
   $('graphCanvas').style.display = mode === 'graph' ? 'block' : 'none';
   $('graphControls').style.display = mode === 'graph' ? 'flex' : 'none';
 
@@ -3760,11 +3826,34 @@ function setViewMode(mode){
   $('graphAsTable').textContent = mode === 'table' ? 'Показать картой' : 'Таблица';
 
   if(mode === 'table') renderRelTable();
-  if(mode === '3d') init3DGraph();
+  if(mode === '3d'){
+    $('graph3dTree').setAttribute('aria-pressed', String(graph.showTree));
+    $('graph3dLinks').setAttribute('aria-pressed', String(graph.showLinks));
+    init3DGraph();
+  }
 }
 
 $('graphAsTable').onclick = () => setViewMode(viewMode === 'table' ? 'graph' : 'table');
 $('graphAs3d').onclick = () => setViewMode(viewMode === '3d' ? 'graph' : '3d');
+
+$('graph3dTree').onclick = () => {
+  graph.showTree = !graph.showTree;
+  $('graph3dTree').setAttribute('aria-pressed', String(graph.showTree));
+  $('graphTree').setAttribute('aria-pressed', String(graph.showTree));
+  rebuild3DEdges();
+  drawGraph();
+};
+$('graph3dLinks').onclick = () => {
+  graph.showLinks = !graph.showLinks;
+  $('graph3dLinks').setAttribute('aria-pressed', String(graph.showLinks));
+  $('graphLinks').setAttribute('aria-pressed', String(graph.showLinks));
+  rebuild3DEdges();
+  drawGraph();
+};
+$('graph3dZoomIn').onclick = () => zoom3DStep(1/1.25);
+$('graph3dZoomOut').onclick = () => zoom3DStep(1.25);
+$('graph3dFit').onclick = () => reset3DView();
+$('graph3dReset').onclick = () => { if(viewMode === '3d') init3DGraph(); };
 
 /* ===================== ЛЮДИ ===================== */
 
@@ -4721,11 +4810,13 @@ $('graphClose').onclick = closeGraphScreen;
 $('graphTree').onclick = () => {
   graph.showTree = !graph.showTree;
   $('graphTree').setAttribute('aria-pressed', String(graph.showTree));
+  $('graph3dTree').setAttribute('aria-pressed', String(graph.showTree));
   drawGraph();
 };
 $('graphLinks').onclick = () => {
   graph.showLinks = !graph.showLinks;
   $('graphLinks').setAttribute('aria-pressed', String(graph.showLinks));
+  $('graph3dLinks').setAttribute('aria-pressed', String(graph.showLinks));
   drawGraph();
 };
 $('graphReset').onclick = () => { buildGraph(); drawGraph(); if(viewMode==='table') renderRelTable(); if(viewMode==='3d') init3DGraph(); };
@@ -4795,6 +4886,7 @@ function pathTo(node){
 
 window.addEventListener('resize', () => {
   if($('graphBg').classList.contains('open')){ resizeGraph(); drawGraph(); }
+  if(viewMode === '3d') resize3DGraph();
 });
 
 /* ---------------------- план и сроки ---------------------------- */
