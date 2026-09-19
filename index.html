@@ -1143,9 +1143,11 @@
       <button id="seedParkour">Курс: паркур и акробатика</button>
       <button id="fillSurveillanceTheory">Слежка и контрнаблюдение: залить теорию</button>
       <button id="seedSurveillance">Курс: слежка и контрнаблюдение</button>
+      <button id="fillSurvivalTheory">Выживание: залить теорию</button>
+      <button id="seedSurvival">Курс: выживание</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 59 — Excel-курс завершён (54/54), курс слежки и контрнаблюдения (историко-академический, 48/48)</div>
+    <div class="hint sv-version" id="version">Версия 60 — курс выживания (48/48) добавлен</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -1163,6 +1165,7 @@
 <script src="theory-parkour.js"></script>
 <script src="theory-firstaid.js"></script>
 <script src="theory-surveillance.js"></script>
+<script src="theory-survival.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.2/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -5079,6 +5082,14 @@ courseButton('seedSurveillance', 'Слежка и контрнаблюдение
   'Материал целиком основан на открытых источниках и историографии, с явным акцентом на законность и этику.',
   'Курс: слежка и контрнаблюдение');
 
+courseButton('seedSurvival', 'Выживание', () => SURVIVAL_COURSE, 'часов',
+  'Практический курс выживания: психология и подготовка, вода, огонь, укрытие, добыча пищи, ' +
+  'базовое ориентирование без приборов, сигнализация и спасение, погода и климатические угрозы, ' +
+  'опасные животные и растения, узлы и подручные инструменты, городское выживание и ЧС, ' +
+  'психологическая устойчивость и долгосрочное выживание. Основан на открытых военных и туристических ' +
+  'руководствах (US Army Survival Manual, SAS Survival Handbook, Bushcraft 101).',
+  'Курс: выживание');
+
 courseButton('seedExcel', 'Excel', () => EXCEL_COURSE, 'часов',
   'Академический курс: от модели данных до Power Query, DAX и автоматизации.',
   'Загрузить курс: Excel');
@@ -5126,6 +5137,7 @@ theoryButton('fillMartialTheory', () => theorySet('MARTIAL_THEORY'), 'Боева
 theoryButton('fillFirstAidTheory', () => theorySet('FIRSTAID_THEORY'), 'Первая помощь: залить теорию');
 theoryButton('fillParkourTheory', () => theorySet('PARKOUR_THEORY'), 'Паркур и акробатика: залить теорию');
 theoryButton('fillSurveillanceTheory', () => theorySet('SURVEILLANCE_THEORY'), 'Слежка и контрнаблюдение: залить теорию');
+theoryButton('fillSurvivalTheory', () => theorySet('SURVIVAL_THEORY'), 'Выживание: залить теорию');
 
 $('fillSqlTheory').onclick = async () => {
   const btn = $('fillSqlTheory');
