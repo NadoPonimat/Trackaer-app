@@ -1145,9 +1145,11 @@
       <button id="seedSurveillance">Курс: слежка и контрнаблюдение</button>
       <button id="fillSurvivalTheory">Выживание: залить теорию</button>
       <button id="seedSurvival">Курс: выживание</button>
+      <button id="fillNavigationTheory">Ориентирование на местности: залить теорию</button>
+      <button id="seedNavigation">Курс: ориентирование на местности</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 60 — курс выживания (48/48) добавлен</div>
+    <div class="hint sv-version" id="version">Версия 61 — курс ориентирования на местности (48/48) добавлен</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -1166,6 +1168,7 @@
 <script src="theory-firstaid.js"></script>
 <script src="theory-surveillance.js"></script>
 <script src="theory-survival.js"></script>
+<script src="theory-navigation.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.2/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -5090,6 +5093,16 @@ courseButton('seedSurvival', 'Выживание', () => SURVIVAL_COURSE, 'ча�
   'руководствах (US Army Survival Manual, SAS Survival Handbook, Bushcraft 101).',
   'Курс: выживание');
 
+courseButton('seedNavigation', 'Ориентирование на местности', () => NAVIGATION_COURSE, 'часов',
+  'Углублённый курс ориентирования на местности: топографическая карта и рельеф, устройство и приёмы ' +
+  'работы с компасом, определение азимута и движение по нему, измерение расстояний, GPS и спутниковая ' +
+  'навигация, комбинирование карты и компаса на маршруте, спортивное ориентирование, ориентирование в ' +
+  'особых условиях (горы, лес, ночь, плохая видимость), продвинутые естественные методы навигации, ' +
+  'планирование маршрута и подготовка похода, типичные ошибки навигации и их предотвращение. ' +
+  'Основан на открытых источниках (US Army FM 3-25.26, Boy Scout Handbook, руководства Silva/Suunto, ' +
+  'правила IOF, SAS Survival Handbook, правило Нейсмита).',
+  'Курс: ориентирование на местности');
+
 courseButton('seedExcel', 'Excel', () => EXCEL_COURSE, 'часов',
   'Академический курс: от модели данных до Power Query, DAX и автоматизации.',
   'Загрузить курс: Excel');
@@ -5138,6 +5151,7 @@ theoryButton('fillFirstAidTheory', () => theorySet('FIRSTAID_THEORY'), 'Перв
 theoryButton('fillParkourTheory', () => theorySet('PARKOUR_THEORY'), 'Паркур и акробатика: залить теорию');
 theoryButton('fillSurveillanceTheory', () => theorySet('SURVEILLANCE_THEORY'), 'Слежка и контрнаблюдение: залить теорию');
 theoryButton('fillSurvivalTheory', () => theorySet('SURVIVAL_THEORY'), 'Выживание: залить теорию');
+theoryButton('fillNavigationTheory', () => theorySet('NAVIGATION_THEORY'), 'Ориентирование на местности: залить теорию');
 
 $('fillSqlTheory').onclick = async () => {
   const btn = $('fillSqlTheory');
