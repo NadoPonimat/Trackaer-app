@@ -378,10 +378,26 @@
   #bookReaderBg .graph-bottom{background:var(--rt-surface);border-color:var(--rt-line)}
   #bookReaderBg .graph-bottom button{background:var(--rt-bg);color:var(--rt-text);border-color:var(--rt-line)}
   #bookReaderBg .more{color:var(--rt-text)}
-  .pgn-content{background:var(--rt-bg);color:var(--rt-text)}
+  .pgn-content{
+    background:var(--rt-bg);color:var(--rt-text);
+    font-family:Georgia,'Noto Serif','PT Serif','Times New Roman',serif;
+  }
   .pgn-content .fb2-subtitle,.pgn-content .fb2-author,.pgn-content .fb2-epigraph{color:var(--rt-muted)}
   .pgn-content .fb2-epigraph{border-left-color:var(--rt-line)}
   #bookPdfWrap{background:var(--rt-bg)}
+  /* «электронные чернила»: матовая зернистая поверхность без цвета в интерфейсе, без анимации перелистывания */
+  #bookReaderBg.rt-mono .graph-top .more{filter:grayscale(1) contrast(.85);opacity:.8}
+  #bookReaderBg.rt-mono .pgn-content{
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch' result='t'/%3E%3CfeColorMatrix in='t' type='matrix' values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat:repeat;
+    background-blend-mode:multiply;
+  }
+  #bookReaderBg.rt-mono #bookPdfWrap{
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch' result='t'/%3E%3CfeColorMatrix in='t' type='matrix' values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat:repeat;
+    background-blend-mode:multiply;
+  }
+  #bookReaderBg.rt-mono .pgn-content.pgn-anim{transition:none}
   .reader-theme-popup{
     position:fixed;z-index:40;display:none;flex-direction:column;gap:2px;
     background:var(--surface);border:1px solid var(--line);border-radius:14px;
@@ -1289,9 +1305,11 @@
       <button id="seedSurvival">Курс: выживание</button>
       <button id="fillNavigationTheory">Ориентирование на местности: залить теорию</button>
       <button id="seedNavigation">Курс: ориентирование на местности</button>
+      <button id="fillAstronomyTheory">Астрономия: залить теорию</button>
+      <button id="seedAstronomy">Курс: астрономия</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 61 — курс ориентирования на местности (48/48) добавлен</div>
+    <div class="hint sv-version" id="version">Версия 62 — курс астрономии (48/48) добавлен</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -1311,6 +1329,7 @@
 <script src="theory-surveillance.js"></script>
 <script src="theory-survival.js"></script>
 <script src="theory-navigation.js"></script>
+<script src="theory-astronomy.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.2/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -4390,14 +4409,14 @@ async function saveBookHighlights(){ if(currentBook) await repo.setSetting('book
 const HL_COLORS = ['hl-yellow','hl-green','hl-blue','hl-pink'];
 
 const READER_THEMES = {
-  paper: {bg:'#e8e5dc', surface:'#ded9cc', text:'#2c2a25', muted:'#6e6a5e', line:'#c9c3b2',
-          pdfFilter:'grayscale(.5) contrast(.9) brightness(1.03)'},
+  paper: {bg:'#e9e9e4', surface:'#dcdcd6', text:'#1e1e1c', muted:'#68685f', line:'#c6c6bd',
+          pdfFilter:'grayscale(1) contrast(1.12) brightness(1.06)', mono:true},
   sepia: {bg:'#f2e6cc', surface:'#e9d9b8', text:'#4a3826', muted:'#8a7355', line:'#d8c5a0',
-          pdfFilter:'sepia(.35) brightness(.97)'},
+          pdfFilter:'sepia(.35) brightness(.97)', mono:false},
   white: {bg:'#ffffff', surface:'#f5f5f5', text:'#1a1a1a', muted:'#6b6b6b', line:'#e2e2e2',
-          pdfFilter:'none'},
+          pdfFilter:'none', mono:false},
   night: {bg:'#141414', surface:'#1c1c1c', text:'#d9d5cb', muted:'#8f8b80', line:'#333230',
-          pdfFilter:'invert(.92) hue-rotate(180deg) brightness(.9)'},
+          pdfFilter:'invert(.92) hue-rotate(180deg) brightness(.9)', mono:false},
 };
 function applyReaderTheme(){
   const key = READER_THEMES[settings.readerTheme] ? settings.readerTheme : 'paper';
@@ -4408,6 +4427,7 @@ function applyReaderTheme(){
   bg.style.setProperty('--rt-text', t.text);
   bg.style.setProperty('--rt-muted', t.muted);
   bg.style.setProperty('--rt-line', t.line);
+  bg.classList.toggle('rt-mono', !!t.mono);
   const canvas = $('bookPdfCanvas');
   if(canvas) canvas.style.filter = t.pdfFilter;
   [...$('readerThemePopup').querySelectorAll('button')].forEach(b => {
@@ -6114,6 +6134,15 @@ courseButton('seedNavigation', 'Ориентирование на местнос
   'правила IOF, SAS Survival Handbook, правило Нейсмита).',
   'Курс: ориентирование на местности');
 
+courseButton('seedAstronomy', 'Астрономия', () => ASTRONOMY_COURSE, 'часов',
+  'Общеобразовательный курс астрономии: история науки, небесная сфера и системы координат, Земля и Луна, ' +
+  'приливы и затмения, планеты и малые тела Солнечной системы, Солнце, классификация и эволюция звёзд, ' +
+  'галактики и крупномасштабная структура Вселенной, космология (Большой взрыв, реликтовое излучение, ' +
+  'тёмная материя и энергия), инструменты и практика любительских наблюдений неба, современные космические ' +
+  'телескопы и миссии, поиск экзопланет и внеземной жизни. Основан на открытых учебниках общей астрономии ' +
+  'и астрофизики и общедоступных данных NASA/ESA.',
+  'Курс: астрономия');
+
 courseButton('seedExcel', 'Excel', () => EXCEL_COURSE, 'часов',
   'Академический курс: от модели данных до Power Query, DAX и автоматизации.',
   'Загрузить курс: Excel');
@@ -6163,6 +6192,7 @@ theoryButton('fillParkourTheory', () => theorySet('PARKOUR_THEORY'), 'Парку
 theoryButton('fillSurveillanceTheory', () => theorySet('SURVEILLANCE_THEORY'), 'Слежка и контрнаблюдение: залить теорию');
 theoryButton('fillSurvivalTheory', () => theorySet('SURVIVAL_THEORY'), 'Выживание: залить теорию');
 theoryButton('fillNavigationTheory', () => theorySet('NAVIGATION_THEORY'), 'Ориентирование на местности: залить теорию');
+theoryButton('fillAstronomyTheory', () => theorySet('ASTRONOMY_THEORY'), 'Астрономия: залить теорию');
 
 $('fillSqlTheory').onclick = async () => {
   const btn = $('fillSqlTheory');
