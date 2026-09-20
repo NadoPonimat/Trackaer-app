@@ -367,6 +367,35 @@
   .pg-panel .pg-conn{font-size:13px;color:var(--muted);margin-bottom:6px}
   .pg-panel .pg-conn b{color:var(--text);font-weight:600}
 
+  /* ---- темы чтения книг (независимо от общей темы оформления приложения) ---- */
+  #bookReaderBg{
+    --rt-bg:var(--bg); --rt-surface:var(--surface); --rt-text:var(--text);
+    --rt-muted:var(--muted); --rt-line:var(--line);
+    background:var(--rt-bg);
+  }
+  #bookReaderBg .graph-top{background:var(--rt-surface);color:var(--rt-text);border-color:var(--rt-line)}
+  #bookReaderBg .graph-sub{color:var(--rt-muted)}
+  #bookReaderBg .graph-bottom{background:var(--rt-surface);border-color:var(--rt-line)}
+  #bookReaderBg .graph-bottom button{background:var(--rt-bg);color:var(--rt-text);border-color:var(--rt-line)}
+  #bookReaderBg .more{color:var(--rt-text)}
+  .pgn-content{background:var(--rt-bg);color:var(--rt-text)}
+  .pgn-content .fb2-subtitle,.pgn-content .fb2-author,.pgn-content .fb2-epigraph{color:var(--rt-muted)}
+  .pgn-content .fb2-epigraph{border-left-color:var(--rt-line)}
+  #bookPdfWrap{background:var(--rt-bg)}
+  .reader-theme-popup{
+    position:fixed;z-index:40;display:none;flex-direction:column;gap:2px;
+    background:var(--surface);border:1px solid var(--line);border-radius:14px;
+    padding:6px;box-shadow:0 8px 24px rgba(0,0,0,.35);min-width:180px;
+  }
+  .reader-theme-popup.open{display:flex}
+  .reader-theme-popup button{
+    display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;
+    border:none;background:transparent;color:var(--text);font:inherit;font-size:14px;
+    cursor:pointer;text-align:left;
+  }
+  .reader-theme-popup button[aria-pressed="true"]{background:var(--bg);outline:1px solid var(--accent)}
+  .reader-theme-popup .sw{width:20px;height:20px;border-radius:50%;flex:none;border:1px solid;box-sizing:border-box}
+
   /* ---- постраничная читалка книг (FB2/EPUB): CSS-колонки как страницы ---- */
   .pgn-viewport{flex:1;position:relative;overflow:hidden;touch-action:none}
   .pgn-content{
@@ -956,6 +985,7 @@
       <div class="graph-sub" id="bookReaderSub"></div>
     </div>
     <button class="more" id="bookTocOpen" aria-label="Оглавление и закладки">📑</button>
+    <button class="more" id="bookThemeToggle" aria-label="Тема чтения">🎨</button>
     <button class="more" id="bookBookmarkToggle" aria-label="Закладка на странице">🔖</button>
     <button class="more" id="bookDelete" aria-label="Удалить">🗑</button>
     <button class="more" id="bookReaderClose" aria-label="Закрыть">✕</button>
@@ -991,6 +1021,13 @@
   <div class="dot c-blue" data-color="hl-blue"></div>
   <div class="dot c-pink" data-color="hl-pink"></div>
   <button class="rm" id="hlPopupRemove" style="display:none">🗑</button>
+</div>
+
+<div class="reader-theme-popup" id="readerThemePopup">
+  <button data-rt="paper"><span class="sw" style="background:#e8e5dc;border-color:#c9c3b2"></span>Бумага (e-ink)</button>
+  <button data-rt="sepia"><span class="sw" style="background:#f2e6cc;border-color:#d8c5a0"></span>Сепия</button>
+  <button data-rt="white"><span class="sw" style="background:#ffffff;border-color:#e2e2e2"></span>Белая</button>
+  <button data-rt="night"><span class="sw" style="background:#141414;border-color:#333230"></span>Тёмная</button>
 </div>
 
 <div class="sheet-bg" id="bookTocBg">
@@ -1532,6 +1569,7 @@ async function openDatabase(){
   settings.budget = s.budget || '';
   settings.theme = s.theme || 'red';
   settings.readerFont = s.readerFont || 'm';
+  settings.readerTheme = s.readerTheme || 'paper';
   for(const key of Object.keys(SRS_DEFAULTS))
     settings[key] = s[key] !== undefined && s[key] !== ''
       ? (key === 'srsOrder' ? s[key] : Number(s[key]))
@@ -4351,6 +4389,56 @@ async function saveBookHighlights(){ if(currentBook) await repo.setSetting('book
 
 const HL_COLORS = ['hl-yellow','hl-green','hl-blue','hl-pink'];
 
+const READER_THEMES = {
+  paper: {bg:'#e8e5dc', surface:'#ded9cc', text:'#2c2a25', muted:'#6e6a5e', line:'#c9c3b2',
+          pdfFilter:'grayscale(.5) contrast(.9) brightness(1.03)'},
+  sepia: {bg:'#f2e6cc', surface:'#e9d9b8', text:'#4a3826', muted:'#8a7355', line:'#d8c5a0',
+          pdfFilter:'sepia(.35) brightness(.97)'},
+  white: {bg:'#ffffff', surface:'#f5f5f5', text:'#1a1a1a', muted:'#6b6b6b', line:'#e2e2e2',
+          pdfFilter:'none'},
+  night: {bg:'#141414', surface:'#1c1c1c', text:'#d9d5cb', muted:'#8f8b80', line:'#333230',
+          pdfFilter:'invert(.92) hue-rotate(180deg) brightness(.9)'},
+};
+function applyReaderTheme(){
+  const key = READER_THEMES[settings.readerTheme] ? settings.readerTheme : 'paper';
+  const t = READER_THEMES[key];
+  const bg = $('bookReaderBg');
+  bg.style.setProperty('--rt-bg', t.bg);
+  bg.style.setProperty('--rt-surface', t.surface);
+  bg.style.setProperty('--rt-text', t.text);
+  bg.style.setProperty('--rt-muted', t.muted);
+  bg.style.setProperty('--rt-line', t.line);
+  const canvas = $('bookPdfCanvas');
+  if(canvas) canvas.style.filter = t.pdfFilter;
+  [...$('readerThemePopup').querySelectorAll('button')].forEach(b => {
+    b.setAttribute('aria-pressed', b.dataset.rt === key ? 'true' : 'false');
+  });
+}
+function closeReaderThemePopup(){ $('readerThemePopup').classList.remove('open'); }
+$('bookThemeToggle').onclick = (e) => {
+  e.stopPropagation();
+  const popup = $('readerThemePopup');
+  if(popup.classList.contains('open')){ closeReaderThemePopup(); return; }
+  popup.classList.add('open');
+  const btnRect = $('bookThemeToggle').getBoundingClientRect();
+  popup.style.left = Math.max(8, Math.min(window.innerWidth - popup.offsetWidth - 8, btnRect.left)) + 'px';
+  popup.style.top = (btnRect.bottom + 8) + 'px';
+};
+[...document.querySelectorAll('#readerThemePopup button')].forEach(btn => {
+  btn.onclick = async () => {
+    settings.readerTheme = btn.dataset.rt;
+    await repo.setSetting('readerTheme', settings.readerTheme);
+    applyReaderTheme();
+    closeReaderThemePopup();
+  };
+});
+document.addEventListener('pointerdown', (e) => {
+  const popup = $('readerThemePopup');
+  if(!popup.classList.contains('open')) return;
+  if(popup.contains(e.target) || e.target.closest('#bookThemeToggle')) return;
+  closeReaderThemePopup();
+}, true);
+
 function detectFormat(filename){
   const ext = filename.toLowerCase().split('.').pop();
   if(ext === 'fb2') return 'fb2';
@@ -5381,6 +5469,7 @@ async function openBookReaderInner(entry, base64){
   $('bookReaderTitle').textContent = entry.title || entry.filename;
   $('booksBg').classList.remove('open');
   $('bookReaderBg').classList.add('open');
+  applyReaderTheme();
 
   $('bookReaderBody').style.display = 'none';
   $('bookPdfWrap').style.display = 'none';
