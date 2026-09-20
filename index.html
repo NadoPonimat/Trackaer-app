@@ -367,17 +367,81 @@
   .pg-panel .pg-conn{font-size:13px;color:var(--muted);margin-bottom:6px}
   .pg-panel .pg-conn b{color:var(--text);font-weight:600}
 
-  #bookReaderBody .fb2-section{margin-bottom:18px}
-  #bookReaderBody .fb2-title{margin:0 0 10px;font-size:1.3em;text-align:center}
-  #bookReaderBody .fb2-subtitle{margin:14px 0 6px;color:var(--muted)}
-  #bookReaderBody .fb2-poem{margin:14px 0;font-style:italic}
-  #bookReaderBody .fb2-stanza{margin:0 0 10px}
-  #bookReaderBody .fb2-author{text-align:right;color:var(--muted);font-size:0.9em}
-  #bookReaderBody .fb2-epigraph{margin:14px 0;padding-left:14px;border-left:2px solid var(--line);color:var(--muted)}
-  #bookReaderBody img{max-width:100%;height:auto;display:block;margin:10px auto}
-  #bookReaderBody p{margin:0 0 12px}
+  /* ---- постраничная читалка книг (FB2/EPUB): CSS-колонки как страницы ---- */
+  .pgn-viewport{flex:1;position:relative;overflow:hidden;touch-action:none}
+  .pgn-content{
+    position:absolute;top:0;left:0;column-gap:32px;column-fill:auto;
+    padding:18px 16px calc(env(safe-area-inset-bottom) + 20px);
+    will-change:transform;
+  }
+  .pgn-content.pgn-anim{transition:transform .28s ease}
+  .pgn-content.font-s{font-size:14px;line-height:1.6}
+  .pgn-content.font-m{font-size:17px;line-height:1.65}
+  .pgn-content.font-l{font-size:21px;line-height:1.7}
+  .pgn-content .fb2-section{margin-bottom:18px}
+  .pgn-content .fb2-title{margin:0 0 10px;font-size:1.3em;text-align:center}
+  .pgn-content .fb2-subtitle{margin:14px 0 6px;color:var(--muted)}
+  .pgn-content .fb2-poem{margin:14px 0;font-style:italic}
+  .pgn-content .fb2-stanza{margin:0 0 10px}
+  .pgn-content .fb2-author{text-align:right;color:var(--muted);font-size:0.9em}
+  .pgn-content .fb2-epigraph{margin:14px 0;padding-left:14px;border-left:2px solid var(--line);color:var(--muted)}
+  .pgn-content img{max-width:100%;height:auto;display:block;margin:10px auto;break-inside:avoid}
+  .pgn-content p{margin:0 0 12px}
+  .pgn-content mark.hl, .pdf-hl{background:rgba(255,214,0,.38);color:inherit;border-radius:2px}
+  .pgn-content mark.hl-yellow, .pdf-hl.hl-yellow{background:rgba(255,214,0,.38)}
+  .pgn-content mark.hl-green, .pdf-hl.hl-green{background:rgba(63,169,107,.35)}
+  .pgn-content mark.hl-blue, .pdf-hl.hl-blue{background:rgba(64,150,255,.32)}
+  .pgn-content mark.hl-pink, .pdf-hl.hl-pink{background:rgba(255,90,150,.32)}
+
   #bookPdfWrap{display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:10px}
-  #bookPdfCanvas{max-width:100%}
+  .pdf-page-wrap{position:relative;margin:0 auto}
+  #bookPdfCanvas{max-width:100%;display:block}
+  .pdf-text-layer{
+    position:absolute;top:0;left:0;overflow:hidden;line-height:1;
+    transform-origin:0 0;user-select:text;
+  }
+  .pdf-text-layer span{
+    position:absolute;color:transparent;white-space:pre;cursor:text;transform-origin:0 0;
+  }
+  .pdf-text-layer span::selection{background:rgba(64,150,255,.45)}
+  .pdf-hl-layer{position:absolute;top:0;left:0;overflow:hidden;pointer-events:none}
+  .pdf-hl{position:absolute;pointer-events:none}
+
+  .pgn-pageinfo{flex:1 1 auto;text-align:center;color:var(--muted);font-size:13px;
+    display:flex;align-items:center;justify-content:center}
+
+  .hl-popup{
+    position:fixed;z-index:40;display:none;gap:8px;align-items:center;
+    background:var(--surface);border:1px solid var(--line);border-radius:14px;
+    padding:8px 10px;box-shadow:0 8px 24px rgba(0,0,0,.35);
+  }
+  .hl-popup.open{display:flex}
+  .hl-popup .dot{width:24px;height:24px;border-radius:50%;flex:none;cursor:pointer;border:2px solid transparent}
+  .hl-popup .dot[data-active="true"]{border-color:var(--text)}
+  .hl-popup .dot.c-yellow{background:#E8C400}
+  .hl-popup .dot.c-green{background:#3FA96B}
+  .hl-popup .dot.c-blue{background:#4096FF}
+  .hl-popup .dot.c-pink{background:#FF5A96}
+  .hl-popup .rm{background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;padding:2px 4px}
+
+  .toc-tabs{display:flex;gap:8px;margin-bottom:12px}
+  .toc-tabs button{
+    flex:1;padding:10px;border-radius:var(--radius);background:var(--bg);
+    color:var(--muted);border:1px solid var(--line);font:inherit;font-size:13px;cursor:pointer;
+  }
+  .toc-tabs button[aria-pressed="true"]{border-color:var(--accent);color:var(--text)}
+  .toc-row{
+    display:flex;align-items:center;gap:10px;padding:12px 4px;
+    border-bottom:1px solid var(--line);cursor:pointer;
+  }
+  .toc-row:last-child{border-bottom:none}
+  .toc-row .t{flex:1;min-width:0}
+  .toc-row .t .ttl{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .toc-row .t .snip{display:block;font-size:12px;color:var(--muted);margin-top:2px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .toc-row.lvl-1 .ttl{padding-left:14px;font-size:.94em;color:var(--muted)}
+  .toc-row .rm{background:none;border:none;color:var(--muted);font-size:18px;padding:2px 8px;cursor:pointer}
+  #bookTocBg{z-index:30}
 
   .rv-body{flex:1;overflow-y:auto;padding:18px 16px 8px}
   .rv-path{font-size:12px;color:var(--muted);margin-bottom:4px}
@@ -891,24 +955,53 @@
       <div class="graph-title" id="bookReaderTitle"></div>
       <div class="graph-sub" id="bookReaderSub"></div>
     </div>
+    <button class="more" id="bookTocOpen" aria-label="Оглавление и закладки">📑</button>
+    <button class="more" id="bookBookmarkToggle" aria-label="Закладка на странице">🔖</button>
     <button class="more" id="bookDelete" aria-label="Удалить">🗑</button>
     <button class="more" id="bookReaderClose" aria-label="Закрыть">✕</button>
   </div>
-  <div class="reader-body" id="bookReaderBody" style="display:none"></div>
+  <div class="pgn-viewport" id="bookReaderBody" style="display:none">
+    <div class="pgn-content" id="bookPgnContent"></div>
+  </div>
   <div class="people-graph-body" id="bookPdfWrap" style="display:none">
-    <canvas id="bookPdfCanvas"></canvas>
+    <div class="pdf-page-wrap" id="bookPdfPageWrap">
+      <canvas id="bookPdfCanvas"></canvas>
+      <div class="pdf-hl-layer" id="bookPdfHlLayer"></div>
+      <div class="pdf-text-layer" id="bookPdfTextLayer"></div>
+    </div>
   </div>
   <div class="graph-bottom" id="bookTextControls" style="display:none">
     <button id="bookFontS">А</button>
     <button id="bookFontM">А</button>
     <button id="bookFontL">А</button>
-    <button id="bookChapPrev">‹ Глава</button>
-    <button id="bookChapNext">Глава ›</button>
+    <button id="bookPagePrevT" aria-label="Назад">‹</button>
+    <div class="pgn-pageinfo" id="bookPageInfoT"></div>
+    <button id="bookPageNextT" aria-label="Вперёд">›</button>
   </div>
   <div class="graph-bottom" id="bookPdfControls" style="display:none">
     <button id="bookPagePrev">‹ Стр.</button>
     <button id="bookPageInfo" disabled></button>
     <button id="bookPageNext">Стр. ›</button>
+  </div>
+</div>
+
+<div class="hl-popup" id="hlPopup">
+  <div class="dot c-yellow" data-color="hl-yellow"></div>
+  <div class="dot c-green" data-color="hl-green"></div>
+  <div class="dot c-blue" data-color="hl-blue"></div>
+  <div class="dot c-pink" data-color="hl-pink"></div>
+  <button class="rm" id="hlPopupRemove" style="display:none">🗑</button>
+</div>
+
+<div class="sheet-bg" id="bookTocBg">
+  <div class="sheet">
+    <h2 id="bookTocTitle">Оглавление</h2>
+    <div class="toc-tabs">
+      <button id="tocTabToc" aria-pressed="true">Оглавление</button>
+      <button id="tocTabBookmarks" aria-pressed="false">Закладки</button>
+    </div>
+    <div class="scroll" style="max-height:66vh" id="tocList"></div>
+    <div class="actions"><button id="bookTocClose">Закрыть</button></div>
   </div>
 </div>
 
@@ -2469,14 +2562,14 @@ $('menuDelete').onclick = async () => {
   render();
 };
 
-['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg'].forEach(id => {
+['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg','bookTocBg'].forEach(id => {
   const bg = $(id);
   bg.onclick = e => { if(e.target === bg) bg.classList.remove('open'); };
 });
 
 if(window.Capacitor && window.Capacitor.Plugins.App){
   window.Capacitor.Plugins.App.addListener('backButton', () => {
-    for(const id of ['pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookReaderBg','harmfulBg']){
+    for(const id of ['pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg']){
       if($(id).classList.contains('open')){ $(id).classList.remove('open'); return; }
     }
     if(path.length){ path.pop(); render(); return; }
@@ -4231,6 +4324,12 @@ $('peopleGraphCanvas').addEventListener('click', (ev) => {
 let BOOKS = [];
 let booksSeq = 0;
 let currentBook = null;   /* {id, format, ...распарсенное состояние} */
+let pgn = null;           /* {w,h,gap,total,index} — состояние постраничной раскладки */
+let pgnSuppressClick = false;
+let hlPopupTarget = null;
+let tocTab = 'toc';
+
+function genId(){ return 'h' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
 async function loadBooksIndex(){
   const s = await repo.getSettings();
@@ -4239,6 +4338,18 @@ async function loadBooksIndex(){
   booksSeq = BOOKS.reduce((m,b) => Math.max(m,b.id), 0);
 }
 async function saveBooksIndex(){ await repo.setSetting('books_index', JSON.stringify(BOOKS)); }
+
+async function loadBookAnnotations(id){
+  const s = await repo.getSettings();
+  let bookmarks = [], highlights = [];
+  try{ bookmarks = s['book_bookmarks_'+id] ? JSON.parse(s['book_bookmarks_'+id]) : []; }catch(e){ bookmarks = []; }
+  try{ highlights = s['book_highlights_'+id] ? JSON.parse(s['book_highlights_'+id]) : []; }catch(e){ highlights = []; }
+  return {bookmarks, highlights};
+}
+async function saveBookBookmarks(){ if(currentBook) await repo.setSetting('book_bookmarks_' + currentBook.id, JSON.stringify(currentBook.bookmarks)); }
+async function saveBookHighlights(){ if(currentBook) await repo.setSetting('book_highlights_' + currentBook.id, JSON.stringify(currentBook.highlights)); }
+
+const HL_COLORS = ['hl-yellow','hl-green','hl-blue','hl-pink'];
 
 function detectFormat(filename){
   const ext = filename.toLowerCase().split('.').pop();
@@ -4309,9 +4420,12 @@ $('bookFileInput').onchange = async (ev) => {
 
 async function deleteCurrentBook(){
   if(!currentBook) return;
-  BOOKS = BOOKS.filter(b => b.id !== currentBook.id);
+  const id = currentBook.id;
+  BOOKS = BOOKS.filter(b => b.id !== id);
   await saveBooksIndex();
-  await repo.setSetting('book_data_' + currentBook.id, '');
+  await repo.setSetting('book_data_' + id, '');
+  await repo.setSetting('book_bookmarks_' + id, '');
+  await repo.setSetting('book_highlights_' + id, '');
   closeBookReader();
   renderBooksList();
 }
@@ -4337,37 +4451,53 @@ function fb2QueryAll(root, name){
   return out;
 }
 function fb2Query(root, name){ return fb2QueryAll(root, name)[0] || null; }
+function fb2DirectChild(node, name){
+  for(const c of node.children || []) if(c.localName === name) return c;
+  return null;
+}
 function escapeHtmlText(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-function fb2NodeToHtml(node, binaries){
+function fb2ChildrenToHtml(node, binaries, ctx){
   let out = '';
   for(const child of node.childNodes){
     if(child.nodeType === 3){ out += escapeHtmlText(child.textContent); continue; }
     if(child.nodeType !== 1) continue;
     const name = child.localName;
     switch(name){
-      case 'section': out += '<div class="fb2-section">' + fb2NodeToHtml(child,binaries) + '</div>'; break;
-      case 'title': out += '<h2 class="fb2-title">' + fb2NodeToHtml(child,binaries) + '</h2>'; break;
-      case 'subtitle': out += '<h4 class="fb2-subtitle">' + fb2NodeToHtml(child,binaries) + '</h4>'; break;
-      case 'p': out += '<p>' + fb2NodeToHtml(child,binaries) + '</p>'; break;
+      case 'section': {
+        const level = ctx.depth + 1;
+        let elId = null;
+        if(level <= 2){
+          elId = genId();
+          const tEl = fb2DirectChild(child, 'title');
+          const title = tEl ? tEl.textContent.trim().replace(/\s+/g,' ') : 'Раздел';
+          ctx.toc.push({chapterIndex: ctx.chapterIndex, elementId: elId, title, level});
+        }
+        out += '<div class="fb2-section"' + (elId ? ' id="'+elId+'"' : '') + '>' +
+          fb2ChildrenToHtml(child, binaries, {toc: ctx.toc, chapterIndex: ctx.chapterIndex, depth: level}) + '</div>';
+        break;
+      }
+      case 'title': out += '<h2 class="fb2-title">' + fb2ChildrenToHtml(child,binaries,ctx) + '</h2>'; break;
+      case 'subtitle': out += '<h4 class="fb2-subtitle">' + fb2ChildrenToHtml(child,binaries,ctx) + '</h4>'; break;
+      case 'p': out += '<p>' + fb2ChildrenToHtml(child,binaries,ctx) + '</p>'; break;
       case 'empty-line': out += '<br>'; break;
-      case 'emphasis': out += '<em>' + fb2NodeToHtml(child,binaries) + '</em>'; break;
-      case 'strong': out += '<strong>' + fb2NodeToHtml(child,binaries) + '</strong>'; break;
-      case 'strikethrough': out += '<s>' + fb2NodeToHtml(child,binaries) + '</s>'; break;
-      case 'epigraph': out += '<blockquote class="fb2-epigraph">' + fb2NodeToHtml(child,binaries) + '</blockquote>'; break;
-      case 'cite': out += '<blockquote>' + fb2NodeToHtml(child,binaries) + '</blockquote>'; break;
-      case 'poem': out += '<div class="fb2-poem">' + fb2NodeToHtml(child,binaries) + '</div>'; break;
-      case 'stanza': out += '<p class="fb2-stanza">' + fb2NodeToHtml(child,binaries) + '</p>'; break;
-      case 'v': out += fb2NodeToHtml(child,binaries) + '<br>'; break;
-      case 'text-author': out += '<p class="fb2-author">— ' + fb2NodeToHtml(child,binaries) + '</p>'; break;
+      case 'emphasis': out += '<em>' + fb2ChildrenToHtml(child,binaries,ctx) + '</em>'; break;
+      case 'strong': out += '<strong>' + fb2ChildrenToHtml(child,binaries,ctx) + '</strong>'; break;
+      case 'strikethrough': out += '<s>' + fb2ChildrenToHtml(child,binaries,ctx) + '</s>'; break;
+      case 'epigraph': out += '<blockquote class="fb2-epigraph">' + fb2ChildrenToHtml(child,binaries,ctx) + '</blockquote>'; break;
+      case 'cite': out += '<blockquote>' + fb2ChildrenToHtml(child,binaries,ctx) + '</blockquote>'; break;
+      case 'poem': out += '<div class="fb2-poem">' + fb2ChildrenToHtml(child,binaries,ctx) + '</div>'; break;
+      case 'stanza': out += '<p class="fb2-stanza">' + fb2ChildrenToHtml(child,binaries,ctx) + '</p>'; break;
+      case 'v': out += fb2ChildrenToHtml(child,binaries,ctx) + '<br>'; break;
+      case 'text-author': out += '<p class="fb2-author">— ' + fb2ChildrenToHtml(child,binaries,ctx) + '</p>'; break;
       case 'image': {
         const href = (child.getAttributeNS && child.getAttributeNS('http://www.w3.org/1999/xlink','href'))
           || child.getAttribute('l:href') || child.getAttribute('xlink:href') || '';
-        const id = href.replace(/^#/,'');
-        if(binaries[id]) out += '<img src="' + binaries[id] + '" style="max-width:100%">';
+        const bid = href.replace(/^#/,'');
+        if(binaries[bid]) out += '<img src="' + binaries[bid] + '" style="max-width:100%">';
         break;
       }
-      default: out += fb2NodeToHtml(child,binaries);
+      default: out += fb2ChildrenToHtml(child,binaries,ctx);
     }
   }
   return out;
@@ -4391,11 +4521,22 @@ function parseFb2(base64){
   });
   const bodies = fb2QueryAll(doc.documentElement, 'body').filter(b => !b.getAttribute('name'));
   const mainBody = bodies[0] || fb2QueryAll(doc.documentElement, 'body')[0];
-  return {
-    title: titleEl ? titleEl.textContent : '',
-    author,
-    html: mainBody ? fb2NodeToHtml(mainBody, binaries) : '<p>Не удалось разобрать текст книги.</p>'
-  };
+  const toc = [];
+  const chapters = [];
+  const topSections = mainBody ? [...mainBody.children].filter(c => c.localName === 'section') : [];
+  if(topSections.length){
+    topSections.forEach((sec, i) => {
+      const tEl = fb2DirectChild(sec, 'title');
+      const title = tEl ? tEl.textContent.trim().replace(/\s+/g,' ') : ('Глава ' + (i+1));
+      toc.push({chapterIndex: i, elementId: null, title, level: 0});
+      const html = fb2ChildrenToHtml(sec, binaries, {toc, chapterIndex: i, depth: 0});
+      chapters.push({html, title});
+    });
+  } else {
+    const html = mainBody ? fb2ChildrenToHtml(mainBody, binaries, {toc, chapterIndex: 0, depth: 0}) : '<p>Не удалось разобрать текст книги.</p>';
+    chapters.push({html, title: ''});
+  }
+  return {title: titleEl ? titleEl.textContent : '', author, chapters, toc};
 }
 
 /* ---------- EPUB ---------- */
@@ -4426,7 +4567,7 @@ async function openEpub(base64){
   const chapterPaths = spineIds.map(id => manifestItems[id]).filter(Boolean);
   const titleEl = opfDoc.getElementsByTagName('dc:title')[0];
   const creatorEl = opfDoc.getElementsByTagName('dc:creator')[0];
-  return {zip, chapterPaths, title: titleEl ? titleEl.textContent : '', author: creatorEl ? creatorEl.textContent : ''};
+  return {zip, chapterPaths, opfPath, opfDir, title: titleEl ? titleEl.textContent : '', author: creatorEl ? creatorEl.textContent : ''};
 }
 
 async function renderEpubChapter(epub, index){
@@ -4454,6 +4595,90 @@ async function renderEpubChapter(epub, index){
   return bodyHtml;
 }
 
+async function parseEpubToc(epub){
+  const {zip, chapterPaths, opfPath, opfDir} = epub;
+  const norm = p => p.replace(/^\.\//,'').split('#')[0];
+  const pathIndex = {};
+  chapterPaths.forEach((p,i) => { pathIndex[norm(p)] = i; });
+  function findChapterIndex(href){
+    const clean = norm(href);
+    if(pathIndex.hasOwnProperty(clean)) return pathIndex[clean];
+    const base = clean.split('/').pop();
+    for(const key in pathIndex){ if(key.split('/').pop() === base) return pathIndex[key]; }
+    return null;
+  }
+  try{
+    const opfXml = await zip.file(opfPath).async('text');
+    const opfDoc = new DOMParser().parseFromString(opfXml, 'application/xml');
+    const items = [...opfDoc.getElementsByTagName('item')];
+    const navItem = items.find(it => (it.getAttribute('properties')||'').split(/\s+/).includes('nav'));
+    if(navItem){
+      const navPath = resolveZipPath(opfDir, navItem.getAttribute('href'));
+      const navDir = navPath.split('/').slice(0,-1).join('/');
+      const navXml = await zip.file(navPath).async('text');
+      let navDoc;
+      try{ navDoc = new DOMParser().parseFromString(navXml, 'application/xhtml+xml'); }
+      catch(e){ navDoc = new DOMParser().parseFromString(navXml, 'text/html'); }
+      let navEl = null;
+      [...navDoc.getElementsByTagName('nav')].forEach(n => {
+        const type = n.getAttribute('epub:type') ||
+          (n.getAttributeNS && n.getAttributeNS('http://www.idpf.org/2007/ops','type')) || '';
+        if(type.indexOf('toc') !== -1) navEl = n;
+      });
+      if(!navEl) navEl = navDoc.getElementsByTagName('nav')[0];
+      if(navEl){
+        const toc = [];
+        const walkOl = (ol, level) => {
+          [...ol.children].filter(c => c.localName === 'li').forEach(li => {
+            const a = [...li.children].find(c => c.localName === 'a');
+            if(a){
+              const href = a.getAttribute('href') || '';
+              const resolved = resolveZipPath(navDir, href.split('#')[0]);
+              const ci = findChapterIndex(resolved);
+              if(ci !== null){
+                toc.push({chapterIndex: ci, elementId: href.split('#')[1] || null,
+                          title: a.textContent.trim().replace(/\s+/g,' '), level: Math.min(level,2)});
+              }
+            }
+            const subOl = [...li.children].find(c => c.localName === 'ol');
+            if(subOl) walkOl(subOl, level+1);
+          });
+        };
+        const topOl = [...navEl.children].find(c => c.localName === 'ol');
+        if(topOl) walkOl(topOl, 0);
+        if(toc.length) return toc;
+      }
+    }
+    const ncxItem = items.find(it => (it.getAttribute('media-type')||'') === 'application/x-dtbncx+xml');
+    if(ncxItem){
+      const ncxPath = resolveZipPath(opfDir, ncxItem.getAttribute('href'));
+      const ncxDir = ncxPath.split('/').slice(0,-1).join('/');
+      const ncxXml = await zip.file(ncxPath).async('text');
+      const ncxDoc = new DOMParser().parseFromString(ncxXml, 'application/xml');
+      const toc = [];
+      const walkNav = (parent, level) => {
+        [...parent.children].filter(c => c.localName === 'navPoint').forEach(np => {
+          const labelEl = fb2Query(np, 'text');
+          const contentEl = fb2Query(np, 'content');
+          const src = contentEl ? contentEl.getAttribute('src') : '';
+          if(src){
+            const resolved = resolveZipPath(ncxDir, src.split('#')[0]);
+            const ci = findChapterIndex(resolved);
+            if(ci !== null){
+              toc.push({chapterIndex: ci, elementId: src.split('#')[1] || null,
+                        title: labelEl ? labelEl.textContent.trim().replace(/\s+/g,' ') : '', level: Math.min(level,2)});
+            }
+          }
+          walkNav(np, level+1);
+        });
+      };
+      const navMap = ncxDoc.getElementsByTagName('navMap')[0];
+      if(navMap){ walkNav(navMap, 0); if(toc.length) return toc; }
+    }
+  }catch(e){ /* переходим к запасному варианту ниже */ }
+  return chapterPaths.map((p,i) => ({chapterIndex: i, elementId: null, title: 'Глава ' + (i+1), level: 0}));
+}
+
 /* ---------- PDF ---------- */
 
 if(typeof pdfjsLib !== 'undefined'){
@@ -4466,11 +4691,642 @@ async function openPdf(base64){
   return doc;
 }
 
-async function renderPdfPage(pdfDoc, pageNum){
-  const page = await pdfDoc.getPage(pageNum);
+async function buildPdfToc(pdfDoc){
+  try{
+    const outline = await pdfDoc.getOutline();
+    if(!outline || !outline.length) return [];
+    const toc = [];
+    async function walk(items, level){
+      for(const item of items){
+        let pageNumber = null;
+        try{
+          let dest = item.dest;
+          if(typeof dest === 'string') dest = await pdfDoc.getDestination(dest);
+          if(dest && dest[0]){
+            const idx = await pdfDoc.getPageIndex(dest[0]);
+            pageNumber = idx + 1;
+          }
+        }catch(e){ /* пункт без валидной цели — пропускаем номер страницы */ }
+        toc.push({title: item.title || '(без названия)', pageNumber, level: Math.min(level,2)});
+        if(item.items && item.items.length) await walk(item.items, level+1);
+      }
+    }
+    await walk(outline, 0);
+    return toc;
+  }catch(e){ return []; }
+}
+
+async function buildPdfTextLayer(page, viewport){
+  const layer = $('bookPdfTextLayer');
+  layer.innerHTML = '';
+  layer.style.width = viewport.width + 'px';
+  layer.style.height = viewport.height + 'px';
+  const textContent = await page.getTextContent();
+  const spans = [];
+  textContent.items.forEach((item, idx) => {
+    if(!item.str){ return; }
+    const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
+    const angle = Math.atan2(tx[1], tx[0]);
+    const fontHeight = Math.hypot(tx[2], tx[3]) || 1;
+    const span = document.createElement('span');
+    span.textContent = item.str;
+    span.dataset.itemIndex = idx;
+    span.style.left = tx[4] + 'px';
+    span.style.top = (tx[5] - fontHeight) + 'px';
+    span.style.fontSize = fontHeight + 'px';
+    if(angle !== 0){ span.style.transform = 'rotate(' + angle + 'rad)'; }
+    layer.appendChild(span);
+    spans.push({span, targetWidth: (item.width || 0) * viewport.scale});
+  });
+  await new Promise(resolve => requestAnimationFrame(() => {
+    spans.forEach(({span, targetWidth}) => {
+      const actual = span.getBoundingClientRect().width;
+      if(actual > 0 && targetWidth > 0){
+        const scaleX = targetWidth / actual;
+        span.style.transform = (span.style.transform ? span.style.transform + ' ' : '') + 'scaleX(' + scaleX + ')';
+      }
+    });
+    resolve();
+  }));
+}
+
+function renderPdfHighlights(pageNum){
+  const hlLayer = $('bookPdfHlLayer');
+  const textLayer = $('bookPdfTextLayer');
+  hlLayer.innerHTML = '';
+  hlLayer.style.width = textLayer.style.width;
+  hlLayer.style.height = textLayer.style.height;
+  const layerRect = textLayer.getBoundingClientRect();
+  (currentBook.highlights || []).filter(h => h.page === pageNum).forEach(h => {
+    (h.itemIndexes || []).forEach(idx => {
+      const span = textLayer.querySelector('span[data-item-index="' + idx + '"]');
+      if(!span) return;
+      const r = span.getBoundingClientRect();
+      const rect = document.createElement('div');
+      rect.className = 'pdf-hl ' + h.color;
+      rect.style.left = (r.left - layerRect.left) + 'px';
+      rect.style.top = (r.top - layerRect.top) + 'px';
+      rect.style.width = r.width + 'px';
+      rect.style.height = r.height + 'px';
+      rect.dataset.hlId = h.id;
+      hlLayer.appendChild(rect);
+    });
+  });
+}
+
+function pdfSelectedItemIndexes(){
+  const sel = window.getSelection();
+  if(!sel || sel.isCollapsed || sel.rangeCount === 0) return [];
+  const range = sel.getRangeAt(0);
+  const layer = $('bookPdfTextLayer');
+  if(!layer.contains(range.commonAncestorContainer) && range.commonAncestorContainer !== layer) return [];
+  const idxs = [];
+  layer.querySelectorAll('span[data-item-index]').forEach(span => {
+    if(range.intersectsNode(span)) idxs.push(Number(span.dataset.itemIndex));
+  });
+  return idxs;
+}
+
+async function createPdfHighlightFromSelection(color){
+  const idxs = pdfSelectedItemIndexes();
+  if(!idxs.length) return;
+  const sel = window.getSelection();
+  const snippet = (sel.toString() || '').replace(/\s+/g,' ').trim().slice(0,140);
+  sel.removeAllRanges();
+  const id = genId();
+  currentBook.highlights.push({id, page: currentBook.page, itemIndexes: idxs, color, snippet, createdAt: Date.now()});
+  await saveBookHighlights();
+  renderPdfHighlights(currentBook.page);
+  hideHlPopup();
+}
+
+/* ---------- унифицированный доступ к главам (FB2 = топ-секции, EPUB = spine) ---------- */
+
+async function getChapterHtml(i){
+  if(currentBook.chapterCache.has(i)) return currentBook.chapterCache.get(i);
+  const html = currentBook.format === 'fb2'
+    ? (currentBook.fb2Chapters[i] ? currentBook.fb2Chapters[i].html : '')
+    : await renderEpubChapter(currentBook.epub, i);
+  currentBook.chapterCache.set(i, html);
+  return html;
+}
+function chapterCount(){
+  if(!currentBook) return 0;
+  return currentBook.format === 'fb2' ? currentBook.fb2Chapters.length : currentBook.epub.chapterPaths.length;
+}
+function chapterTitleFor(i){
+  if(!currentBook) return '';
+  const t = (currentBook.toc || []).find(e => e.level === 0 && e.chapterIndex === i);
+  return t ? t.title : '';
+}
+
+/* ---------- постраничная раскладка (CSS-колонки) ---------- */
+
+function pgnFlattenText(root){
+  const nodes = [];
+  let text = '';
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let n;
+  while((n = walker.nextNode())){
+    const s = n.nodeValue;
+    if(!s) continue;
+    nodes.push({node: n, start: text.length, end: text.length + s.length});
+    text += s;
+  }
+  return {text, nodes};
+}
+function pgnOffsetToNode(flat, offset){
+  for(const rec of flat.nodes){
+    if(offset >= rec.start && offset <= rec.end) return {node: rec.node, offset: offset - rec.start};
+  }
+  const last = flat.nodes[flat.nodes.length - 1];
+  return last ? {node: last.node, offset: last.node.nodeValue.length} : null;
+}
+function pgnNodeOffsetToFlat(flat, node, offsetInNode){
+  const rec = flat.nodes.find(r => r.node === node);
+  return rec ? rec.start + offsetInNode : 0;
+}
+
+function pgnPageIndexForOffset(offset){
+  const content = $('bookPgnContent');
+  const flat = pgnFlattenText(content);
+  if(!flat.nodes.length || !pgn) return 0;
+  const pos = pgnOffsetToNode(flat, offset);
+  if(!pos) return 0;
+  let pageIndex = 0;
+  try{
+    const marker = document.createElement('span');
+    marker.style.cssText = 'display:inline-block;width:0;height:0;overflow:hidden;';
+    const range = document.createRange();
+    range.setStart(pos.node, Math.min(pos.offset, pos.node.nodeValue.length));
+    range.collapse(true);
+    range.insertNode(marker);
+    pageIndex = Math.floor(marker.offsetLeft / (pgn.vw + pgn.gap));
+    const parent = marker.parentNode;
+    parent.removeChild(marker);
+    parent.normalize();
+  }catch(e){ pageIndex = 0; }
+  return Math.max(0, Math.min(pgn.total - 1, pageIndex));
+}
+function pgnPageIndexForElement(el){
+  if(!el || !pgn) return 0;
+  return Math.max(0, Math.min(pgn.total - 1, Math.floor(el.offsetLeft / (pgn.vw + pgn.gap))));
+}
+function pgnCurrentTopOffset(){
+  const vp = $('bookReaderBody');
+  const rect = vp.getBoundingClientRect();
+  const x = rect.left + 10, y = rect.top + 10;
+  let range = null;
+  try{
+    if(document.caretRangeFromPoint){
+      range = document.caretRangeFromPoint(x,y);
+    } else if(document.caretPositionFromPoint){
+      const cp = document.caretPositionFromPoint(x,y);
+      if(cp){ range = document.createRange(); range.setStart(cp.offsetNode, cp.offset); }
+    }
+  }catch(e){ range = null; }
+  if(!range || !range.startContainer) return 0;
+  const content = $('bookPgnContent');
+  if(!content.contains(range.startContainer)) return 0;
+  const flat = pgnFlattenText(content);
+  return pgnNodeOffsetToFlat(flat, range.startContainer, range.startOffset);
+}
+
+function pgnMeasure(){
+  const vp = $('bookReaderBody');
+  const content = $('bookPgnContent');
+  const vw = vp.clientWidth || 320;
+  const vh = vp.clientHeight || 480;
+  const gap = 32;
+  content.style.width = vw + 'px';
+  content.style.height = vh + 'px';
+  content.style.columnWidth = vw + 'px';
+  content.style.columnGap = gap + 'px';
+  const total = Math.max(1, Math.round(content.scrollWidth / (vw + gap)));
+  pgn = {vw, gap, total, index: pgn ? Math.min(pgn.index, total-1) : 0};
+}
+
+async function persistCurrentPosition(){
+  if(!currentBook || currentBook.format === 'pdf') return;
+  const entry = BOOKS.find(b => b.id === currentBook.id);
+  if(!entry) return;
+  entry.pos = {chapterIndex: currentBook.chapterIndex, offset: pgnCurrentTopOffset()};
+  await saveBooksIndex();
+}
+
+function pgnSetTransform(index, animate){
+  const content = $('bookPgnContent');
+  index = Math.max(0, Math.min(pgn.total - 1, index));
+  content.classList.toggle('pgn-anim', !!animate);
+  content.style.transform = 'translateX(' + (-(index * (pgn.vw + pgn.gap))) + 'px)';
+  pgn.index = index;
+  updatePageIndicator();
+  updateBookmarkButtonState();
+  persistCurrentPosition();
+}
+function pgnJumpInstant(index){ pgnSetTransform(index, false); }
+function pgnGoTo(index){ pgnSetTransform(index, true); }
+
+async function pgnRepaginate(){
+  if(!currentBook || currentBook.format === 'pdf' || !pgn) return;
+  const offset = pgnCurrentTopOffset();
+  pgnMeasure();
+  pgnJumpInstant(pgnPageIndexForOffset(offset));
+}
+let pgnResizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(pgnResizeTimer);
+  pgnResizeTimer = setTimeout(() => { pgnRepaginate(); }, 200);
+});
+
+function chapterNext(){
+  if(!pgn) return;
+  if(pgn.index < pgn.total - 1){ pgnGoTo(pgn.index + 1); }
+  else if(currentBook.chapterIndex < chapterCount() - 1){ showChapter(currentBook.chapterIndex + 1, {pageIndex: 0}); }
+}
+function chapterPrevTail(){
+  if(!pgn) return;
+  if(pgn.index > 0){ pgnGoTo(pgn.index - 1); }
+  else if(currentBook.chapterIndex > 0){ showChapter(currentBook.chapterIndex - 1, {pageIndex: 'last'}); }
+}
+
+function pgnAttachGestures(){
+  const vp = $('bookReaderBody');
+  let sx = 0, sy = 0, dragging = false, startT = 0;
+  vp.onpointerdown = (e) => {
+    if(!currentBook || currentBook.format === 'pdf') return;
+    sx = e.clientX; sy = e.clientY; dragging = false; startT = Date.now();
+  };
+  vp.onpointermove = (e) => {
+    if(!currentBook || currentBook.format === 'pdf' || !pgn) return;
+    if(e.buttons === 0 && !dragging) return;
+    const dx = e.clientX - sx, dy = e.clientY - sy;
+    if(!dragging){
+      if(Math.abs(dx) < 12 || Math.abs(dx) < Math.abs(dy)) return;
+      dragging = true;
+    }
+    const content = $('bookPgnContent');
+    content.classList.remove('pgn-anim');
+    const base = -(pgn.index * (pgn.vw + pgn.gap));
+    content.style.transform = 'translateX(' + (base + dx) + 'px)';
+  };
+  vp.onpointerup = (e) => {
+    if(!currentBook || currentBook.format === 'pdf' || !pgn){ dragging = false; return; }
+    const dx = e.clientX - sx, dt = Date.now() - startT;
+    if(dragging){
+      dragging = false;
+      const threshold = pgn.vw * 0.18;
+      if(dx <= -threshold) chapterNext();
+      else if(dx >= threshold) chapterPrevTail();
+      else pgnGoTo(pgn.index);
+      return;
+    }
+    const sel = window.getSelection();
+    if(sel && !sel.isCollapsed && sel.toString().trim()) return;
+    if(e.target.closest && e.target.closest('mark.hl')) return;
+    if(dt > 500) return;
+    const rect = vp.getBoundingClientRect();
+    const relX = e.clientX - rect.left;
+    if(relX < rect.width * 0.32) chapterPrevTail();
+    else if(relX > rect.width * 0.68) chapterNext();
+  };
+}
+
+/* ---------- выделение / маркеры ---------- */
+
+function pgnApplyHighlightByOffsets(startOffset, endOffset, color, id){
+  const content = $('bookPgnContent');
+  const flat = pgnFlattenText(content);
+  const segments = flat.nodes.filter(r => r.end > startOffset && r.start < endOffset);
+  segments.forEach(rec => {
+    let node = rec.node;
+    const locStart = Math.max(0, startOffset - rec.start);
+    const locEnd = Math.min(rec.end - rec.start, endOffset - rec.start);
+    if(locEnd < node.nodeValue.length) node.splitText(locEnd);
+    let target = node;
+    if(locStart > 0) target = node.splitText(locStart);
+    const mark = document.createElement('mark');
+    mark.className = 'hl ' + color;
+    mark.setAttribute('data-hl-id', id);
+    target.parentNode.insertBefore(mark, target);
+    mark.appendChild(target);
+  });
+}
+function pgnUnwrapMark(id){
+  const content = $('bookPgnContent');
+  content.querySelectorAll('mark[data-hl-id="' + id + '"]').forEach(m => {
+    const parent = m.parentNode;
+    while(m.firstChild) parent.insertBefore(m.firstChild, m);
+    parent.removeChild(m);
+  });
+  content.normalize();
+}
+function pgnRecolorMark(id, color){
+  $('bookPgnContent').querySelectorAll('mark[data-hl-id="' + id + '"]').forEach(m => {
+    HL_COLORS.forEach(c => m.classList.remove(c));
+    m.classList.add(color);
+  });
+}
+async function createHighlightFromSelection(color){
+  const sel = window.getSelection();
+  if(!sel || sel.isCollapsed || sel.rangeCount === 0) return;
+  const range = sel.getRangeAt(0);
+  const content = $('bookPgnContent');
+  if(!content.contains(range.commonAncestorContainer) && range.commonAncestorContainer !== content) return;
+  const flat = pgnFlattenText(content);
+  const a = pgnNodeOffsetToFlat(flat, range.startContainer, range.startOffset);
+  const b = pgnNodeOffsetToFlat(flat, range.endContainer, range.endOffset);
+  const s = Math.min(a,b), e = Math.max(a,b);
+  if(e <= s) return;
+  const snippet = flat.text.slice(s, Math.min(e, s+140)).replace(/\s+/g,' ').trim();
+  const id = genId();
+  sel.removeAllRanges();
+  pgnApplyHighlightByOffsets(s, e, color, id);
+  currentBook.highlights.push({id, chapterIndex: currentBook.chapterIndex, start: s, end: e, color, snippet, createdAt: Date.now()});
+  await saveBookHighlights();
+  hideHlPopup();
+}
+
+/* ---------- всплывающая палитра маркера ---------- */
+
+function positionHlPopup(rect){
+  const popup = $('hlPopup');
+  popup.classList.add('open');
+  const pw = popup.offsetWidth || 220, ph = popup.offsetHeight || 44;
+  let left = rect.left + rect.width/2 - pw/2;
+  left = Math.max(8, Math.min(window.innerWidth - pw - 8, left));
+  let top = rect.top - ph - 10;
+  if(top < 8) top = rect.bottom + 10;
+  popup.style.left = left + 'px';
+  popup.style.top = top + 'px';
+}
+function hideHlPopup(){
+  $('hlPopup').classList.remove('open');
+  hlPopupTarget = null;
+}
+function showHlPopupForMark(el, hlId){
+  hlPopupTarget = {mode: 'edit', id: hlId};
+  positionHlPopup(el.getBoundingClientRect());
+  $('hlPopupRemove').style.display = 'inline-block';
+  const hl = (currentBook.highlights || []).find(h => h.id === hlId);
+  [...$('hlPopup').querySelectorAll('.dot')].forEach(d => {
+    d.setAttribute('data-active', hl && d.dataset.color === hl.color ? 'true' : 'false');
+  });
+}
+let hlSelTimer = null;
+document.addEventListener('selectionchange', () => {
+  clearTimeout(hlSelTimer);
+  hlSelTimer = setTimeout(onSelectionChangeCheck, 60);
+});
+function onSelectionChangeCheck(){
+  if(!currentBook || !$('bookReaderBg').classList.contains('open')) return;
+  const sel = window.getSelection();
+  if(!sel || sel.isCollapsed || sel.rangeCount === 0 || !sel.toString().trim()){
+    if(hlPopupTarget && hlPopupTarget.mode === 'new') hideHlPopup();
+    return;
+  }
+  const range = sel.getRangeAt(0);
+  const container = currentBook.format === 'pdf' ? $('bookPdfTextLayer') : $('bookPgnContent');
+  if(!container.contains(range.commonAncestorContainer) && range.commonAncestorContainer !== container) return;
+  hlPopupTarget = {mode: 'new'};
+  positionHlPopup(range.getBoundingClientRect());
+  $('hlPopupRemove').style.display = 'none';
+  [...$('hlPopup').querySelectorAll('.dot')].forEach(d => d.setAttribute('data-active','false'));
+}
+[...document.querySelectorAll('#hlPopup .dot')].forEach(dot => {
+  dot.onclick = async () => {
+    if(!hlPopupTarget) return;
+    const color = dot.dataset.color;
+    if(hlPopupTarget.mode === 'new'){
+      if(currentBook.format === 'pdf') await createPdfHighlightFromSelection(color);
+      else await createHighlightFromSelection(color);
+    } else {
+      const id = hlPopupTarget.id;
+      const hl = (currentBook.highlights || []).find(h => h.id === id);
+      if(hl){
+        hl.color = color;
+        if(currentBook.format === 'pdf') renderPdfHighlights(currentBook.page);
+        else pgnRecolorMark(id, color);
+        await saveBookHighlights();
+      }
+      hideHlPopup();
+    }
+  };
+});
+$('hlPopupRemove').onclick = async () => {
+  if(!hlPopupTarget || hlPopupTarget.mode !== 'edit') return;
+  const id = hlPopupTarget.id;
+  currentBook.highlights = (currentBook.highlights || []).filter(h => h.id !== id);
+  if(currentBook.format === 'pdf') renderPdfHighlights(currentBook.page);
+  else pgnUnwrapMark(id);
+  await saveBookHighlights();
+  hideHlPopup();
+};
+document.addEventListener('pointerdown', (e) => {
+  if(!hlPopupTarget) return;
+  if($('hlPopup').contains(e.target)) return;
+  if(e.target.closest && (e.target.closest('mark.hl') || e.target.closest('.pdf-hl'))) return;
+  hideHlPopup();
+}, true);
+$('bookPgnContent').addEventListener('click', (e) => {
+  const mark = e.target.closest('mark.hl');
+  if(mark) showHlPopupForMark(mark, mark.getAttribute('data-hl-id'));
+});
+$('bookPdfHlLayer').addEventListener('click', (e) => {
+  const t = e.target.closest('.pdf-hl');
+  if(t) showHlPopupForMark(t, t.dataset.hlId);
+});
+
+/* ---------- закладки на странице ---------- */
+
+function currentPageBookmark(){
+  if(!currentBook) return null;
+  if(currentBook.format === 'pdf'){
+    return (currentBook.bookmarks || []).find(b => b.page === currentBook.page) || null;
+  }
+  if(!pgn) return null;
+  return (currentBook.bookmarks || []).find(b => b.chapterIndex === currentBook.chapterIndex &&
+    pgnPageIndexForOffset(b.offset || 0) === pgn.index) || null;
+}
+function updateBookmarkButtonState(){
+  const btn = $('bookBookmarkToggle');
+  if(!btn) return;
+  const bm = currentPageBookmark();
+  btn.style.opacity = bm ? '1' : '.5';
+  btn.setAttribute('aria-pressed', bm ? 'true' : 'false');
+}
+function makeBookmarkRecordForCurrentLocation(){
+  if(currentBook.format === 'pdf'){
+    return {id: genId(), page: currentBook.page, label: 'Стр. ' + currentBook.page, createdAt: Date.now()};
+  }
+  const offset = pgnCurrentTopOffset();
+  const flat = pgnFlattenText($('bookPgnContent'));
+  const snippet = flat.text.slice(offset, offset+90).replace(/\s+/g,' ').trim();
+  return {id: genId(), chapterIndex: currentBook.chapterIndex, offset, snippet, createdAt: Date.now()};
+}
+$('bookBookmarkToggle').onclick = async () => {
+  if(!currentBook) return;
+  const existing = currentPageBookmark();
+  if(existing) currentBook.bookmarks = currentBook.bookmarks.filter(b => b.id !== existing.id);
+  else currentBook.bookmarks.push(makeBookmarkRecordForCurrentLocation());
+  await saveBookBookmarks();
+  updateBookmarkButtonState();
+};
+
+/* ---------- лист «Оглавление / Закладки» ---------- */
+
+function renderTocSheetList(){
+  const list = $('tocList');
+  if(tocTab === 'toc'){
+    if(currentBook.format === 'pdf'){
+      const toc = currentBook.toc || [];
+      if(!toc.length){ list.innerHTML = '<div class="empty">Оглавление недоступно для этого PDF.</div>'; return; }
+      list.innerHTML = toc.map((t,i) => '<div class="toc-row' + (t.level>0?' lvl-1':'') + '" data-idx="'+i+'">' +
+        '<div class="t"><span class="ttl">' + escapeHtmlText(t.title) + '</span></div></div>').join('');
+      [...list.querySelectorAll('.toc-row')].forEach(row => { row.onclick = () => jumpToTocEntry(toc[Number(row.dataset.idx)]); });
+    } else {
+      const toc = currentBook.toc || [];
+      if(!toc.length){ list.innerHTML = '<div class="empty">Оглавление недоступно для этой книги.</div>'; return; }
+      list.innerHTML = toc.map((t,i) => '<div class="toc-row' + (t.level>0?' lvl-1':'') + '" data-idx="'+i+'">' +
+        '<div class="t"><span class="ttl">' + escapeHtmlText(t.title || ('Раздел '+(i+1))) + '</span></div></div>').join('');
+      [...list.querySelectorAll('.toc-row')].forEach(row => { row.onclick = () => jumpToTocEntry(toc[Number(row.dataset.idx)]); });
+    }
+  } else {
+    const bms = (currentBook.bookmarks || []).slice().sort((a,b) => (a.createdAt||0)-(b.createdAt||0));
+    if(!bms.length){ list.innerHTML = '<div class="empty">Пока нет закладок на страницах.</div>'; return; }
+    list.innerHTML = bms.map((b,i) => {
+      const label = b.label || (currentBook.format === 'pdf' ? ('Стр. ' + b.page) : ('Глава ' + ((b.chapterIndex||0)+1)));
+      const snip = b.snippet ? '<span class="snip">' + escapeHtmlText(b.snippet) + '</span>' : '';
+      return '<div class="toc-row" data-idx="'+i+'"><div class="t"><span class="ttl">' + escapeHtmlText(label) + '</span>' + snip + '</div>' +
+        '<button class="rm" data-idx="'+i+'">🗑</button></div>';
+    }).join('');
+    [...list.querySelectorAll('.toc-row')].forEach(row => {
+      row.onclick = (e) => { if(e.target.closest('.rm')) return; jumpToBookmark(bms[Number(row.dataset.idx)]); };
+    });
+    [...list.querySelectorAll('.rm')].forEach(btn => {
+      btn.onclick = async (e) => {
+        e.stopPropagation();
+        const bm = bms[Number(btn.dataset.idx)];
+        currentBook.bookmarks = currentBook.bookmarks.filter(x => x.id !== bm.id);
+        await saveBookBookmarks();
+        renderTocSheetList();
+        updateBookmarkButtonState();
+      };
+    });
+  }
+}
+function openTocSheet(){
+  if(!currentBook) return;
+  renderTocSheetList();
+  $('bookTocBg').classList.add('open');
+}
+$('bookTocOpen').onclick = openTocSheet;
+$('bookTocClose').onclick = () => $('bookTocBg').classList.remove('open');
+$('tocTabToc').onclick = () => {
+  tocTab = 'toc';
+  $('tocTabToc').setAttribute('aria-pressed','true');
+  $('tocTabBookmarks').setAttribute('aria-pressed','false');
+  renderTocSheetList();
+};
+$('tocTabBookmarks').onclick = () => {
+  tocTab = 'bookmarks';
+  $('tocTabBookmarks').setAttribute('aria-pressed','true');
+  $('tocTabToc').setAttribute('aria-pressed','false');
+  renderTocSheetList();
+};
+
+async function jumpToTocEntry(entry){
+  if(!entry) return;
+  if(currentBook.format === 'pdf'){
+    if(entry.pageNumber){ currentBook.page = entry.pageNumber; hideHlPopup(); await showPdfPage(); }
+  } else if(entry.chapterIndex !== currentBook.chapterIndex){
+    await showChapter(entry.chapterIndex, entry.elementId ? {elementId: entry.elementId} : {pageIndex: 0});
+  } else if(entry.elementId){
+    pgnJumpInstant(pgnPageIndexForElement(document.getElementById(entry.elementId)));
+  } else {
+    pgnJumpInstant(0);
+  }
+  $('bookTocBg').classList.remove('open');
+}
+async function jumpToBookmark(bm){
+  if(!bm) return;
+  if(currentBook.format === 'pdf'){
+    currentBook.page = bm.page; hideHlPopup(); await showPdfPage();
+  } else if(bm.chapterIndex !== currentBook.chapterIndex){
+    await showChapter(bm.chapterIndex, {offset: bm.offset || 0});
+  } else {
+    pgnJumpInstant(pgnPageIndexForOffset(bm.offset || 0));
+  }
+  $('bookTocBg').classList.remove('open');
+}
+
+/* ---------- общий читатель ---------- */
+
+function applyBookFont(){
+  const size = settings.readerFont || 'm';
+  const content = $('bookPgnContent');
+  content.classList.remove('font-s','font-m','font-l');
+  content.classList.add(READER_SIZES[size] || 'font-m');
+}
+['bookFontS','bookFontM','bookFontL'].forEach((id, i) => {
+  $(id).onclick = async () => {
+    settings.readerFont = ['s','m','l'][i];
+    await repo.setSetting('readerFont', settings.readerFont);
+    applyBookFont();
+    if(currentBook && currentBook.format !== 'pdf' && pgn) await pgnRepaginate();
+  };
+});
+
+function updateReaderSubtitle(){
+  const entry = BOOKS.find(b => b.id === currentBook.id);
+  const author = entry && entry.author ? entry.author : '';
+  const chTitle = chapterTitleFor(currentBook.chapterIndex);
+  const parts = [];
+  if(author) parts.push(author);
+  if(chTitle) parts.push(chTitle);
+  if(!parts.length && chapterCount() > 1) parts.push('Глава ' + (currentBook.chapterIndex+1) + ' из ' + chapterCount());
+  $('bookReaderSub').textContent = parts.join(' · ');
+}
+function updatePageIndicator(){
+  if(!pgn) return;
+  let txt = (pgn.index+1) + ' / ' + pgn.total;
+  if(chapterCount() > 1) txt += '  ·  гл. ' + (currentBook.chapterIndex+1) + '/' + chapterCount();
+  $('bookPageInfoT').textContent = txt;
+}
+
+async function showChapter(chapterIndex, opts){
+  opts = opts || {};
+  chapterIndex = Math.max(0, Math.min(chapterCount()-1, chapterIndex));
+  currentBook.chapterIndex = chapterIndex;
+  const html = await getChapterHtml(chapterIndex);
+  const content = $('bookPgnContent');
+  content.classList.remove('pgn-anim');
+  content.style.transform = 'translateX(0px)';
+  content.innerHTML = html;
+  (currentBook.highlights || []).filter(h => h.chapterIndex === chapterIndex).forEach(h => {
+    pgnApplyHighlightByOffsets(h.start, h.end, h.color, h.id);
+  });
+  await new Promise(r => requestAnimationFrame(r));
+  pgnMeasure();
+  let idx = 0;
+  if(opts.offset != null) idx = pgnPageIndexForOffset(opts.offset);
+  else if(opts.elementId) idx = pgnPageIndexForElement(document.getElementById(opts.elementId));
+  else if(opts.pageIndex === 'last') idx = pgn.total - 1;
+  else if(typeof opts.pageIndex === 'number') idx = opts.pageIndex;
+  pgnJumpInstant(idx);
+  updateReaderSubtitle();
+  const entry = BOOKS.find(b => b.id === currentBook.id);
+  if(entry){ entry.chapterIndex = chapterIndex; await saveBooksIndex(); }
+}
+$('bookPagePrevT').onclick = () => { hideHlPopup(); chapterPrevTail(); };
+$('bookPageNextT').onclick = () => { hideHlPopup(); chapterNext(); };
+
+async function showPdfPage(){
+  const entry = BOOKS.find(b => b.id === currentBook.id);
+  const page = await currentBook.pdfDoc.getPage(currentBook.page);
   const canvas = $('bookPdfCanvas');
   const wrap = $('bookPdfWrap');
-  const targetWidth = wrap.clientWidth || 360;
+  const targetWidth = (wrap.clientWidth || 380) - 20;
   const baseViewport = page.getViewport({scale: 1});
   const scale = targetWidth / baseViewport.width;
   const viewport = page.getViewport({scale});
@@ -4479,26 +5335,26 @@ async function renderPdfPage(pdfDoc, pageNum){
   canvas.height = viewport.height * dpr;
   canvas.style.width = viewport.width + 'px';
   canvas.style.height = viewport.height + 'px';
+  $('bookPdfPageWrap').style.width = viewport.width + 'px';
+  $('bookPdfPageWrap').style.height = viewport.height + 'px';
   const ctx = canvas.getContext('2d');
   ctx.setTransform(dpr,0,0,dpr,0,0);
   await page.render({canvasContext: ctx, viewport}).promise;
+  await buildPdfTextLayer(page, viewport);
+  renderPdfHighlights(currentBook.page);
+  $('bookPageInfo').textContent = currentBook.page + ' / ' + currentBook.pdfDoc.numPages;
+  entry.pos = currentBook.page;
+  await saveBooksIndex();
+  updateBookmarkButtonState();
 }
-
-/* ---------- общий читатель ---------- */
-
-function applyBookFont(){
-  const size = settings.readerFont || 'm';
-  const body = $('bookReaderBody');
-  body.classList.remove('font-s','font-m','font-l');
-  body.classList.add(READER_SIZES[size] || 'font-m');
-}
-['bookFontS','bookFontM','bookFontL'].forEach((id, i) => {
-  $(id).onclick = async () => {
-    settings.readerFont = ['s','m','l'][i];
-    await repo.setSetting('readerFont', settings.readerFont);
-    applyBookFont();
-  };
-});
+$('bookPagePrev').onclick = () => {
+  if(!currentBook || currentBook.format !== 'pdf') return;
+  if(currentBook.page > 1){ currentBook.page--; hideHlPopup(); showPdfPage(); }
+};
+$('bookPageNext').onclick = () => {
+  if(!currentBook || currentBook.format !== 'pdf') return;
+  if(currentBook.page < currentBook.pdfDoc.numPages){ currentBook.page++; hideHlPopup(); showPdfPage(); }
+};
 
 async function openBookReader(id){
   const entry = BOOKS.find(b => b.id === id);
@@ -4517,7 +5373,11 @@ async function openBookReader(id){
 
 async function openBookReaderInner(entry, base64){
   const id = entry.id;
-  currentBook = {id, format: entry.format};
+  const {bookmarks, highlights} = await loadBookAnnotations(id);
+  currentBook = {id, format: entry.format, bookmarks, highlights, chapterCache: new Map(), chapterIndex: 0, toc: []};
+  tocTab = 'toc';
+  $('tocTabToc').setAttribute('aria-pressed','true');
+  $('tocTabBookmarks').setAttribute('aria-pressed','false');
   $('bookReaderTitle').textContent = entry.title || entry.filename;
   $('booksBg').classList.remove('open');
   $('bookReaderBg').classList.add('open');
@@ -4529,87 +5389,57 @@ async function openBookReaderInner(entry, base64){
 
   if(entry.format === 'fb2'){
     const parsed = parseFb2(base64);
-    if(parsed.title && !entry.title.length){ entry.title = parsed.title; }
-    if(parsed.author && !entry.author){ entry.author = parsed.author; await saveBooksIndex(); }
-    $('bookReaderSub').textContent = entry.author || '';
-    $('bookReaderBody').innerHTML = parsed.html;
+    currentBook.fb2Chapters = parsed.chapters;
+    currentBook.toc = parsed.toc;
+    if(parsed.title && !entry.title){ entry.title = parsed.title; }
+    if(parsed.author && !entry.author){ entry.author = parsed.author; }
+    await saveBooksIndex();
+    $('bookReaderTitle').textContent = entry.title || entry.filename;
     $('bookReaderBody').style.display = 'block';
     $('bookTextControls').style.display = 'flex';
-    $('bookChapPrev').style.display = 'none';
-    $('bookChapNext').style.display = 'none';
     applyBookFont();
-    $('bookReaderBody').scrollTop = entry.pos || 0;
+    pgnAttachGestures();
+    const legacyPos = typeof entry.pos === 'object' && entry.pos ? entry.pos : {chapterIndex:0, offset:0};
+    await showChapter(legacyPos.chapterIndex || 0, {offset: legacyPos.offset || 0});
   }
 
   if(entry.format === 'epub'){
     const epub = await openEpub(base64);
     currentBook.epub = epub;
-    currentBook.chapterIndex = entry.chapterIndex || 0;
+    currentBook.toc = await parseEpubToc(epub);
     if(epub.title && !entry.title){ entry.title = epub.title; }
     if(epub.author && !entry.author){ entry.author = epub.author; }
     await saveBooksIndex();
-    $('bookReaderSub').textContent = entry.author || '';
+    $('bookReaderTitle').textContent = entry.title || entry.filename;
+    $('bookReaderBody').style.display = 'block';
     $('bookTextControls').style.display = 'flex';
-    $('bookChapPrev').style.display = 'inline-block';
-    $('bookChapNext').style.display = 'inline-block';
-    await showEpubChapter();
+    applyBookFont();
+    pgnAttachGestures();
+    const legacyPos = typeof entry.pos === 'object' && entry.pos ? entry.pos : {chapterIndex: entry.chapterIndex||0, offset:0};
+    await showChapter(legacyPos.chapterIndex || 0, {offset: legacyPos.offset || 0});
   }
 
   if(entry.format === 'pdf'){
     const pdfDoc = await openPdf(base64);
     currentBook.pdfDoc = pdfDoc;
-    currentBook.page = entry.pos || 1;
+    currentBook.page = (typeof entry.pos === 'number' && entry.pos > 0) ? entry.pos : 1;
+    currentBook.toc = await buildPdfToc(pdfDoc);
     $('bookReaderSub').textContent = '';
-    $('bookPdfWrap').style.display = 'block';
+    $('bookPdfWrap').style.display = 'flex';
     $('bookPdfControls').style.display = 'flex';
     await showPdfPage();
   }
+  updateBookmarkButtonState();
 }
-
-async function showEpubChapter(){
-  const entry = BOOKS.find(b => b.id === currentBook.id);
-  const html = await renderEpubChapter(currentBook.epub, currentBook.chapterIndex);
-  $('bookReaderBody').innerHTML = html;
-  $('bookReaderBody').style.display = 'block';
-  applyBookFont();
-  $('bookReaderSub').textContent = (entry.author ? entry.author + ' · ' : '') +
-    'глава ' + (currentBook.chapterIndex+1) + ' из ' + currentBook.epub.chapterPaths.length;
-  entry.chapterIndex = currentBook.chapterIndex;
-  await saveBooksIndex();
-}
-$('bookChapPrev').onclick = () => {
-  if(!currentBook || currentBook.format !== 'epub') return;
-  if(currentBook.chapterIndex > 0){ currentBook.chapterIndex--; showEpubChapter(); }
-};
-$('bookChapNext').onclick = () => {
-  if(!currentBook || currentBook.format !== 'epub') return;
-  if(currentBook.chapterIndex < currentBook.epub.chapterPaths.length-1){ currentBook.chapterIndex++; showEpubChapter(); }
-};
-
-async function showPdfPage(){
-  const entry = BOOKS.find(b => b.id === currentBook.id);
-  await renderPdfPage(currentBook.pdfDoc, currentBook.page);
-  $('bookPageInfo').textContent = currentBook.page + ' / ' + currentBook.pdfDoc.numPages;
-  entry.pos = currentBook.page;
-  await saveBooksIndex();
-}
-$('bookPagePrev').onclick = () => {
-  if(!currentBook || currentBook.format !== 'pdf') return;
-  if(currentBook.page > 1){ currentBook.page--; showPdfPage(); }
-};
-$('bookPageNext').onclick = () => {
-  if(!currentBook || currentBook.format !== 'pdf') return;
-  if(currentBook.page < currentBook.pdfDoc.numPages){ currentBook.page++; showPdfPage(); }
-};
 
 function closeBookReader(){
-  if(currentBook && currentBook.format === 'fb2'){
-    const entry = BOOKS.find(b => b.id === currentBook.id);
-    if(entry){ entry.pos = $('bookReaderBody').scrollTop; saveBooksIndex(); }
-  }
+  hideHlPopup();
+  $('bookTocBg').classList.remove('open');
+  if(currentBook && currentBook.format !== 'pdf' && pgn) persistCurrentPosition();
   $('bookReaderBg').classList.remove('open');
   $('booksBg').classList.add('open');
   currentBook = null;
+  pgn = null;
   renderBooksList();
 }
 $('bookReaderClose').onclick = closeBookReader;
