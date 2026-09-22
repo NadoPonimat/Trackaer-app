@@ -1511,7 +1511,7 @@
       <button id="seedBartending">Курс: барменство (базовый)</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 69 — фикс зависания загрузки новостей (таймауты + резервные прокси)</div>
+    <div class="hint sv-version" id="version">Версия 70 — новости: таймаут увеличен, видна причина сбоя по каждому источнику</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -6050,7 +6050,7 @@ let newsCache = {};   /* lang -> {items, fetchedAt, failedSources} */
 let newsLoading = {}; /* lang -> true пока идёт загрузка */
 let newsCacheLoaded = {}; /* lang -> true, если уже подняли сохранённый кэш из БД */
 
-const NEWS_FETCH_TIMEOUT_MS = 6000; /* не ждать вечно один источник — за это время либо ответ, либо переход к следующему варианту */
+const NEWS_FETCH_TIMEOUT_MS = 10000; /* не ждать вечно один источник — за это время либо ответ, либо переход к следующему варианту */
 
 function newsProxyUrls(url){
   /* Многие RSS-ленты не отдают CORS-заголовки, поэтому WebView блокирует
@@ -6076,6 +6076,15 @@ async function newsFetchWithTimeout(url, ms){
   }finally{
     clearTimeout(timer);
   }
+}
+
+function newsFailReason(err){
+  if(!err) return 'ошибка';
+  if(err.name === 'AbortError') return 'таймаут';
+  const m = /^HTTP (\d+)/.exec(err.message || '');
+  if(m) return 'HTTP ' + m[1];
+  if(/Failed to fetch|NetworkError|Load failed|network/i.test(err.message || '')) return 'сеть/CORS';
+  return (err.message || 'ошибка').slice(0, 40);
 }
 
 async function fetchRssText(url){
@@ -6178,7 +6187,7 @@ async function newsRefresh(lang, force){
   const failedSources = [];
   settled.forEach((r, i) => {
     if(r.status === 'fulfilled') items.push(...r.value);
-    else failedSources.push(sources[i].name);
+    else failedSources.push(sources[i].name + ' (' + newsFailReason(r.reason) + ')');
   });
   const seen = new Set();
   const deduped = items.filter(e => { if(seen.has(e.link)) return false; seen.add(e.link); return true; });
