@@ -651,18 +651,72 @@
     100%{transform:translateX(340%)}
   }
 
-  @media (prefers-reduced-motion:reduce){
-    #ddSplash *{animation:none!important}
+  /* «Рога» — маленькие рожки над названием, отсылка к маске Сорвиголовы */
+  .ddHorn{
+    position:absolute;top:-24px;width:0;height:0;
+    border-left:13px solid transparent;border-right:13px solid transparent;
+    border-bottom:24px solid var(--accent,#e02826);
+    opacity:0;transform:scale(.4) translateY(8px);transform-origin:bottom center;
+    will-change:transform,opacity;display:none;
+  }
+  .ddHorn.left{left:6%}
+  .ddHorn.right{right:6%}
+  #ddSplash[data-anim="horns"] .ddHorn{display:block;animation:ddHornPop 700ms cubic-bezier(.34,1.56,.64,1) forwards}
+  #ddSplash[data-anim="horns"] .ddHorn.right{animation-delay:120ms}
+  #ddSplash[data-anim="horns"] #ddTitle{animation:ddFadeIn 400ms ease-out 260ms forwards}
+  @keyframes ddHornPop{
+    0%{opacity:0;transform:scale(.3) translateY(10px)}
+    60%{opacity:1;transform:scale(1.15) translateY(-2px)}
+    100%{opacity:1;transform:scale(1) translateY(0)}
+  }
+
+  /* «Слух» — обострённые чувства: рядом с названием бьётся «пульс» сонара,
+     двойным ударом «лаб-даб», как сердцебиение, которое он слышит через стену */
+  #ddBlip{
+    position:absolute;top:50%;left:-24px;width:11px;height:11px;margin-top:-6px;
+    background:var(--accent,#e02826);border-radius:50%;
+    opacity:0;transform:scale(.6);display:none;will-change:transform,opacity;
+  }
+  #ddSplash[data-anim="hearing"] #ddBlip{display:block;animation:ddHeartbeat 1400ms ease-in-out 200ms infinite}
+  #ddSplash[data-anim="hearing"] #ddTitle{animation:ddFadeIn 400ms ease-out 100ms forwards}
+  @keyframes ddHeartbeat{
+    0%,100%{opacity:.3;transform:scale(.6)}
+    10%{opacity:1;transform:scale(1.3)}
+    20%{opacity:.5;transform:scale(.8)}
+    30%{opacity:1;transform:scale(1.15)}
+    45%{opacity:.3;transform:scale(.6)}
+  }
+
+  /* «Вспышка» — короткая яркая вспышка в начале, отсылка к аварии с
+     химикатами из его истории; после неё название проступает как обычно */
+  #ddFlash{
+    position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(circle at center, var(--accent,#e02826) 0%, transparent 60%);
+    opacity:0;display:none;will-change:opacity;
+  }
+  #ddSplash[data-anim="flash"] #ddFlash{display:block;animation:ddFlashPulse 900ms ease-out forwards}
+  #ddSplash[data-anim="flash"] #ddTitle{animation:ddFadeIn 500ms ease-out 350ms forwards}
+  @keyframes ddFlashPulse{
+    0%{opacity:0}
+    8%{opacity:.9}
+    16%{opacity:.15}
+    24%{opacity:.75}
+    35%{opacity:.05}
+    100%{opacity:0}
   }
 </style>
 </head>
 <body>
 <div id="ddSplash" data-anim="radar">
+  <div id="ddFlash"></div>
   <div id="ddRadar">
     <div class="ddRing"></div>
     <div class="ddRing"></div>
     <div class="ddRing"></div>
     <div id="ddTitleWrap">
+      <div class="ddHorn left"></div>
+      <div class="ddHorn right"></div>
+      <div id="ddBlip"></div>
       <div id="ddTitle">БМ</div>
       <div id="ddScan"></div>
     </div>
@@ -1293,6 +1347,9 @@
         <button data-a="radar">Радар</button>
         <button data-a="pulse">Пульс</button>
         <button data-a="scan">Скан</button>
+        <button data-a="horns">Рога</button>
+        <button data-a="hearing">Слух</button>
+        <button data-a="flash">Вспышка</button>
         <button data-a="none">Без анимации</button>
       </div>
       <div class="hint">Все варианты нарисованы через transform/opacity, поэтому идут ровно на 60 fps даже на слабом телефоне.</div>
@@ -1413,7 +1470,7 @@
       <button id="seedAstronomy">Курс: астрономия</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 65 — выбор анимации при входе (60 fps)</div>
+    <div class="hint sv-version" id="version">Версия 66 — почищен баг с анимацией, ещё 3 темы (рога/слух/вспышка)</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -1698,7 +1755,8 @@ async function openDatabase(){
   settings.readerFont = s.readerFont || 'm';
   settings.readerTheme = s.readerTheme || 'paper';
   settings.statusNotify = s.statusNotify === 'off' ? 'off' : 'on';
-  settings.splashAnim = ['radar','pulse','scan','none'].includes(s.splashAnim) ? s.splashAnim : 'radar';
+  settings.splashAnim = ['radar','pulse','scan','horns','hearing','flash','none'].includes(s.splashAnim)
+    ? s.splashAnim : 'radar';
   for(const key of Object.keys(SRS_DEFAULTS))
     settings[key] = s[key] !== undefined && s[key] !== ''
       ? (key === 'srsOrder' ? s[key] : Number(s[key]))
@@ -6364,7 +6422,10 @@ function applyTheme(){
   };
 });
 
-const SPLASH_ANIM_LABEL = {radar:'Радар', pulse:'Пульс', scan:'Скан', none:'Без анимации'};
+const SPLASH_ANIM_LABEL = {
+  radar:'Радар', pulse:'Пульс', scan:'Скан',
+  horns:'Рога', hearing:'Слух', flash:'Вспышка', none:'Без анимации'
+};
 
 function syncSplashAnim(){
   [...$('splashAnims').children].forEach(b =>
