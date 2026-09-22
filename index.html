@@ -1276,6 +1276,16 @@
       <div class="hint">Модель SM-2: интервал умножается на лёгкость, «снова» сбрасывает счёт и снижает лёгкость.</div>
     </div>
 
+    <button class="sv-head" data-sec="secNotify">Уведомления</button>
+    <div class="sv-sec" id="secNotify">
+      <label>Сводка дня в шторке</label>
+      <div class="seg" id="statusNotifToggle">
+        <button data-v="on">Показывать</button>
+        <button data-v="off">Не показывать</button>
+      </div>
+      <div class="hint">Прикреплённое уведомление: сколько тем повторено сегодня, сколько сделано по каждому направлению и курение против нормы. Финансы туда не выводятся. Обновляется при отметках в приложении. Нужен плагин @capacitor/local-notifications в сборке — без него просто не появится.</div>
+    </div>
+
     <button class="sv-head" data-sec="secData">Готовые наборы</button>
     <div class="sv-sec" id="secData">
       <div class="hint">Загружается в ту категорию, в которой ты сейчас находишься.</div>
@@ -1309,7 +1319,7 @@
       <button id="seedAstronomy">Курс: астрономия</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 62 — курс астрономии (48/48) добавлен</div>
+    <div class="hint sv-version" id="version">Версия 63 — сводка дня в шторке уведомлений</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -1589,6 +1599,7 @@ async function openDatabase(){
   settings.theme = s.theme || 'red';
   settings.readerFont = s.readerFont || 'm';
   settings.readerTheme = s.readerTheme || 'paper';
+  settings.statusNotify = s.statusNotify === 'off' ? 'off' : 'on';
   for(const key of Object.keys(SRS_DEFAULTS))
     settings[key] = s[key] !== undefined && s[key] !== ''
       ? (key === 'srsOrder' ? s[key] : Number(s[key]))
@@ -2347,8 +2358,9 @@ $('quickSave').onclick = async () => {
     ? Math.min(Number(quickNode.plan) || Infinity, Math.max(0, was + add))
     : was + add;
   await repo.update(quickNode.id, {fact: now});
-  /* страницы пишем и в журнал, чтобы видеть темп чтения */
-  if(quickMode === 'pages' && add > 0){
+  /* каждое добавление пишем и в журнал — это даёт «сколько сделано сегодня»
+     для сводки в шторке уведомлений, а для книг заодно и темп чтения */
+  if(add > 0){
     const sets = await repo.listSets(quickNode.id);
     await repo.addSet({
       node_id: quickNode.id, date: todayISO(),
@@ -2361,6 +2373,7 @@ $('quickSave').onclick = async () => {
     ? 'Записано, всего ' + now + ' стр.'
     : 'Записано');
   render();
+  updateStatusNotification();
 };
 
 /* открытие для книги */
@@ -3152,6 +3165,7 @@ async function addSmoke(n){
     note: new Date().toTimeString().slice(0,5)
   });
   await renderQuit();
+  updateStatusNotification();
 }
 
 $('quitOne').onclick = () => addSmoke(1);
@@ -3162,6 +3176,7 @@ $('quitUndo').onclick = async () => {
   await repo.removeSet(todays[0].id);
   toast('Последняя отметка убрана');
   await renderQuit();
+  updateStatusNotification();
 };
 $('quitClose').onclick = closeQuit;
 
@@ -5743,6 +5758,119 @@ async function analyzeAndScheduleWarnings(app){
 
 /* ===================== /ВРЕДНЫЕ ПРИЛОЖЕНИЯ ===================== */
 
+/* ===================== сводка дня в шторке уведомлений ===========
+   Прикреплённое (ongoing) уведомление, которое видно, просто смахнув
+   шторку сверху: сколько тем повторено сегодня, сколько сделано по
+   каждому направлению (курсы, книги и т.д.) и курение относительно
+   нормы. Финансы туда намеренно не выводятся — не для чужих глаз на
+   шторке. Обновляется при отметках в приложении и при возврате в него.
+   Работает только если в сборку добавлен @capacitor/local-notifications,
+   как и напоминания о вредных приложениях выше — без плагина просто
+   тихо не появляется, остальной учёт работает как обычно.
+==================================================================*/
+
+const STATUS_NOTIF_ID = 424242;
+
+function statusNotifPlugin(){
+  return (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) || null;
+}
+
+async function requestStatusNotifPermission(){
+  const plugin = statusNotifPlugin();
+  if(!plugin) return;
+  try{ await plugin.requestPermissions(); }catch(e){}
+}
+
+/* сколько по каждому узлу отмечено сегодня — сумма value из журнала (sets) */
+async function todaySetTotals(){
+  const sets = await repo.setsOnDate(todayISO());
+  const byNode = new Map();
+  for(const s of sets) byNode.set(s.node_id, (byNode.get(s.node_id) || 0) + (Number(s.value) || 0));
+  return byNode;
+}
+
+async function statusSummaryLines(){
+  await reindex();
+  const byNode = await todaySetTotals();
+  const today = todayISO();
+  const lines = [];
+
+  /* карточек-тем повторено сегодня — по всем направлениям сразу */
+  const reviewedToday = index.all.filter(n => isStudyCard(n) && n.last_review === today).length;
+  if(reviewedToday > 0) lines.push('Повторено тем: ' + reviewedToday);
+
+  const roots = index.all.filter(n => n.parent_id == null && n.kind === 'category');
+  for(const root of roots){
+    if(root.mode === 'money') continue; /* финансы в шторку не выводим */
+
+    if(root.mode === 'quit'){
+      const norm = quitNorm(root, today);
+      const fact = byNode.get(root.id) || 0;
+      lines.push(root.name + ': ' + fmt(fact) + ' из ' + fmt(norm));
+      continue;
+    }
+
+    let total = byNode.get(root.id) || 0;
+    for(const e of descendantEntries(root.id)) total += byNode.get(e.id) || 0;
+    if(total > 0){
+      const unit = root.unit || (root.mode === 'books' ? 'стр.' : '');
+      lines.push(root.name + ': ' + fmt(total) + (unit ? ' ' + unit : ''));
+    }
+  }
+  return lines;
+}
+
+async function updateStatusNotification(){
+  if(settings.statusNotify === 'off') return;
+  const plugin = statusNotifPlugin();
+  if(!plugin) return;
+  const lines = await statusSummaryLines();
+  const largeBody = lines.length ? lines.join('\n') : 'Сегодня пока ничего не отмечено';
+  try{
+    await plugin.cancel({notifications:[{id: STATUS_NOTIF_ID}]});
+    await plugin.schedule({notifications:[{
+      id: STATUS_NOTIF_ID,
+      title: 'Трекер — сегодня',
+      body: lines.length ? lines.join(' · ') : largeBody,
+      largeBody,
+      summaryText: 'Сводка дня',
+      ongoing: true,
+      autoCancel: false,
+    }]});
+  }catch(e){ /* нет разрешения или плагина в этой сборке — тихо пропускаем */ }
+}
+
+async function clearStatusNotification(){
+  const plugin = statusNotifPlugin();
+  if(!plugin) return;
+  try{ await plugin.cancel({notifications:[{id: STATUS_NOTIF_ID}]}); }catch(e){}
+}
+
+function syncStatusNotify(){
+  [...$('statusNotifToggle').children].forEach(b =>
+    b.setAttribute('aria-pressed', String(b.dataset.v === (settings.statusNotify || 'on'))));
+}
+
+[...$('statusNotifToggle').children].forEach(b => {
+  b.onclick = async () => {
+    settings.statusNotify = b.dataset.v;
+    await repo.setSetting('statusNotify', settings.statusNotify);
+    syncStatusNotify();
+    if(settings.statusNotify === 'off'){
+      clearStatusNotification();
+      toast('Сводка в шторке выключена');
+    } else {
+      await requestStatusNotifPermission();
+      await updateStatusNotification();
+      toast('Сводка в шторке включена');
+    }
+  };
+});
+
+if(window.Capacitor && window.Capacitor.Plugins.App){
+  window.Capacitor.Plugins.App.addListener('resume', () => { updateStatusNotification(); });
+}
+
 $('openGraph').onclick = openGraphScreen;
 $('graphClose').onclick = closeGraphScreen;
 
@@ -6036,6 +6164,7 @@ $('service').onclick = () => {
   applyTheme();
   syncSrs();
   syncPlanUnits();
+  syncStatusNotify();
   $('fBudget').value = settings.budget || '';
   $('serviceBg').classList.add('open');
 };
@@ -6303,6 +6432,9 @@ $('readerClose').onclick = closeReader;
   try{
     await openDatabase();
     await render();
+    if(settings.statusNotify !== 'off'){
+      requestStatusNotifPermission().then(updateStatusNotification);
+    }
   }catch(err){
     $('list').innerHTML = '<div class="empty">База не открылась: ' + err.message + '</div>';
   }
