@@ -36,6 +36,26 @@
     --bg:#F5F6F8; --surface:#FFFFFF; --surface-2:#EDEFF3; --line:#D5D9E0;
     --accent:#1F6FEB; --income:#1F8A4C; --text:#14161A; --muted:#5C6470;
   }
+  html[data-theme="violet"]{
+    --bg:#0D0714; --surface:#170A22; --surface-2:#211032; --line:#3A1F52;
+    --accent:#A855F7; --income:#4ADE80; --text:#F2E9FB; --muted:#9C86B5;
+  }
+  html[data-theme="raspberry"]{
+    --bg:#170811; --surface:#23101B; --surface-2:#301526; --line:#4A1F38;
+    --accent:#E23F82; --income:#4FBE79; --text:#F7E9F0; --muted:#B27E96;
+  }
+  html[data-theme="orange"]{
+    --bg:#160E06; --surface:#24170A; --surface-2:#33210D; --line:#4D3517;
+    --accent:#F97316; --income:#4CAF6E; --text:#F8ECDD; --muted:#B49A7C;
+  }
+  html[data-theme="black"]{
+    --bg:#000000; --surface:#0A0A0A; --surface-2:#151515; --line:#2A2A2A;
+    --accent:#5EC8FF; --income:#43C97B; --text:#F2F2F2; --muted:#8A8A8A;
+  }
+  html[data-theme="cream"]{
+    --bg:#FBF3E7; --surface:#FFFFFF; --surface-2:#F3E7D3; --line:#E3D2B4;
+    --accent:#B5651D; --income:#3F8F5F; --text:#2B2015; --muted:#8A7860;
+  }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;padding:0;height:100%}
   body{
@@ -685,6 +705,13 @@
         <button class="picker" id="fTarget">Не выбрано</button>
         <div class="hint">Дебюты ведут в миттельшпили, миттельшпили — в эндшпили</div>
       </div>
+
+      <div class="field" id="catPassWrap">
+        <label for="fCatPass">Пароль на категорию</label>
+        <input id="fCatPass" type="password" autocomplete="new-password" placeholder="Оставь пустым — без пароля/без изменений">
+        <div class="hint" id="catPassHint">Название в списке спрячется за ❄❄❄❄❄❄, откроется только после ввода пароля.</div>
+        <button id="catPassRemove" type="button" style="display:none">Убрать пароль</button>
+      </div>
     </div>
 
     <div id="entryFields">
@@ -818,6 +845,21 @@
     <div class="actions">
       <button id="quickCancel">Отмена</button>
       <button id="quickSave" class="primary">Добавить</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet-bg" id="lockBg">
+  <div class="sheet">
+    <h2>❄ Категория под паролем</h2>
+    <div class="field">
+      <label for="fLockPass">Пароль</label>
+      <input id="fLockPass" type="password" autocomplete="current-password">
+      <div class="hint" id="lockHint">Введи пароль, чтобы открыть категорию.</div>
+    </div>
+    <div class="actions">
+      <button id="lockCancel">Отмена</button>
+      <button id="lockUnlock" class="primary">Открыть</button>
     </div>
   </div>
 </div>
@@ -1201,6 +1243,11 @@
         <button data-t="graphite">Графит</button>
         <button data-t="sand">Песок</button>
         <button data-t="light">Светлая</button>
+        <button data-t="violet">Фиолетовая</button>
+        <button data-t="raspberry">Малиновая</button>
+        <button data-t="orange">Оранжевая</button>
+        <button data-t="black">Чёрная</button>
+        <button data-t="cream">Кремовая</button>
       </div>
     </div>
 
@@ -1319,7 +1366,7 @@
       <button id="seedAstronomy">Курс: астрономия</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 63 — сводка дня в шторке уведомлений</div>
+    <div class="hint sv-version" id="version">Версия 64 — пароль на категории, ещё 5 тем оформления</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -1377,6 +1424,8 @@ CREATE TABLE IF NOT EXISTS node (
   genre TEXT,
   rating REAL,
   status TEXT,
+  locked INTEGER NOT NULL DEFAULT 0,
+  pass_hash TEXT,
   sort INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL
 );
@@ -1428,13 +1477,15 @@ const NEW_COLUMNS = [
   "ALTER TABLE node ADD COLUMN last_review TEXT",
   "ALTER TABLE node ADD COLUMN genre TEXT",
   "ALTER TABLE node ADD COLUMN rating REAL",
-  "ALTER TABLE node ADD COLUMN status TEXT"
+  "ALTER TABLE node ADD COLUMN status TEXT",
+  "ALTER TABLE node ADD COLUMN locked INTEGER NOT NULL DEFAULT 0",
+  "ALTER TABLE node ADD COLUMN pass_hash TEXT"
 ];
 
 const FIELDS = ['parent_id','name','kind','mode','unit','plan','fact','deadline','done',
                 'amount','op_date','direction','target_id','note','days','volume',
                 'due','ivl','ease','reps','lapses','last_review',
-                'genre','rating','status','sort','created_at'];
+                'genre','rating','status','locked','pass_hash','sort','created_at'];
 
 const SqliteRepo = {
   async init(){
@@ -1651,6 +1702,7 @@ function createNode(parentId, d){
     due:d.due ?? null, ivl:d.ivl ?? null, ease:d.ease ?? null,
     reps:0, lapses:0, last_review:null,
     genre:d.genre ?? null, rating:d.rating ?? null, status:d.status ?? null,
+    locked:d.locked ? 1 : 0, pass_hash:d.pass_hash ?? null,
     sort:Date.now(), created_at:new Date().toISOString()
   });
 }
@@ -1818,6 +1870,75 @@ function toast(text){
   t._timer = setTimeout(() => t.classList.remove('show'), 1800);
 }
 
+/* ===================== пароль на категорию ========================
+   Пароль хранится не в открытом виде, а его хэшем (SHA-256, если
+   доступен SubtleCrypto — в вебвью Capacitor обычно доступен; иначе
+   простой запасной хэш, просто чтобы не светить пароль в базе как есть).
+   Разблокировка живёт только в памяти на время сеанса — заново открыл
+   приложение, снова спрашивает пароль.
+==================================================================*/
+
+const SNOWFLAKE_MASK = '❄❄❄❄❄❄';
+let unlockedCourses = new Set();
+
+async function hashPass(text){
+  if(window.crypto && window.crypto.subtle){
+    try{
+      const enc = new TextEncoder().encode(text);
+      const buf = await window.crypto.subtle.digest('SHA-256', enc);
+      return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+    }catch(e){ /* падаем на запасной вариант ниже */ }
+  }
+  let h = 0;
+  for(let i = 0; i < text.length; i++) h = (Math.imul(31, h) + text.charCodeAt(i)) | 0;
+  return 'fb:' + (h >>> 0).toString(16);
+}
+
+const isLockedNode = node =>
+  !!(node && node.kind === 'category' && Number(node.locked) && !unlockedCourses.has(node.id));
+
+/* у узла есть родитель-категория, которая сейчас заперта и не открыта в этом сеансе —
+   значит сам узел (тема, карточка, что угодно внутри) тоже не должен светиться нигде,
+   кроме списка внутри уже открытой категории */
+function hasLockedAncestor(node){
+  let p = node && node.parent_id != null ? index.byId.get(node.parent_id) : null;
+  while(p){
+    if(isLockedNode(p)) return true;
+    p = p.parent_id != null ? index.byId.get(p.parent_id) : null;
+  }
+  return false;
+}
+
+let lockTarget = null;   // узел, который сейчас пытаются открыть
+let lockThen = null;     // что сделать после успешного ввода пароля
+
+function askUnlock(node, then){
+  lockTarget = node;
+  lockThen = then;
+  $('fLockPass').value = '';
+  $('lockHint').textContent = 'Введи пароль, чтобы открыть категорию.';
+  $('lockBg').classList.add('open');
+  setTimeout(() => $('fLockPass').focus(), 50);
+}
+$('lockCancel').onclick = () => { $('lockBg').classList.remove('open'); lockTarget = null; lockThen = null; };
+$('lockUnlock').onclick = async () => {
+  const val = $('fLockPass').value;
+  if(!val){ $('lockHint').textContent = 'Введи пароль.'; return; }
+  const h = await hashPass(val);
+  if(!lockTarget || h !== lockTarget.pass_hash){
+    $('lockHint').textContent = 'Неверный пароль, попробуй ещё раз.';
+    $('fLockPass').value = '';
+    $('fLockPass').focus();
+    return;
+  }
+  unlockedCourses.add(lockTarget.id);
+  $('lockBg').classList.remove('open');
+  const then = lockThen;
+  lockTarget = null; lockThen = null;
+  if(then) then();
+};
+$('fLockPass').addEventListener('keydown', e => { if(e.key === 'Enter') $('lockUnlock').click(); });
+
 function overdue(item){
   if(!item.deadline || item.done) return false;
   return item.deadline < today();
@@ -1943,11 +2064,13 @@ async function render(){
       row.appendChild(dot);
     }
 
+    const itemLocked = isLockedNode(item);
+
     const body = document.createElement('div');
     body.className = 'body';
     const name = document.createElement('span');
     name.className = 'name';
-    name.textContent = item.name;
+    name.textContent = itemLocked ? (SNOWFLAKE_MASK + ' 🔒') : item.name;
     if(itemBook){
       const st = bookStatus(item);
       const badge = document.createElement('span');
@@ -1967,34 +2090,41 @@ async function render(){
     meta.className = 'meta';
 
     if(item.kind === 'category'){
-      const kids = await repo.listChildren(item.id);
-      const parts = [];
-      if(itemMoney){
-        const a = await aggregateMoney(item.id, ym);
-        parts.push(a.count ? a.count + ' операций' : 'за месяц пусто');
-        if(a.expense) parts.push('расход ' + money(a.expense));
-        if(a.income)  parts.push('доход ' + money(a.income));
-      } else {
-        const a = await aggregate(item.id);
-        const unit = item.unit || currentUnit();
-        parts.push(kids.length === 0 ? 'пусто' : kids.length + ' внутри');
-        if(item.volume){
-          const w = weeksLeft(item.deadline);
-          const left = Math.max(0, Number(item.volume) - (a.fact || 0));
-          parts.push(fmt(left) + ' ' + planUnitWord() + ' осталось');
-          if(w) parts.push(fmt(Math.round(left / w * 10) / 10) + ' ' + planUnitWord() + '/нед');
-          else if(w === 0) parts.push('срок вышел');
-        }
-        if(a.count) parts.push(a.done + '/' + a.count + ' готово');
-        if(a.plan)  parts.push(fmt(a.fact) + ' из ' + fmt(a.plan) + (unit ? ' ' + unit : ''));
-      }
-      meta.textContent = parts.join(' · ');
-      body.appendChild(meta);
-      body.onclick = () => {
+      const enterCategory = () => {
         if(item.mode === 'quit'){ openQuit(item); return; }
         path.push({id:item.id, name:item.name, unit:item.unit, mode:item.mode});
         render();
       };
+      if(itemLocked){
+        meta.textContent = 'Нажми, чтобы ввести пароль';
+        body.appendChild(meta);
+        body.onclick = () => askUnlock(item, enterCategory);
+      } else {
+        const kids = await repo.listChildren(item.id);
+        const parts = [];
+        if(itemMoney){
+          const a = await aggregateMoney(item.id, ym);
+          parts.push(a.count ? a.count + ' операций' : 'за месяц пусто');
+          if(a.expense) parts.push('расход ' + money(a.expense));
+          if(a.income)  parts.push('доход ' + money(a.income));
+        } else {
+          const a = await aggregate(item.id);
+          const unit = item.unit || currentUnit();
+          parts.push(kids.length === 0 ? 'пусто' : kids.length + ' внутри');
+          if(item.volume){
+            const w = weeksLeft(item.deadline);
+            const left = Math.max(0, Number(item.volume) - (a.fact || 0));
+            parts.push(fmt(left) + ' ' + planUnitWord() + ' осталось');
+            if(w) parts.push(fmt(Math.round(left / w * 10) / 10) + ' ' + planUnitWord() + '/нед');
+            else if(w === 0) parts.push('срок вышел');
+          }
+          if(a.count) parts.push(a.done + '/' + a.count + ' готово');
+          if(a.plan)  parts.push(fmt(a.fact) + ' из ' + fmt(a.plan) + (unit ? ' ' + unit : ''));
+        }
+        meta.textContent = parts.join(' · ');
+        body.appendChild(meta);
+        body.onclick = enterCategory;
+      }
     } else if(itemBook){
       const b = bookStats(item);
       const parts = [];
@@ -2074,7 +2204,7 @@ async function render(){
     if(item.kind === 'category'){
       const chev = document.createElement('span');
       chev.className = 'chev';
-      chev.textContent = '›';
+      chev.textContent = itemLocked ? '🔒' : '›';
       row.appendChild(chev);
     } else if(itemMoney){
       const sum = document.createElement('span');
@@ -2106,8 +2236,12 @@ async function render(){
     const more = document.createElement('button');
     more.className = 'more';
     more.textContent = '⋯';
-    more.setAttribute('aria-label', 'Действия: ' + item.name);
-    more.onclick = e => { e.stopPropagation(); openMenu(item); };
+    more.setAttribute('aria-label', 'Действия: ' + (itemLocked ? SNOWFLAKE_MASK : item.name));
+    more.onclick = e => {
+      e.stopPropagation();
+      if(itemLocked){ askUnlock(item, () => openMenu(item)); return; }
+      openMenu(item);
+    };
     row.appendChild(more);
 
     list.appendChild(row);
@@ -2192,6 +2326,12 @@ function openEditor(mode, node){
   $('fNote').value     = node && node.note ? node.note : '';
   $('fVolume').value   = node && node.volume != null ? node.volume : '';
   $('fCatDeadline').value = node && node.kind === 'category' && node.deadline ? node.deadline : '';
+  $('fCatPass').value  = '';
+  const catLocked = node && node.kind === 'category' && Number(node.locked);
+  $('catPassRemove').style.display = catLocked ? 'block' : 'none';
+  $('catPassHint').textContent = catLocked
+    ? 'Пароль уже установлен. Введи новый, чтобы сменить, или нажми «Убрать пароль».'
+    : 'Название в списке спрячется за ❄❄❄❄❄❄, откроется только после ввода пароля.';
 
   const inherited = currentUnit();
   $('unitHint').textContent = inherited
@@ -2316,6 +2456,20 @@ $('editSave').onclick = async () => {
     };
   }
 
+  /* пароль ставится только на категории; пустое поле при изменении
+     существующей категории означает «не трогать», а не «убрать» —
+     для снятия пароля есть отдельная кнопка */
+  if(cat){
+    const passTrim = $('fCatPass').value.trim();
+    if(passTrim){
+      data.locked = 1;
+      data.pass_hash = await hashPass(passTrim);
+    } else if(editState.mode === 'add'){
+      data.locked = 0;
+      data.pass_hash = null;
+    }
+  }
+
   if(editState.mode === 'add'){
     await createNode(current(), data);
     toast('Добавлено');
@@ -2327,6 +2481,16 @@ $('editSave').onclick = async () => {
   }
   closeEditor();
   render();
+};
+
+$('catPassRemove').onclick = async () => {
+  if(!editState.node) return;
+  await repo.update(editState.node.id, {locked: 0, pass_hash: null});
+  editState.node.locked = 0; editState.node.pass_hash = null;
+  unlockedCourses.delete(editState.node.id);
+  $('catPassRemove').style.display = 'none';
+  $('catPassHint').textContent = 'Название в списке спрячется за ❄❄❄❄❄❄, откроется только после ввода пароля.';
+  toast('Пароль убран');
 };
 
 /* --------------------------- быстрый факт ----------------------- */
@@ -2463,7 +2627,8 @@ function pickCandidates(){
   if(pickMode === 'target'){
     return index.all
       .filter(n => n.kind === 'category' && n.mode !== 'money' &&
-                   (!editState.node || n.id !== editState.node.id))
+                   (!editState.node || n.id !== editState.node.id) &&
+                   !isLockedNode(n) && !hasLockedAncestor(n))
       .filter(n => !q || n.name.toLowerCase().includes(q));
   }
 
@@ -2475,7 +2640,8 @@ function pickCandidates(){
     if(q) pool = pool.filter(n => n.name.toLowerCase().includes(q));
     if(!q || pool.length) return pool;
   }
-  pool = index.all.filter(n => n.id !== linkNode.id && n.amount == null);
+  pool = index.all.filter(n => n.id !== linkNode.id && n.amount == null &&
+                               !isLockedNode(n) && !hasLockedAncestor(n));
   return q ? pool.filter(n => n.name.toLowerCase().includes(q)) : pool.slice(0, 50);
 }
 
@@ -2632,14 +2798,14 @@ $('menuDelete').onclick = async () => {
   render();
 };
 
-['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg','bookTocBg'].forEach(id => {
+['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg','bookTocBg','lockBg'].forEach(id => {
   const bg = $(id);
   bg.onclick = e => { if(e.target === bg) bg.classList.remove('open'); };
 });
 
 if(window.Capacitor && window.Capacitor.Plugins.App){
   window.Capacitor.Plugins.App.addListener('backButton', () => {
-    for(const id of ['pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg']){
+    for(const id of ['pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg','lockBg']){
       if($(id).classList.contains('open')){ $(id).classList.remove('open'); return; }
     }
     if(path.length){ path.pop(); render(); return; }
@@ -2848,7 +3014,7 @@ function dueCards(){
     return false;
   };
 
-  const all = index.all.filter(n => isStudyCard(n) && inScope(n));
+  const all = index.all.filter(n => isStudyCard(n) && inScope(n) && !hasLockedAncestor(n));
   const fresh = all.filter(n => !n.due).slice(0, srsNum('srsNewLimit'));
   const ready = all.filter(n => n.due && n.due <= today)
                    .sort((a, b) => (a.due < b.due ? -1 : 1));
@@ -3348,6 +3514,7 @@ function collectSubtree(rootId){
   const walk = (pid, depth) => {
     for(const n of index.all){
       if(n.parent_id !== pid) continue;
+      if(isLockedNode(n)) continue; /* запертая категория не попадает на карту, пока не открыта */
       out.push({node:n, depth});
       if(out.length < GRAPH_LIMIT) walk(n.id, depth + 1);
     }
@@ -5795,13 +5962,16 @@ async function statusSummaryLines(){
   const today = todayISO();
   const lines = [];
 
-  /* карточек-тем повторено сегодня — по всем направлениям сразу */
-  const reviewedToday = index.all.filter(n => isStudyCard(n) && n.last_review === today).length;
+  /* карточек-тем повторено сегодня — по всем направлениям сразу,
+     кроме того, что спрятано за паролем */
+  const reviewedToday = index.all.filter(n =>
+    isStudyCard(n) && n.last_review === today && !hasLockedAncestor(n)).length;
   if(reviewedToday > 0) lines.push('Повторено тем: ' + reviewedToday);
 
   const roots = index.all.filter(n => n.parent_id == null && n.kind === 'category');
   for(const root of roots){
     if(root.mode === 'money') continue; /* финансы в шторку не выводим */
+    if(isLockedNode(root)) continue; /* запертое паролем в шторку тоже не выводим */
 
     if(root.mode === 'quit'){
       const norm = quitNorm(root, today);
@@ -5971,6 +6141,7 @@ async function planRows(){
   const rows = [];
   for(const n of index.all){
     if(n.kind !== 'category' || !n.volume) continue;
+    if(isLockedNode(n) || hasLockedAncestor(n)) continue;
     const a = await aggregate(n.id);
     const done = a.fact || 0;
     const left = Math.max(0, Number(n.volume) - done);
