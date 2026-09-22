@@ -1,4 +1,4 @@
-
+{
   "appId": "kz.proamgfit.tracker",
   "appName": "Трекер",
   "webDir": "www",
@@ -7,5 +7,10 @@
   },
   "server": {
     "androidScheme": "https"
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
   }
 }
