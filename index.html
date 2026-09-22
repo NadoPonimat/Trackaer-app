@@ -587,30 +587,43 @@
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 <style>
+  /* Заставка при входе. Все анимации намеренно двигают только transform и
+     opacity (никогда width/height/left/top) — эти два свойства браузер
+     анимирует на композиторе, отдельно от основного потока и вёрстки,
+     поэтому даже на слабом телефоне заставка идёт ровными 60 кадрами в
+     секунду вместо просаженных кадров от пересчёта раскладки. */
   #ddSplash{
-    position:fixed;inset:0;z-index:9999;background:#0a0a0a;overflow:hidden;
+    position:fixed;inset:0;z-index:9999;background:var(--bg,#0a0a0a);overflow:hidden;
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
     transition:opacity .5s ease;
   }
   #ddSplash.hide{opacity:0;pointer-events:none}
   #ddRadar{position:relative;display:flex;align-items:center;justify-content:center}
   .ddRing{
-    position:absolute;border:3px solid #e02826;border-radius:50%;
-    width:56px;height:56px;opacity:0;
-    animation:ddPing 1300ms ease-out infinite;
+    position:absolute;top:50%;left:50%;width:56px;height:56px;
+    border:3px solid var(--accent,#e02826);border-radius:50%;
+    opacity:0;transform:translate(-50%,-50%) scale(1);will-change:transform,opacity;
+    display:none;
   }
+  #ddSplash[data-anim="radar"] .ddRing{display:block;animation:ddPing 1300ms cubic-bezier(.2,.6,.35,1) infinite}
   .ddRing:nth-child(2){animation-delay:350ms}
   .ddRing:nth-child(3){animation-delay:700ms}
   @keyframes ddPing{
-    0%{width:56px;height:56px;opacity:.9}
-    100%{width:910px;height:910px;opacity:0}
+    0%{transform:translate(-50%,-50%) scale(1);opacity:.9}
+    100%{transform:translate(-50%,-50%) scale(16.25);opacity:0}
   }
 
+  #ddTitleWrap{position:relative;display:inline-block}
+  #ddSplash[data-anim="scan"] #ddTitleWrap{overflow:hidden}
   #ddTitle{
-    position:relative;font:800 100px/1 Arial, sans-serif;letter-spacing:20px;color:#e02826;
-    text-shadow:0 0 10px rgba(224,40,38,.8), 0 0 24px rgba(224,40,38,.4);
-    opacity:0;animation:ddBeat 520ms ease-in-out 500ms forwards;
+    position:relative;font:800 100px/1 Arial, sans-serif;letter-spacing:20px;color:var(--accent,#e02826);
+    text-shadow:0 0 10px var(--accent,#e02826), 0 0 26px var(--accent,#e02826);
+    opacity:0;transform:scale(.9);will-change:transform,opacity;
   }
+  #ddSplash[data-anim="radar"] #ddTitle{animation:ddBeat 520ms ease-in-out 500ms forwards}
+  #ddSplash[data-anim="pulse"] #ddTitle{animation:ddPulse 1500ms ease-in-out 150ms infinite}
+  #ddSplash[data-anim="scan"] #ddTitle{animation:ddFadeIn 400ms ease-out 100ms forwards}
+  #ddSplash[data-anim="none"] #ddTitle{opacity:1;transform:scale(1)}
   @keyframes ddBeat{
     0%{opacity:0;transform:scale(.9)}
     30%{opacity:1;transform:scale(1.08)}
@@ -618,15 +631,41 @@
     60%{transform:scale(1.05)}
     100%{opacity:1;transform:scale(1)}
   }
+  @keyframes ddPulse{
+    0%,100%{opacity:.82;transform:scale(1)}
+    50%{opacity:1;transform:scale(1.07)}
+  }
+  @keyframes ddFadeIn{
+    0%{opacity:0;transform:scale(.96)}
+    100%{opacity:1;transform:scale(1)}
+  }
+
+  #ddScan{
+    position:absolute;top:0;left:-32%;width:32%;height:100%;
+    background:linear-gradient(90deg, transparent, var(--accent,#e02826) 50%, transparent);
+    opacity:0;display:none;will-change:transform;
+  }
+  #ddSplash[data-anim="scan"] #ddScan{display:block;opacity:.85;animation:ddScanMove 1100ms linear 150ms infinite}
+  @keyframes ddScanMove{
+    0%{transform:translateX(0)}
+    100%{transform:translateX(340%)}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    #ddSplash *{animation:none!important}
+  }
 </style>
 </head>
 <body>
-<div id="ddSplash">
+<div id="ddSplash" data-anim="radar">
   <div id="ddRadar">
     <div class="ddRing"></div>
     <div class="ddRing"></div>
     <div class="ddRing"></div>
-    <div id="ddTitle">БМ</div>
+    <div id="ddTitleWrap">
+      <div id="ddTitle">БМ</div>
+      <div id="ddScan"></div>
+    </div>
   </div>
 </div>
 
@@ -1249,6 +1288,14 @@
         <button data-t="black">Чёрная</button>
         <button data-t="cream">Кремовая</button>
       </div>
+      <label>Анимация при входе</label>
+      <div class="seg wrap" id="splashAnims">
+        <button data-a="radar">Радар</button>
+        <button data-a="pulse">Пульс</button>
+        <button data-a="scan">Скан</button>
+        <button data-a="none">Без анимации</button>
+      </div>
+      <div class="hint">Все варианты нарисованы через transform/opacity, поэтому идут ровно на 60 fps даже на слабом телефоне.</div>
     </div>
 
     <button class="sv-head" data-sec="secPlan">Планирование</button>
@@ -1366,7 +1413,7 @@
       <button id="seedAstronomy">Курс: астрономия</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 64 — пароль на категории, ещё 5 тем оформления</div>
+    <div class="hint sv-version" id="version">Версия 65 — выбор анимации при входе (60 fps)</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -1651,6 +1698,7 @@ async function openDatabase(){
   settings.readerFont = s.readerFont || 'm';
   settings.readerTheme = s.readerTheme || 'paper';
   settings.statusNotify = s.statusNotify === 'off' ? 'off' : 'on';
+  settings.splashAnim = ['radar','pulse','scan','none'].includes(s.splashAnim) ? s.splashAnim : 'radar';
   for(const key of Object.keys(SRS_DEFAULTS))
     settings[key] = s[key] !== undefined && s[key] !== ''
       ? (key === 'srsOrder' ? s[key] : Number(s[key]))
@@ -6316,6 +6364,22 @@ function applyTheme(){
   };
 });
 
+const SPLASH_ANIM_LABEL = {radar:'Радар', pulse:'Пульс', scan:'Скан', none:'Без анимации'};
+
+function syncSplashAnim(){
+  [...$('splashAnims').children].forEach(b =>
+    b.setAttribute('aria-pressed', String(b.dataset.a === settings.splashAnim)));
+}
+
+[...$('splashAnims').children].forEach(b => {
+  b.onclick = async () => {
+    settings.splashAnim = b.dataset.a;
+    await repo.setSetting('splashAnim', settings.splashAnim);
+    syncSplashAnim();
+    toast('Анимация при входе: ' + SPLASH_ANIM_LABEL[settings.splashAnim]);
+  };
+});
+
 function syncSched(){
   [...$('schedModes').children].forEach(b =>
     b.setAttribute('aria-pressed', String(b.dataset.s === settings.schedule)));
@@ -6336,6 +6400,7 @@ $('service').onclick = () => {
   syncSrs();
   syncPlanUnits();
   syncStatusNotify();
+  syncSplashAnim();
   $('fBudget').value = settings.budget || '';
   $('serviceBg').classList.add('open');
 };
@@ -6602,6 +6667,7 @@ $('readerClose').onclick = closeReader;
   const MIN_SPLASH_MS = 2000;
   try{
     await openDatabase();
+    $('ddSplash').dataset.anim = settings.splashAnim;
     await render();
     if(settings.statusNotify !== 'off'){
       requestStatusNotifPermission().then(updateStatusNotification);
