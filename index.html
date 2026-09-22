@@ -550,6 +550,24 @@
   .graph-title{font-size:17px;font-weight:600;flex:1}
   .graph-sub{font-size:12px;color:var(--muted);margin-top:2px}
   .graph-top .more{margin-left:auto}
+  .news-card{
+    display:flex;gap:10px;background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);padding:10px;margin-bottom:8px;cursor:pointer;
+  }
+  .news-card:active{background:var(--surface-2)}
+  .news-thumb{
+    width:88px;height:88px;flex:none;border-radius:8px;object-fit:cover;
+    background:var(--surface-2);
+  }
+  .news-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+  .news-title{font-size:14px;font-weight:600;line-height:1.3}
+  .news-snippet{
+    font-size:12px;color:var(--muted);line-height:1.35;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .news-meta{font-size:11px;color:var(--muted);margin-top:auto}
+  #newsList[dir="rtl"] .news-card{flex-direction:row-reverse}
+  #newsList[dir="rtl"] .news-title, #newsList[dir="rtl"] .news-snippet{text-align:right}
   #graphCanvas{flex:1;width:100%;touch-action:none;display:block}
   .graph-bottom{
     display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px calc(env(safe-area-inset-bottom) + 12px);
@@ -1216,6 +1234,24 @@
   </div>
 </div>
 
+<div class="graph-bg" id="newsBg">
+  <div class="graph-top">
+    <div style="flex:1">
+      <div class="graph-title">Новости</div>
+      <div class="graph-sub" id="newsSub"></div>
+    </div>
+    <button class="more" id="newsRefresh" aria-label="Обновить">⟳</button>
+    <button class="more" id="newsClose" aria-label="Закрыть">✕</button>
+  </div>
+  <div class="seg wrap" id="newsLangs" style="margin:10px 12px 0">
+    <button data-lang="ru" aria-pressed="true">Русский</button>
+    <button data-lang="en" aria-pressed="false">English</button>
+    <button data-lang="ar" aria-pressed="false">العربية</button>
+    <button data-lang="es" aria-pressed="false">Español</button>
+  </div>
+  <div class="pr-body" id="newsList"></div>
+</div>
+
 <div class="graph-bg" id="quitBg">
   <div class="graph-top">
     <div>
@@ -1325,6 +1361,7 @@
       <button id="openPeople">Люди</button>
       <button id="openBooks">Книги</button>
       <button id="openHarmful">Вредные приложения</button>
+      <button id="openNews">Новости</button>
     </div>
 
     <button class="sv-head" data-sec="secTheme">Оформление</button>
@@ -1474,7 +1511,7 @@
       <button id="seedBartending">Курс: барменство (базовый)</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 67 — курсы «Европейская кухня» и «Барменство (базовый)»</div>
+    <div class="hint sv-version" id="version">Версия 68 — вкладка «Новости» (RU/EN/AR/ES, живые RSS-ленты с фото)</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -2917,7 +2954,7 @@ $('menuDelete').onclick = async () => {
 
 if(window.Capacitor && window.Capacitor.Plugins.App){
   window.Capacitor.Plugins.App.addListener('backButton', () => {
-    for(const id of ['pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg','lockBg']){
+    for(const id of ['pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg','newsBg','lockBg']){
       if($(id).classList.contains('open')){ $(id).classList.remove('open'); return; }
     }
     if(path.length){ path.pop(); render(); return; }
@@ -5979,6 +6016,235 @@ $('harmfulClose').onclick = () => {
   $('harmfulBg').classList.remove('open');
   if(harmfulTickTimer){ clearInterval(harmfulTickTimer); harmfulTickTimer = null; }
 };
+
+/* ---------- Новости ----------
+   Живые RSS-ленты популярных изданий на изучаемых языках + на русском.
+   Список источников — обычный массив ниже, его легко редактировать
+   (добавить/убрать издание, поменять адрес RSS), если какая-то лента
+   перестанет работать или появится желание добавить другую. */
+
+const NEWS_SOURCES = {
+  ru: [
+    {name:'Tengrinews',    rss:'https://tengrinews.kz/rss/news.rss'},
+    {name:'Zakon.kz',      rss:'https://www.zakon.kz/rss/'},
+    {name:'ТАСС',          rss:'https://tass.ru/rss/v2.xml'},
+    {name:'РИА Новости',   rss:'https://ria.ru/export/rss2/archive/index.xml'},
+    {name:'Коммерсантъ',   rss:'https://www.kommersant.ru/RSS/news.xml'},
+  ],
+  en: [
+    {name:'BBC News',      rss:'https://feeds.bbci.co.uk/news/world/rss.xml'},
+    {name:'The Guardian',  rss:'https://www.theguardian.com/world/rss'},
+  ],
+  ar: [
+    {name:'BBC Arabic',    rss:'https://feeds.bbci.co.uk/arabic/rss.xml'},
+    {name:'Al Jazeera',    rss:'https://www.aljazeera.net/xml/rss/all.xml'},
+  ],
+  es: [
+    {name:'BBC Mundo',       rss:'https://feeds.bbci.co.uk/mundo/rss.xml'},
+    {name:'CNN en Español',  rss:'https://cnnespanol.cnn.com/feed/'},
+  ],
+};
+const NEWS_CACHE_MS = 15 * 60 * 1000; /* считаем ленту свежей 15 минут */
+let newsLang = 'ru';
+let newsCache = {};   /* lang -> {items, fetchedAt, failedSources} */
+let newsLoading = {}; /* lang -> true пока идёт загрузка */
+let newsCacheLoaded = {}; /* lang -> true, если уже подняли сохранённый кэш из БД */
+
+function newsProxyUrl(url){
+  /* Многие RSS-ленты не отдают CORS-заголовки, поэтому при прямой неудаче
+     пробуем через открытый прокси allorigins.win. */
+  return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+}
+
+async function fetchRssText(url){
+  try{
+    const r = await fetch(url, {cache:'no-store'});
+    if(r.ok){
+      const t = await r.text();
+      if(t && t.trim()) return t;
+    }
+  }catch(_e){ /* переходим к прокси */ }
+  const r2 = await fetch(newsProxyUrl(url), {cache:'no-store'});
+  if(!r2.ok) throw new Error('HTTP ' + r2.status);
+  return await r2.text();
+}
+
+function newsNsAll(el, localName){
+  return [...el.getElementsByTagNameNS('*', localName)];
+}
+function newsNsText(el, localName){
+  const n = newsNsAll(el, localName)[0];
+  return n ? (n.textContent || '').trim() : '';
+}
+
+function newsParseImage(el, htmlFallback){
+  const media = newsNsAll(el, 'content').find(n => n.getAttribute && n.getAttribute('url'))
+             || newsNsAll(el, 'thumbnail').find(n => n.getAttribute && n.getAttribute('url'));
+  if(media) return media.getAttribute('url');
+  const encl = newsNsAll(el, 'enclosure').find(n => (n.getAttribute('type') || '').startsWith('image') && n.getAttribute('url'));
+  if(encl) return encl.getAttribute('url');
+  if(htmlFallback){
+    const m = htmlFallback.match(/<img[^>]+src=["']([^"']+)["']/i);
+    if(m) return m[1];
+  }
+  return null;
+}
+
+function newsParseEntries(xmlText){
+  const doc = new DOMParser().parseFromString(xmlText, 'text/xml');
+  if(doc.querySelector('parsererror')) throw new Error('Некорректный XML');
+  let entries = newsNsAll(doc, 'item');
+  if(!entries.length) entries = newsNsAll(doc, 'entry'); /* Atom */
+  return entries.map(el => {
+    const title = newsNsText(el, 'title').replace(/<[^>]+>/g, '');
+    let link = newsNsText(el, 'link');
+    if(!link){
+      const linkEl = newsNsAll(el, 'link').find(n => n.getAttribute && n.getAttribute('href'));
+      if(linkEl) link = linkEl.getAttribute('href');
+    }
+    const descHtml = newsNsText(el, 'encoded') || newsNsText(el, 'description') ||
+                      newsNsText(el, 'summary') || newsNsText(el, 'content');
+    const pubStr = newsNsText(el, 'pubDate') || newsNsText(el, 'published') || newsNsText(el, 'updated');
+    const pubDate = pubStr ? new Date(pubStr) : null;
+    const img = newsParseImage(el, descHtml);
+    const snippet = descHtml.replace(/<[^>]+>/g, ' ').replace(/&[a-z0-9#]+;/gi, ' ')
+                             .replace(/\s+/g, ' ').trim().slice(0, 160);
+    return {title, link, img, pubDate: (pubDate && !isNaN(pubDate)) ? pubDate : null, snippet};
+  }).filter(e => e.title && e.link);
+}
+
+async function newsLoadPersistedCache(lang){
+  if(newsCacheLoaded[lang]) return;
+  newsCacheLoaded[lang] = true;
+  try{
+    const s = await repo.getSettings();
+    const raw = s['news_cache_' + lang];
+    if(!raw) return;
+    const saved = JSON.parse(raw);
+    if(!saved || !Array.isArray(saved.items)) return;
+    newsCache[lang] = {
+      items: saved.items.map(e => Object.assign({}, e, {pubDate: e.pubDate ? new Date(e.pubDate) : null})),
+      fetchedAt: saved.fetchedAt || 0,
+      failedSources: [],
+      stale: true,
+    };
+  }catch(_e){ /* нет сохранённого кэша — не страшно */ }
+}
+
+async function newsRefresh(lang, force){
+  const cached = newsCache[lang];
+  if(!force && cached && !cached.stale && (Date.now() - cached.fetchedAt) < NEWS_CACHE_MS) return;
+  const sources = NEWS_SOURCES[lang] || [];
+  newsLoading[lang] = true;
+  if(newsLang === lang) renderNewsList();
+  const settled = await Promise.allSettled(sources.map(async src => {
+    const xml = await fetchRssText(src.rss);
+    return newsParseEntries(xml).map(e => Object.assign(e, {source: src.name}));
+  }));
+  const items = [];
+  const failedSources = [];
+  settled.forEach((r, i) => {
+    if(r.status === 'fulfilled') items.push(...r.value);
+    else failedSources.push(sources[i].name);
+  });
+  const seen = new Set();
+  const deduped = items.filter(e => { if(seen.has(e.link)) return false; seen.add(e.link); return true; });
+  deduped.sort((a, b) => (b.pubDate ? b.pubDate.getTime() : 0) - (a.pubDate ? a.pubDate.getTime() : 0));
+  const trimmed = deduped.slice(0, 60);
+  newsLoading[lang] = false;
+  if(trimmed.length){
+    newsCache[lang] = {items: trimmed, fetchedAt: Date.now(), failedSources, stale: false};
+    try{
+      await repo.setSetting('news_cache_' + lang, JSON.stringify({
+        items: trimmed.map(e => ({title:e.title, link:e.link, img:e.img, source:e.source, snippet:e.snippet,
+                                   pubDate: e.pubDate ? e.pubDate.toISOString() : null})),
+        fetchedAt: newsCache[lang].fetchedAt,
+      }));
+    }catch(_e){}
+  }else if(cached){
+    newsCache[lang] = Object.assign({}, cached, {failedSources});
+  }else{
+    newsCache[lang] = {items:[], fetchedAt: Date.now(), failedSources, stale:false};
+  }
+  if(newsLang === lang) renderNewsList();
+}
+
+function newsTimeAgo(date){
+  if(!date) return '';
+  const diffMin = Math.floor((Date.now() - date.getTime()) / 60000);
+  if(diffMin < 1) return 'только что';
+  if(diffMin < 60) return diffMin + ' мин назад';
+  const hr = Math.floor(diffMin / 60);
+  if(hr < 24) return hr + ' ч назад';
+  const day = Math.floor(hr / 24);
+  if(day < 7) return day + ' дн назад';
+  return date.toLocaleDateString('ru-RU');
+}
+
+function newsOpenArticle(url){
+  const browser = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser;
+  if(browser && browser.open) browser.open({url});
+  else window.open(url, '_blank');
+}
+
+function newsEscAttr(s){ return escapeHtmlText(s).replace(/"/g, '&quot;'); }
+
+function renderNewsList(){
+  const lang = newsLang;
+  $('newsList').dir = lang === 'ar' ? 'rtl' : 'ltr';
+  const cache = newsCache[lang];
+  const subParts = [];
+  if(cache && cache.fetchedAt) subParts.push((cache.stale ? 'Сохранено ' : 'Обновлено ') + newsTimeAgo(new Date(cache.fetchedAt)));
+  if(newsLoading[lang]) subParts.push('обновляю…');
+  if(cache && cache.failedSources && cache.failedSources.length) subParts.push('не загрузилось: ' + cache.failedSources.join(', '));
+  $('newsSub').textContent = subParts.join(' · ');
+
+  if(!cache || !cache.items.length){
+    if(newsLoading[lang]){
+      $('newsList').innerHTML = '<div class="empty">Загружаю новости…</div>';
+    }else{
+      $('newsList').innerHTML = '<div class="empty">Не получилось загрузить новости.<br>' +
+        'Проверь подключение к интернету и нажми ⟳.</div>';
+    }
+    return;
+  }
+  $('newsList').innerHTML = cache.items.map((e, i) => {
+    const img = e.img ? ('<img class="news-thumb" loading="lazy" src="' + newsEscAttr(e.img) +
+                          '" onerror="this.remove()">') : '';
+    const meta = escapeHtmlText(e.source) + (e.pubDate ? ' · ' + newsTimeAgo(e.pubDate) : '');
+    return '<div class="news-card" data-i="' + i + '">' + img +
+      '<div class="news-body">' +
+        '<div class="news-title">' + escapeHtmlText(e.title) + '</div>' +
+        (e.snippet ? '<div class="news-snippet">' + escapeHtmlText(e.snippet) + '</div>' : '') +
+        '<div class="news-meta">' + meta + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+  [...$('newsList').querySelectorAll('.news-card[data-i]')].forEach(card => {
+    card.onclick = () => newsOpenArticle(cache.items[Number(card.dataset.i)].link);
+  });
+}
+
+async function newsShowLang(lang){
+  newsLang = lang;
+  [...$('newsLangs').children].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
+  await newsLoadPersistedCache(lang);
+  renderNewsList();
+  newsRefresh(lang, false);
+}
+
+[...$('newsLangs').children].forEach(b => {
+  b.onclick = () => newsShowLang(b.dataset.lang);
+});
+
+function openNewsScreen(){
+  $('serviceBg').classList.remove('open');
+  $('newsBg').classList.add('open');
+  newsShowLang(newsLang);
+}
+$('openNews').onclick = openNewsScreen;
+$('newsClose').onclick = () => $('newsBg').classList.remove('open');
+$('newsRefresh').onclick = () => newsRefresh(newsLang, true);
 
 /* ---------- шаблон входов и локальные уведомления ---------- */
 /* Работает только если в сборку добавлен @capacitor/local-notifications.
