@@ -1511,7 +1511,7 @@
       <button id="seedBartending">Курс: барменство (базовый)</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 68 — вкладка «Новости» (RU/EN/AR/ES, живые RSS-ленты с фото)</div>
+    <div class="hint sv-version" id="version">Версия 69 — фикс зависания загрузки новостей (таймауты + резервные прокси)</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -6050,23 +6050,56 @@ let newsCache = {};   /* lang -> {items, fetchedAt, failedSources} */
 let newsLoading = {}; /* lang -> true пока идёт загрузка */
 let newsCacheLoaded = {}; /* lang -> true, если уже подняли сохранённый кэш из БД */
 
-function newsProxyUrl(url){
-  /* Многие RSS-ленты не отдают CORS-заголовки, поэтому при прямой неудаче
-     пробуем через открытый прокси allorigins.win. */
-  return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+const NEWS_FETCH_TIMEOUT_MS = 6000; /* не ждать вечно один источник — за это время либо ответ, либо переход к следующему варианту */
+
+function newsProxyUrls(url){
+  /* Многие RSS-ленты не отдают CORS-заголовки, поэтому WebView блокирует
+     прямое чтение ответа. При прямой неудаче по очереди пробуем несколько
+     независимых открытых CORS-прокси (на случай если один из них лежит
+     или ограничивает частоту запросов). */
+  const enc = encodeURIComponent(url);
+  return [
+    'https://api.allorigins.win/raw?url=' + enc,
+    'https://api.codetabs.com/v1/proxy?quest=' + enc,
+    'https://corsproxy.io/?url=' + enc,
+  ];
+}
+
+/* fetch() сам по себе может зависнуть на плохом соединении (VPN, мобильная
+   сеть) на неопределённое время — оборачиваем в AbortController, чтобы
+   один недоступный источник не подвешивал всю ленту навсегда. */
+async function newsFetchWithTimeout(url, ms){
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  try{
+    return await fetch(url, {cache:'no-store', signal: ctrl.signal});
+  }finally{
+    clearTimeout(timer);
+  }
 }
 
 async function fetchRssText(url){
   try{
-    const r = await fetch(url, {cache:'no-store'});
+    const r = await newsFetchWithTimeout(url, NEWS_FETCH_TIMEOUT_MS);
     if(r.ok){
       const t = await r.text();
       if(t && t.trim()) return t;
     }
-  }catch(_e){ /* переходим к прокси */ }
-  const r2 = await fetch(newsProxyUrl(url), {cache:'no-store'});
-  if(!r2.ok) throw new Error('HTTP ' + r2.status);
-  return await r2.text();
+  }catch(_e){ /* CORS/таймаут/сеть — переходим к прокси */ }
+  let lastErr = null;
+  for(const proxied of newsProxyUrls(url)){
+    try{
+      const r = await newsFetchWithTimeout(proxied, NEWS_FETCH_TIMEOUT_MS);
+      if(r.ok){
+        const t = await r.text();
+        if(t && t.trim()) return t;
+        lastErr = new Error('Пустой ответ');
+      }else{
+        lastErr = new Error('HTTP ' + r.status);
+      }
+    }catch(e){ lastErr = e; }
+  }
+  throw lastErr || new Error('Не удалось загрузить');
 }
 
 function newsNsAll(el, localName){
