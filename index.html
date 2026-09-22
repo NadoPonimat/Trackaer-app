@@ -1468,9 +1468,13 @@
       <button id="seedNavigation">Курс: ориентирование на местности</button>
       <button id="fillAstronomyTheory">Астрономия: залить теорию</button>
       <button id="seedAstronomy">Курс: астрономия</button>
+      <button id="fillEuroCuisineTheory">Европейская кухня: залить теорию</button>
+      <button id="seedEuroCuisine">Курс: европейская кухня</button>
+      <button id="fillBartendingTheory">Барменство: залить теорию</button>
+      <button id="seedBartending">Курс: барменство (базовый)</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 66 — почищен баг с анимацией, ещё 3 темы (рога/слух/вспышка)</div>
+    <div class="hint sv-version" id="version">Версия 67 — курсы «Европейская кухня» и «Барменство (базовый)»</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -1491,6 +1495,8 @@
 <script src="theory-survival.js"></script>
 <script src="theory-navigation.js"></script>
 <script src="theory-astronomy.js"></script>
+<script src="theory-eurocuisine.js"></script>
+<script src="theory-bartending.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.2/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -6569,6 +6575,24 @@ courseButton('seedAstronomy', 'Астрономия', () => ASTRONOMY_COURSE, '�
   'и астрофизики и общедоступных данных NASA/ESA.',
   'Курс: астрономия');
 
+courseButton('seedEuroCuisine', 'Европейская кухня', () => EURO_CUISINE_COURSE, 'часов',
+  'Поварской курс по европейской кухне: ножи и кухонный инвентарь, ножевые техники и нарезка, баланс ' +
+  'вкуса и ароматика, бульоны и материнские соусы, французская, итальянская, испанская и средиземноморская ' +
+  'кухни, закуски и антипасти, супы, техники приготовления мяса, рыба и морепродукты, организация работы ' +
+  'на профессиональной кухне и санитария (HACCP), а также лайфхаки и адаптация рецептов для домашней ' +
+  'готовки. Основан на стандартных профессиональных пособиях по кулинарии.',
+  'Курс: европейская кухня');
+
+courseButton('seedBartending', 'Барменство (базовый)', () => BARTENDING_COURSE, 'часов',
+  'Базовый курс барменства: инструменты и стекло бармена, техники смешивания (шейк, стир, билд, мадлинг), ' +
+  'крепкий алкоголь и его категории (виски, джин, водка, ром, текила, бренди), модификаторы вкуса ' +
+  '(ликёры, биттеры, вермуты, сиропы, соки), баланс и пропорции классических шаблонов коктейлей, ' +
+  'классические коктейли и их вариации, вкусовая логика сочетаний (как кислота, сладость, горечь, ' +
+  'газация и температура влияют на восприятие вкуса и крепости), безалкогольные и низкоалкогольные ' +
+  'напитки, а также организация работы бара и ответственная подача алкоголя. Основан на стандартных ' +
+  'профессиональных пособиях по барному делу.',
+  'Курс: барменство (базовый)');
+
 courseButton('seedExcel', 'Excel', () => EXCEL_COURSE, 'часов',
   'Академический курс: от модели данных до Power Query, DAX и автоматизации.',
   'Загрузить курс: Excel');
@@ -6619,6 +6643,8 @@ theoryButton('fillSurveillanceTheory', () => theorySet('SURVEILLANCE_THEORY'), '
 theoryButton('fillSurvivalTheory', () => theorySet('SURVIVAL_THEORY'), 'Выживание: залить теорию');
 theoryButton('fillNavigationTheory', () => theorySet('NAVIGATION_THEORY'), 'Ориентирование на местности: залить теорию');
 theoryButton('fillAstronomyTheory', () => theorySet('ASTRONOMY_THEORY'), 'Астрономия: залить теорию');
+theoryButton('fillEuroCuisineTheory', () => theorySet('EURO_CUISINE_THEORY'), 'Европейская кухня: залить теорию');
+theoryButton('fillBartendingTheory', () => theorySet('BARTENDING_THEORY'), 'Барменство: залить теорию');
 
 $('fillSqlTheory').onclick = async () => {
   const btn = $('fillSqlTheory');
