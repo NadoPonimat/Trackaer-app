@@ -823,6 +823,12 @@
         <div class="hint" id="catPassHint">Название в списке спрячется за ❄❄❄❄❄❄, откроется только после ввода пароля.</div>
         <button id="catPassRemove" type="button" style="display:none">Убрать пароль</button>
       </div>
+
+      <div class="field" id="shiftRateWrap">
+        <label for="fShiftRate">Ставка за смену</label>
+        <input id="fShiftRate" type="number" inputmode="decimal" placeholder="например, 10000">
+        <div class="hint">Если укажешь — сможешь быстро добавлять смены, авансы и подработки с автоподсчётом зарплаты.</div>
+      </div>
     </div>
 
     <div id="entryFields">
@@ -906,12 +912,28 @@
     </div>
 
     <div id="moneyFields">
+      <div class="seg wrap" id="entryKinds">
+        <button data-ek="" aria-pressed="true">Обычная</button>
+        <button data-ek="shift">Смена</button>
+        <button data-ek="advance">Аванс</button>
+        <button data-ek="side">Подработка</button>
+      </div>
       <div class="seg" id="dirs">
         <button data-dir="-1" aria-pressed="true">Расход</button>
         <button data-dir="1" aria-pressed="false">Доход</button>
       </div>
-      <div class="two">
+      <div class="two" id="shiftTimeWrap">
         <div class="field">
+          <label for="fShiftStart">Начало смены</label>
+          <input id="fShiftStart" type="time">
+        </div>
+        <div class="field">
+          <label for="fShiftEnd">Конец смены</label>
+          <input id="fShiftEnd" type="time">
+        </div>
+      </div>
+      <div class="two">
+        <div class="field" id="amountWrap">
           <label for="fAmount">Сумма</label>
           <input id="fAmount" type="number" inputmode="decimal">
         </div>
@@ -920,6 +942,7 @@
           <input id="fDate" type="date">
         </div>
       </div>
+      <div class="hint" id="entryKindHint"></div>
     </div>
 
     <div class="field" id="daysWrap">
@@ -1573,6 +1596,10 @@ CREATE TABLE IF NOT EXISTS node (
   status TEXT,
   locked INTEGER NOT NULL DEFAULT 0,
   pass_hash TEXT,
+  shift_rate REAL,
+  entry_kind TEXT,
+  start_time TEXT,
+  end_time TEXT,
   sort INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL
 );
@@ -1626,13 +1653,18 @@ const NEW_COLUMNS = [
   "ALTER TABLE node ADD COLUMN rating REAL",
   "ALTER TABLE node ADD COLUMN status TEXT",
   "ALTER TABLE node ADD COLUMN locked INTEGER NOT NULL DEFAULT 0",
-  "ALTER TABLE node ADD COLUMN pass_hash TEXT"
+  "ALTER TABLE node ADD COLUMN pass_hash TEXT",
+  "ALTER TABLE node ADD COLUMN shift_rate REAL",
+  "ALTER TABLE node ADD COLUMN entry_kind TEXT",
+  "ALTER TABLE node ADD COLUMN start_time TEXT",
+  "ALTER TABLE node ADD COLUMN end_time TEXT"
 ];
 
 const FIELDS = ['parent_id','name','kind','mode','unit','plan','fact','deadline','done',
                 'amount','op_date','direction','target_id','note','days','volume',
                 'due','ivl','ease','reps','lapses','last_review',
-                'genre','rating','status','locked','pass_hash','sort','created_at'];
+                'genre','rating','status','locked','pass_hash',
+                'shift_rate','entry_kind','start_time','end_time','sort','created_at'];
 
 const SqliteRepo = {
   async init(){
@@ -1852,6 +1884,8 @@ function createNode(parentId, d){
     reps:0, lapses:0, last_review:null,
     genre:d.genre ?? null, rating:d.rating ?? null, status:d.status ?? null,
     locked:d.locked ? 1 : 0, pass_hash:d.pass_hash ?? null,
+    shift_rate:d.shift_rate ?? null, entry_kind:d.entry_kind ?? null,
+    start_time:d.start_time ?? null, end_time:d.end_time ?? null,
     sort:Date.now(), created_at:new Date().toISOString()
   });
 }
@@ -1890,6 +1924,24 @@ async function aggregateMoney(id, ym){
     }
   }
   return {income, expense, count};
+}
+
+/* смены/авансы/подработки: считаем отдельно от общего дохода-расхода,
+   т.к. смена сама по себе — не денежная операция, а запись о работе */
+async function aggregateShifts(id, ym){
+  let shifts = 0, advances = 0, side = 0;
+  for(const kid of await repo.listChildren(id)){
+    if(kid.kind === 'entry'){
+      if(!kid.op_date || !kid.op_date.startsWith(ym)) continue;
+      if(kid.entry_kind === 'shift') shifts++;
+      else if(kid.entry_kind === 'advance') advances += Number(kid.amount) || 0;
+      else if(kid.entry_kind === 'side') side += Number(kid.amount) || 0;
+    } else {
+      const a = await aggregateShifts(kid.id, ym);
+      shifts += a.shifts; advances += a.advances; side += a.side;
+    }
+  }
+  return {shifts, advances, side};
 }
 
 /* индекс всех узлов: имя, путь, дети — для связей и выбора */
@@ -2126,19 +2178,32 @@ async function render(){
   $('bookFilters').style.display = booksView && !isNotes() ? 'flex' : 'none';
   $('monthLabel').textContent = MONTHS[month.getMonth()] + ' ' + month.getFullYear();
 
+  const curNode = path.length ? index.byId.get(current()) : null;
+
   const totalEl = $('total');
   totalEl.innerHTML = '';
   if(path.length && moneyView){
     const a = await aggregateMoney(current(), ym);
+    let html;
     if(a.count){
       const net = a.income - a.expense;
-      totalEl.innerHTML =
+      html =
         'Доход <b class="in">' + money(a.income) + '</b> · ' +
         'Расход <b class="out">' + money(a.expense) + '</b> · ' +
         'Итог <b>' + (net >= 0 ? '+' : '−') + money(Math.abs(net)) + '</b>';
     } else {
-      totalEl.textContent = 'В этом месяце операций нет';
+      html = 'В этом месяце операций нет';
     }
+    if(curNode && curNode.shift_rate != null){
+      const s = await aggregateShifts(current(), ym);
+      const salary = s.shifts * Number(curNode.shift_rate);
+      const remaining = salary - s.advances;
+      html += '<br>Смен <b>' + s.shifts + '</b> · ставка <b>' + money(curNode.shift_rate) + '</b>' +
+              ' · ЗП <b>' + money(salary) + '</b>' +
+              (s.advances ? ' · аванс <b>' + money(s.advances) + '</b> · остаток <b>' + money(remaining) + '</b>' : '') +
+              (s.side ? ' · подработка <b class="in">+' + money(s.side) + '</b>' : '');
+    }
+    totalEl.innerHTML = html;
   } else if(path.length && booksView){
     const books = (await repo.listChildren(current())).filter(n => n.kind === 'entry');
     if(books.length){
@@ -2254,6 +2319,12 @@ async function render(){
         if(itemMoney){
           const a = await aggregateMoney(item.id, ym);
           parts.push(a.count ? a.count + ' операций' : 'за месяц пусто');
+          if(item.shift_rate != null){
+            const s = await aggregateShifts(item.id, ym);
+            if(s.shifts) parts.push(s.shifts + ' смен · ЗП ' + money(s.shifts * Number(item.shift_rate)));
+            if(s.advances) parts.push('аванс ' + money(s.advances));
+            if(s.side) parts.push('подработка ' + money(s.side));
+          }
           if(a.expense) parts.push('расход ' + money(a.expense));
           if(a.income)  parts.push('доход ' + money(a.income));
         } else {
@@ -2306,7 +2377,17 @@ async function render(){
       body.appendChild(bar);
       body.onclick = () => openMenu(item);
     } else if(itemMoney){
-      meta.textContent = item.op_date ? item.op_date.split('-').reverse().join('.') : '';
+      const dateStr = item.op_date ? item.op_date.split('-').reverse().join('.') : '';
+      if(item.entry_kind === 'shift'){
+        const times = (item.start_time && item.end_time) ? (item.start_time + '–' + item.end_time) : '';
+        meta.textContent = 'Смена' + (times ? ' · ' + times : '') + (dateStr ? ' · ' + dateStr : '');
+      } else if(item.entry_kind === 'advance'){
+        meta.textContent = 'Аванс' + (dateStr ? ' · ' + dateStr : '');
+      } else if(item.entry_kind === 'side'){
+        meta.textContent = 'Подработка' + (dateStr ? ' · ' + dateStr : '');
+      } else {
+        meta.textContent = dateStr;
+      }
       body.appendChild(meta);
       body.onclick = () => openMenu(item);
     } else {
@@ -2357,9 +2438,15 @@ async function render(){
       row.appendChild(chev);
     } else if(itemMoney){
       const sum = document.createElement('span');
-      const income = Number(item.direction) > 0;
-      sum.className = 'sum ' + (income ? 'in' : 'out');
-      sum.textContent = (income ? '+' : '−') + money(item.amount);
+      if(item.entry_kind === 'shift'){
+        sum.className = 'sum in';
+        const rate = curNode && curNode.shift_rate != null ? Number(curNode.shift_rate) : 0;
+        sum.textContent = '+' + money(rate);
+      } else {
+        const income = Number(item.direction) > 0;
+        sum.className = 'sum ' + (income ? 'in' : 'out');
+        sum.textContent = (income ? '+' : '−') + money(item.amount);
+      }
       row.appendChild(sum);
     } else if(itemBook){
       const plus = document.createElement('button');
@@ -2418,6 +2505,23 @@ function syncEditFields(){
   $('bookFields').style.display  = bookEntry ? 'block' : 'none';
   $('noteFields').style.display  = noteEntry ? 'block' : 'none';
   $('quitFields').style.display  = (cat && editState.catMode === 'quit') ? 'block' : 'none';
+
+  const ek = editState.entryKind || '';
+  $('entryKinds').style.display = moneyEntry ? 'flex' : 'none';
+  $('dirs').style.display = (moneyEntry && ek === '') ? 'flex' : 'none';
+  $('shiftTimeWrap').style.display = (moneyEntry && ek === 'shift') ? 'flex' : 'none';
+  $('amountWrap').style.display = (moneyEntry && ek === 'shift') ? 'none' : 'block';
+  const ekHints = {
+    shift: 'Смена: сумма не нужна — зарплата за смену считается по ставке категории.',
+    advance: 'Аванс уменьшит расчётную зарплату этого месяца на эту сумму.',
+    side: 'Доход не по основной ставке — считается отдельно от смен.'
+  };
+  $('entryKindHint').textContent = moneyEntry ? (ekHints[ek] || '') : '';
+  [...$('entryKinds').children].forEach(b =>
+    b.setAttribute('aria-pressed', String((b.dataset.ek || '') === ek)));
+
+  const moneyCatNow = cat && (inMoney || editState.catMode === 'money');
+  $('shiftRateWrap').style.display = moneyCatNow ? 'block' : 'none';
   [...$('bookStatus').children].forEach(b =>
     b.setAttribute('aria-pressed', String(b.dataset.s === editState.status)));
   $('daysWrap').style.display    = (!cat && !moneyEntry && !bookEntry && !noteEntry && settings.schedule === 'days')
@@ -2448,6 +2552,7 @@ function openEditor(mode, node){
     kind: node ? node.kind : 'category',
     catMode: node ? (node.mode === 'money' ? 'money' : 'plain') : (isMoney() ? 'money' : 'plain'),
     dir: node && Number(node.direction) > 0 ? 1 : -1,
+    entryKind: node && node.entry_kind ? node.entry_kind : '',
     target: node ? (node.target_id ?? null) : null,
     status: node ? bookStatus(node) : 'want',
     node: node || null
@@ -2463,6 +2568,9 @@ function openEditor(mode, node){
   $('fUnitOwn').value  = node && node.kind === 'entry' ? (node.unit || '') : '';
   $('fAmount').value   = node && node.amount != null ? node.amount : '';
   $('fDate').value     = node && node.op_date ? node.op_date : today();
+  $('fShiftRate').value = node && node.kind === 'category' && node.shift_rate != null ? node.shift_rate : '';
+  $('fShiftStart').value = node && node.start_time ? node.start_time : '';
+  $('fShiftEnd').value   = node && node.end_time ? node.end_time : '';
   $('fAuthor').value   = node && node.kind === 'entry' ? (node.unit || '') : '';
   $('fPages').value    = node && node.plan != null ? node.plan : '';
   $('fRead').value     = node && node.fact != null ? node.fact : '';
@@ -2508,6 +2616,15 @@ function closeEditor(){ $('editBg').classList.remove('open'); }
 });
 [...$('dirs').children].forEach(b => {
   b.onclick = () => { editState.dir = Number(b.dataset.dir); syncEditFields(); };
+});
+[...$('entryKinds').children].forEach(b => {
+  b.onclick = () => {
+    editState.entryKind = b.dataset.ek;
+    if(editState.entryKind === 'advance' || editState.entryKind === 'side') editState.dir = 1;
+    const labels = {shift:'Смена', advance:'Аванс', side:'Подработка'};
+    if(labels[editState.entryKind] && !$('fName').value.trim()) $('fName').value = labels[editState.entryKind];
+    syncEditFields();
+  };
 });
 
 $('fTarget').onclick = () => openPicker('target');
@@ -2555,6 +2672,7 @@ $('editSave').onclick = async () => {
       deadline: isQuitCat ? ($('fQuitDate').value || null)
               : (isMoneyCat ? null : ($('fCatDeadline').value || null)),
       note: $('fNote').value.trim() || null,
+      shift_rate: isMoneyCat ? num($('fShiftRate').value) : null,
       fact:null, amount:null, op_date:null, direction:null
     };
   } else if(isNotes()){
@@ -2581,16 +2699,38 @@ $('editSave').onclick = async () => {
       volume:null, days:null, amount:null, op_date:null, direction:null
     };
   } else if(inMoney || (editState.node && editState.node.amount != null)){
-    const amount = num($('fAmount').value);
-    if(amount === null){ toast('Введи сумму'); return; }
-    data = {
-      name, kind:'entry', mode:null, unit:null, target_id:null,
-      note: $('fNote').value.trim() || null,
-      plan:null, fact:null, deadline:null,
-      amount: Math.abs(amount),
-      op_date: $('fDate').value || today(),
-      direction: editState.dir
-    };
+    const ek = editState.entryKind || '';
+    if(ek === 'shift'){
+      const st = $('fShiftStart').value, en = $('fShiftEnd').value;
+      if(!st || !en){ toast('Укажи время смены'); return; }
+      data = {
+        name, kind:'entry', mode:null, unit:null, target_id:null,
+        note: $('fNote').value.trim() || null,
+        plan:null, fact:null, deadline:null,
+        amount: null, op_date: $('fDate').value || today(), direction: null,
+        entry_kind: 'shift', start_time: st, end_time: en
+      };
+    } else if(ek === 'advance' || ek === 'side'){
+      const amount = num($('fAmount').value);
+      if(amount === null || amount <= 0){ toast('Введи сумму'); return; }
+      data = {
+        name, kind:'entry', mode:null, unit:null, target_id:null,
+        note: $('fNote').value.trim() || null,
+        plan:null, fact:null, deadline:null,
+        amount: Math.abs(amount), op_date: $('fDate').value || today(), direction: 1,
+        entry_kind: ek, start_time: null, end_time: null
+      };
+    } else {
+      const amount = num($('fAmount').value);
+      if(amount === null){ toast('Введи сумму'); return; }
+      data = {
+        name, kind:'entry', mode:null, unit:null, target_id:null,
+        note: $('fNote').value.trim() || null,
+        plan:null, fact:null, deadline:null,
+        amount: Math.abs(amount), op_date: $('fDate').value || today(), direction: editState.dir,
+        entry_kind: null, start_time: null, end_time: null
+      };
+    }
   } else {
     data = {
       name, kind:'entry', mode:null, target_id:null,
