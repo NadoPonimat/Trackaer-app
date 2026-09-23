@@ -829,6 +829,12 @@
         <input id="fShiftRate" type="number" inputmode="decimal" placeholder="например, 10000">
         <div class="hint">Если укажешь — сможешь быстро добавлять смены, авансы и подработки с автоподсчётом зарплаты.</div>
       </div>
+
+      <div class="field" id="shiftTemplatesWrap">
+        <label>Шаблоны смен</label>
+        <button class="picker" id="openTemplates" type="button">Управлять шаблонами</button>
+        <div class="hint" id="shiftTemplatesHint">Сохрани категорию — после этого можно будет добавить шаблоны смен (например, 1 смена 06:00–14:30, 2 смена 14:30–23:00), чтобы быстрее проставлять график.</div>
+      </div>
     </div>
 
     <div id="entryFields">
@@ -922,6 +928,14 @@
         <button data-dir="-1" aria-pressed="true">Расход</button>
         <button data-dir="1" aria-pressed="false">Доход</button>
       </div>
+      <div class="seg" id="shiftNos">
+        <button data-sn="1" aria-pressed="true">1 смена</button>
+        <button data-sn="2" aria-pressed="false">2 смена</button>
+      </div>
+      <div class="field" id="shiftTemplatePickWrap">
+        <label>Шаблон</label>
+        <div class="seg wrap" id="shiftTemplatePicks"></div>
+      </div>
       <div class="two" id="shiftTimeWrap">
         <div class="field">
           <label for="fShiftStart">Начало смены</label>
@@ -964,6 +978,52 @@
     <div class="actions">
       <button id="editCancel">Отмена</button>
       <button id="editSave" class="primary">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet-bg" id="tmplBg">
+  <div class="sheet">
+    <h2>Шаблоны смен</h2>
+    <div id="tmplList"></div>
+    <div class="actions">
+      <button id="tmplClose">Закрыть</button>
+      <button id="tmplAdd" class="primary">Добавить шаблон</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet-bg" id="tmplEditBg">
+  <div class="sheet">
+    <h2 id="tmplEditTitle">Новый шаблон</h2>
+    <div class="field">
+      <label for="fTmplName">Название</label>
+      <input id="fTmplName" autocomplete="off" placeholder="например, будни">
+    </div>
+    <div class="two">
+      <div class="field">
+        <label for="fTmpl1Start">1 смена — начало</label>
+        <input id="fTmpl1Start" type="time">
+      </div>
+      <div class="field">
+        <label for="fTmpl1End">1 смена — конец</label>
+        <input id="fTmpl1End" type="time">
+      </div>
+    </div>
+    <div class="two">
+      <div class="field">
+        <label for="fTmpl2Start">2 смена — начало</label>
+        <input id="fTmpl2Start" type="time">
+      </div>
+      <div class="field">
+        <label for="fTmpl2End">2 смена — конец</label>
+        <input id="fTmpl2End" type="time">
+      </div>
+    </div>
+    <div class="hint">Вторую смену можно оставить пустой, если работаешь в один заход.</div>
+    <div class="actions">
+      <button id="tmplEditCancel">Отмена</button>
+      <button id="tmplEditSave" class="primary">Сохранить</button>
     </div>
   </div>
 </div>
@@ -1534,7 +1594,7 @@
       <button id="seedBartending">Курс: барменство (базовый)</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 70 — новости: таймаут увеличен, видна причина сбоя по каждому источнику</div>
+    <div class="hint sv-version" id="version">Версия 71 — Финансы: ставка за смену, учёт смен/авансов/подработок с автоподсчётом зарплаты</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -1600,6 +1660,8 @@ CREATE TABLE IF NOT EXISTS node (
   entry_kind TEXT,
   start_time TEXT,
   end_time TEXT,
+  shift_no INTEGER,
+  shift_templates TEXT,
   sort INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL
 );
@@ -1657,14 +1719,17 @@ const NEW_COLUMNS = [
   "ALTER TABLE node ADD COLUMN shift_rate REAL",
   "ALTER TABLE node ADD COLUMN entry_kind TEXT",
   "ALTER TABLE node ADD COLUMN start_time TEXT",
-  "ALTER TABLE node ADD COLUMN end_time TEXT"
+  "ALTER TABLE node ADD COLUMN end_time TEXT",
+  "ALTER TABLE node ADD COLUMN shift_no INTEGER",
+  "ALTER TABLE node ADD COLUMN shift_templates TEXT"
 ];
 
 const FIELDS = ['parent_id','name','kind','mode','unit','plan','fact','deadline','done',
                 'amount','op_date','direction','target_id','note','days','volume',
                 'due','ivl','ease','reps','lapses','last_review',
                 'genre','rating','status','locked','pass_hash',
-                'shift_rate','entry_kind','start_time','end_time','sort','created_at'];
+                'shift_rate','entry_kind','start_time','end_time','shift_no','shift_templates',
+                'sort','created_at'];
 
 const SqliteRepo = {
   async init(){
@@ -1886,6 +1951,7 @@ function createNode(parentId, d){
     locked:d.locked ? 1 : 0, pass_hash:d.pass_hash ?? null,
     shift_rate:d.shift_rate ?? null, entry_kind:d.entry_kind ?? null,
     start_time:d.start_time ?? null, end_time:d.end_time ?? null,
+    shift_no:d.shift_no ?? null, shift_templates:d.shift_templates ?? null,
     sort:Date.now(), created_at:new Date().toISOString()
   });
 }
@@ -1924,6 +1990,14 @@ async function aggregateMoney(id, ym){
     }
   }
   return {income, expense, count};
+}
+
+/* шаблоны смен хранятся на категории JSON-строкой:
+   [{name, s1:[start,end], s2:[start,end]|null}, ...] */
+function templatesOf(node){
+  if(!node || !node.shift_templates) return [];
+  try{ const arr = JSON.parse(node.shift_templates); return Array.isArray(arr) ? arr : []; }
+  catch(_e){ return []; }
 }
 
 /* смены/авансы/подработки: считаем отдельно от общего дохода-расхода,
@@ -2380,7 +2454,8 @@ async function render(){
       const dateStr = item.op_date ? item.op_date.split('-').reverse().join('.') : '';
       if(item.entry_kind === 'shift'){
         const times = (item.start_time && item.end_time) ? (item.start_time + '–' + item.end_time) : '';
-        meta.textContent = 'Смена' + (times ? ' · ' + times : '') + (dateStr ? ' · ' + dateStr : '');
+        const label = item.shift_no ? (item.shift_no + ' смена') : 'Смена';
+        meta.textContent = label + (times ? ' · ' + times : '') + (dateStr ? ' · ' + dateStr : '');
       } else if(item.entry_kind === 'advance'){
         meta.textContent = 'Аванс' + (dateStr ? ' · ' + dateStr : '');
       } else if(item.entry_kind === 'side'){
@@ -2490,11 +2565,33 @@ let editState = {mode:'add', kind:'category', catMode:'plain', dir:-1, target:nu
 
 const isQuitContext = () => editState.catMode === 'quit';
 
+function renderShiftTemplatePicks(){
+  const wrap = $('shiftTemplatePicks');
+  wrap.innerHTML = '';
+  const cat = current() != null ? index.byId.get(current()) : null;
+  const templates = templatesOf(cat);
+  templates.forEach(t => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = t.name;
+    b.onclick = () => {
+      const times = t['s' + (editState.shiftNo || 1)];
+      if(!times){ toast('В шаблоне «' + t.name + '» нет ' + (editState.shiftNo || 1) + ' смены'); return; }
+      $('fShiftStart').value = times[0];
+      $('fShiftEnd').value = times[1];
+      const cur = $('fName').value.trim();
+      if(!cur || /^[12]?\s*смена$/i.test(cur)) $('fName').value = (editState.shiftNo || 1) + ' смена';
+    };
+    wrap.appendChild(b);
+  });
+  return templates.length;
+}
+
 function syncEditFields(){
   const cat = editState.kind === 'category';
   const inMoney = isMoney();
   const inBooks = isBooks();
-  const moneyEntry = !cat && (inMoney || (editState.node && editState.node.amount != null));
+  const moneyEntry = !cat && (inMoney || (editState.node && (editState.node.amount != null || editState.node.entry_kind)));
   const inNotes = isNotes();
   const bookEntry = !cat && inBooks && !moneyEntry && !inNotes;
   const noteEntry = !cat && inNotes;
@@ -2520,8 +2617,24 @@ function syncEditFields(){
   [...$('entryKinds').children].forEach(b =>
     b.setAttribute('aria-pressed', String((b.dataset.ek || '') === ek)));
 
+  const shiftKindNow = moneyEntry && ek === 'shift';
+  $('shiftNos').style.display = shiftKindNow ? 'flex' : 'none';
+  [...$('shiftNos').children].forEach(b =>
+    b.setAttribute('aria-pressed', String(Number(b.dataset.sn) === (editState.shiftNo || 1))));
+  const tmplCount = shiftKindNow ? renderShiftTemplatePicks() : 0;
+  $('shiftTemplatePickWrap').style.display = tmplCount > 0 ? 'block' : 'none';
+
   const moneyCatNow = cat && (inMoney || editState.catMode === 'money');
   $('shiftRateWrap').style.display = moneyCatNow ? 'block' : 'none';
+  $('shiftTemplatesWrap').style.display = moneyCatNow ? 'block' : 'none';
+  const tmplUsable = moneyCatNow && editState.mode === 'edit' && editState.node;
+  $('openTemplates').disabled = !tmplUsable;
+  $('shiftTemplatesHint').textContent = tmplUsable
+    ? (() => {
+        const n = templatesOf(editState.node).length;
+        return n ? ('Сохранено шаблонов: ' + n) : 'Пока нет ни одного шаблона.';
+      })()
+    : 'Сохрани категорию — после этого можно будет добавить шаблоны смен (например, 1 смена 06:00–14:30, 2 смена 14:30–23:00), чтобы быстрее проставлять график.';
   [...$('bookStatus').children].forEach(b =>
     b.setAttribute('aria-pressed', String(b.dataset.s === editState.status)));
   $('daysWrap').style.display    = (!cat && !moneyEntry && !bookEntry && !noteEntry && settings.schedule === 'days')
@@ -2553,6 +2666,7 @@ function openEditor(mode, node){
     catMode: node ? (node.mode === 'money' ? 'money' : 'plain') : (isMoney() ? 'money' : 'plain'),
     dir: node && Number(node.direction) > 0 ? 1 : -1,
     entryKind: node && node.entry_kind ? node.entry_kind : '',
+    shiftNo: node && node.shift_no ? Number(node.shift_no) : 1,
     target: node ? (node.target_id ?? null) : null,
     status: node ? bookStatus(node) : 'want',
     node: node || null
@@ -2621,11 +2735,128 @@ function closeEditor(){ $('editBg').classList.remove('open'); }
   b.onclick = () => {
     editState.entryKind = b.dataset.ek;
     if(editState.entryKind === 'advance' || editState.entryKind === 'side') editState.dir = 1;
-    const labels = {shift:'Смена', advance:'Аванс', side:'Подработка'};
+    const labels = {shift:(editState.shiftNo || 1) + ' смена', advance:'Аванс', side:'Подработка'};
     if(labels[editState.entryKind] && !$('fName').value.trim()) $('fName').value = labels[editState.entryKind];
     syncEditFields();
   };
 });
+[...$('shiftNos').children].forEach(b => {
+  b.onclick = () => {
+    editState.shiftNo = Number(b.dataset.sn);
+    const cur = $('fName').value.trim();
+    if(!cur || /^[12]?\s*смена$/i.test(cur)) $('fName').value = editState.shiftNo + ' смена';
+    syncEditFields();
+  };
+});
+/* при выборе даты для смены — если 1 смена в этот день уже есть, предлагаем сразу 2-ю */
+$('fDate').addEventListener('change', () => {
+  if(editState.mode !== 'add' || (editState.entryKind || '') !== 'shift') return;
+  const date = $('fDate').value;
+  const catId = current();
+  if(!date || catId == null) return;
+  repo.listChildren(catId).then(kids => {
+    const taken = new Set(kids.filter(k => k.entry_kind === 'shift' && k.op_date === date)
+                               .map(k => Number(k.shift_no) || 1));
+    editState.shiftNo = (taken.has(1) && !taken.has(2)) ? 2 : 1;
+    const cur = $('fName').value.trim();
+    if(!cur || /^[12]?\s*смена$/i.test(cur)) $('fName').value = editState.shiftNo + ' смена';
+    syncEditFields();
+  });
+});
+
+/* -------------------------- шаблоны смен ------------------------- */
+
+let tmplCatId = null;
+let tmplEditIndex = null;
+
+function renderTemplateList(){
+  const node = index.byId.get(tmplCatId);
+  const templates = templatesOf(node);
+  const list = $('tmplList');
+  list.innerHTML = '';
+  if(!templates.length){
+    const e = document.createElement('div');
+    e.className = 'hint';
+    e.textContent = 'Пока нет ни одного шаблона.';
+    list.appendChild(e);
+    return;
+  }
+  templates.forEach((t, i) => {
+    const row = document.createElement('div');
+    row.className = 'row';
+    const body = document.createElement('div');
+    body.className = 'body';
+    const name = document.createElement('span');
+    name.className = 'name';
+    name.textContent = t.name;
+    body.appendChild(name);
+    const meta = document.createElement('span');
+    meta.className = 'meta';
+    const parts = [];
+    if(t.s1) parts.push('1 смена ' + t.s1[0] + '–' + t.s1[1]);
+    if(t.s2) parts.push('2 смена ' + t.s2[0] + '–' + t.s2[1]);
+    meta.textContent = parts.join(' · ');
+    body.appendChild(meta);
+    body.onclick = () => openTemplateEditor(i);
+    row.appendChild(body);
+    const del = document.createElement('button');
+    del.className = 'more';
+    del.textContent = '✕';
+    del.setAttribute('aria-label', 'Удалить шаблон: ' + t.name);
+    del.onclick = async e => {
+      e.stopPropagation();
+      if(!confirm('Удалить шаблон «' + t.name + '»?')) return;
+      const cur = templatesOf(index.byId.get(tmplCatId));
+      cur.splice(i, 1);
+      await repo.update(tmplCatId, {shift_templates: cur.length ? JSON.stringify(cur) : null});
+      await reindex();
+      renderTemplateList();
+      syncEditFields();
+    };
+    row.appendChild(del);
+    list.appendChild(row);
+  });
+}
+
+function openTemplateEditor(i){
+  tmplEditIndex = i;
+  const templates = templatesOf(index.byId.get(tmplCatId));
+  const t = i != null ? templates[i] : null;
+  $('tmplEditTitle').textContent = t ? 'Изменить шаблон' : 'Новый шаблон';
+  $('fTmplName').value = t ? t.name : '';
+  $('fTmpl1Start').value = t && t.s1 ? t.s1[0] : '';
+  $('fTmpl1End').value   = t && t.s1 ? t.s1[1] : '';
+  $('fTmpl2Start').value = t && t.s2 ? t.s2[0] : '';
+  $('fTmpl2End').value   = t && t.s2 ? t.s2[1] : '';
+  $('tmplEditBg').classList.add('open');
+}
+
+$('openTemplates').onclick = () => {
+  if(!editState.node) return;
+  tmplCatId = editState.node.id;
+  renderTemplateList();
+  $('tmplBg').classList.add('open');
+};
+$('tmplClose').onclick = () => $('tmplBg').classList.remove('open');
+$('tmplAdd').onclick = () => openTemplateEditor(null);
+$('tmplEditCancel').onclick = () => $('tmplEditBg').classList.remove('open');
+$('tmplEditSave').onclick = async () => {
+  const name = $('fTmplName').value.trim();
+  if(!name){ toast('Введи название шаблона'); return; }
+  const s1s = $('fTmpl1Start').value, s1e = $('fTmpl1End').value;
+  const s2s = $('fTmpl2Start').value, s2e = $('fTmpl2End').value;
+  if(!s1s || !s1e){ toast('Укажи время 1 смены'); return; }
+  if((s2s && !s2e) || (!s2s && s2e)){ toast('Укажи оба времени 2 смены или оставь пустыми'); return; }
+  const templates = templatesOf(index.byId.get(tmplCatId));
+  const t = {name, s1:[s1s, s1e], s2:(s2s && s2e) ? [s2s, s2e] : null};
+  if(tmplEditIndex != null) templates[tmplEditIndex] = t; else templates.push(t);
+  await repo.update(tmplCatId, {shift_templates: JSON.stringify(templates)});
+  await reindex();
+  $('tmplEditBg').classList.remove('open');
+  renderTemplateList();
+  syncEditFields();
+  toast('Шаблон сохранён');
+};
 
 $('fTarget').onclick = () => openPicker('target');
 
@@ -2698,7 +2929,7 @@ $('editSave').onclick = async () => {
       status: editState.status,
       volume:null, days:null, amount:null, op_date:null, direction:null
     };
-  } else if(inMoney || (editState.node && editState.node.amount != null)){
+  } else if(inMoney || (editState.node && (editState.node.amount != null || editState.node.entry_kind))){
     const ek = editState.entryKind || '';
     if(ek === 'shift'){
       const st = $('fShiftStart').value, en = $('fShiftEnd').value;
@@ -2708,7 +2939,7 @@ $('editSave').onclick = async () => {
         note: $('fNote').value.trim() || null,
         plan:null, fact:null, deadline:null,
         amount: null, op_date: $('fDate').value || today(), direction: null,
-        entry_kind: 'shift', start_time: st, end_time: en
+        entry_kind: 'shift', start_time: st, end_time: en, shift_no: editState.shiftNo || 1
       };
     } else if(ek === 'advance' || ek === 'side'){
       const amount = num($('fAmount').value);
@@ -2718,7 +2949,7 @@ $('editSave').onclick = async () => {
         note: $('fNote').value.trim() || null,
         plan:null, fact:null, deadline:null,
         amount: Math.abs(amount), op_date: $('fDate').value || today(), direction: 1,
-        entry_kind: ek, start_time: null, end_time: null
+        entry_kind: ek, start_time: null, end_time: null, shift_no: null
       };
     } else {
       const amount = num($('fAmount').value);
@@ -2728,7 +2959,7 @@ $('editSave').onclick = async () => {
         note: $('fNote').value.trim() || null,
         plan:null, fact:null, deadline:null,
         amount: Math.abs(amount), op_date: $('fDate').value || today(), direction: editState.dir,
-        entry_kind: null, start_time: null, end_time: null
+        entry_kind: null, start_time: null, end_time: null, shift_no: null
       };
     }
   } else {
@@ -2929,7 +3160,7 @@ function pickCandidates(){
     if(q) pool = pool.filter(n => n.name.toLowerCase().includes(q));
     if(!q || pool.length) return pool;
   }
-  pool = index.all.filter(n => n.id !== linkNode.id && n.amount == null &&
+  pool = index.all.filter(n => n.id !== linkNode.id && n.amount == null && n.entry_kind == null &&
                                !isLockedNode(n) && !hasLockedAncestor(n));
   return q ? pool.filter(n => n.name.toLowerCase().includes(q)) : pool.slice(0, 50);
 }
@@ -3058,10 +3289,10 @@ function openMenu(node){
   $('menuTitle').textContent = node.name;
   $('menuReadNote').style.display = node.note ? 'block' : 'none';
   /* связи только у обычных записей */
-  const plainEntry = node.kind === 'entry' && node.amount == null;
+  const plainEntry = node.kind === 'entry' && node.amount == null && node.entry_kind == null;
   const bookNode = plainEntry && (isBooks() || node.mode === 'books');
   $('menuNotes').style.display = bookNode ? 'block' : 'none';
-  $('menuLinks').style.display = node.amount == null ? 'block' : 'none';
+  $('menuLinks').style.display = (node.amount == null && node.entry_kind == null) ? 'block' : 'none';
   $('menuLog').style.display   = (plainEntry && !bookNode && !isNotes()) ? 'block' : 'none';
   $('menuBg').classList.add('open');
 }
@@ -3087,14 +3318,14 @@ $('menuDelete').onclick = async () => {
   render();
 };
 
-['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg','bookTocBg','lockBg'].forEach(id => {
+['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg','bookTocBg','lockBg','tmplBg','tmplEditBg'].forEach(id => {
   const bg = $(id);
   bg.onclick = e => { if(e.target === bg) bg.classList.remove('open'); };
 });
 
 if(window.Capacitor && window.Capacitor.Plugins.App){
   window.Capacitor.Plugins.App.addListener('backButton', () => {
-    for(const id of ['pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg','newsBg','lockBg']){
+    for(const id of ['tmplEditBg','tmplBg','pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg','newsBg','lockBg']){
       if($(id).classList.contains('open')){ $(id).classList.remove('open'); return; }
     }
     if(path.length){ path.pop(); render(); return; }
@@ -3244,7 +3475,7 @@ function theoryOf(node){
   return node.note.split(/ПРОВЕРЬ СЕБЯ\s*\n/)[0].trim();
 }
 
-const isStudyCard = n => n.kind === 'entry' && n.amount == null && questionsOf(n).length > 0;
+const isStudyCard = n => n.kind === 'entry' && n.amount == null && n.entry_kind == null && questionsOf(n).length > 0;
 
 /* --------- расчёт следующего показа --------- */
 function addDays(iso, days){
