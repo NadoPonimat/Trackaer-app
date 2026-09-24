@@ -846,7 +846,11 @@
     </div>
   </div>
 </div>
-
+<!-- Живёт отдельно от #ddSplash (не внутри него), потому что #ddSplash сам себя
+     удаляет из DOM по окончании заставки (splash.remove()), а музыка должна
+     доиграть заданную длительность независимо от того, сколько идёт визуальная
+     часть заставки. -->
+<audio id="ddMusic" preload="auto" style="display:none"></audio>
 
 <header>
   <nav class="crumbs" id="crumbs"></nav>
@@ -1597,6 +1601,18 @@
         <input type="checkbox" id="splashShowTitleToggle" style="width:auto">
         Показывать название «БМ» поверх фото
       </label>
+
+      <label style="margin-top:14px">Музыка при входе</label>
+      <div class="hint">Файл можно загрузить любой длины (хоть 4, хоть 10 минут) — при запуске проиграется только столько секунд, сколько задано ниже, остальное само обрежется. До 15 МБ.</div>
+      <div class="hint" id="splashMusicName">Музыка не загружена</div>
+      <input type="file" id="splashMusicInput" accept="audio/*" style="display:none">
+      <div class="seg wrap">
+        <button class="picker" id="splashMusicPick" type="button">Загрузить музыку</button>
+        <button class="picker" id="splashMusicRemove" type="button">Убрать музыку</button>
+        <button class="picker" id="splashMusicTest" type="button">Проверить</button>
+      </div>
+      <label style="margin-top:10px">Длительность при входе: <span id="splashMusicDurVal">5 сек</span></label>
+      <input type="range" id="splashMusicDur" min="1" max="60" step="1" style="width:100%">
     </div>
 
     <button class="sv-head" data-sec="secPlan">Планирование</button>
@@ -1720,7 +1736,7 @@
       <button id="seedCalm">Курс: спокойствие и самообладание</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 78 — новый курс «Спокойствие и самообладание» (6 модулей, 24 темы)</div>
+    <div class="hint sv-version" id="version">Версия 79 — музыка при входе: своя, с настраиваемой длительностью проигрывания</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -2031,6 +2047,10 @@ async function openDatabase(){
     ? Number(s.splashPhotoDim) : 45;
   settings.splashShowTitle = s.splashShowTitle !== undefined
     ? (s.splashShowTitle === '1' || s.splashShowTitle === true) : false;
+  settings.splashMusic = s.splashMusic !== undefined ? s.splashMusic : '';
+  settings.splashMusicName = s.splashMusicName || '';
+  settings.splashMusicDuration = (s.splashMusicDuration !== undefined && s.splashMusicDuration !== '')
+    ? Number(s.splashMusicDuration) : 5;
   for(const key of Object.keys(SRS_DEFAULTS))
     settings[key] = s[key] !== undefined && s[key] !== ''
       ? (key === 'srsOrder' ? s[key] : Number(s[key]))
@@ -7329,6 +7349,89 @@ $('splashShowTitleToggle').onchange = async (e) => {
   await repo.setSetting('splashShowTitle', settings.splashShowTitle ? '1' : '0');
 };
 
+// Проигрывает музыку заставки и сама себя обрывает через заданное число секунд —
+// не важно, 4-минутный это трек или 10-минутный, дальше первых N секунд дело не
+// зайдёт. Живёт отдельно от того, сколько показывается сама визуальная заставка:
+// #ddMusic — вне #ddSplash и не удаляется вместе с ним.
+let _splashMusicStopTimer = null;
+function playSplashMusic(src, seconds){
+  const el = $('ddMusic');
+  clearTimeout(_splashMusicStopTimer);
+  try{
+    el.pause();
+    el.src = src;
+    el.currentTime = 0;
+    const p = el.play();
+    // Автовоспроизведение со звуком иногда блокируется системным WebView без
+    // жеста пользователя — если браузер откажет, тихо игнорируем, это не
+    // ошибка приложения.
+    if(p && p.catch) p.catch(() => {});
+  }catch(e){}
+  _splashMusicStopTimer = setTimeout(() => {
+    el.pause();
+    el.currentTime = 0;
+  }, Math.max(0, Number(seconds) || 0) * 1000);
+}
+
+const MAX_SPLASH_MUSIC_BYTES = 15 * 1024 * 1024; // 15 МБ — предел на размер файла в базе
+
+function syncSplashMusicUI(){
+  $('splashMusicName').textContent = settings.splashMusic
+    ? ('Загружено: ' + (settings.splashMusicName || 'без имени'))
+    : 'Музыка не загружена';
+  $('splashMusicDur').value = settings.splashMusicDuration;
+  $('splashMusicDurVal').textContent = settings.splashMusicDuration + ' сек';
+}
+
+function readFileAsDataUrl(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('Не удалось прочитать файл'));
+    reader.readAsDataURL(file);
+  });
+}
+
+$('splashMusicPick').onclick = () => $('splashMusicInput').click();
+$('splashMusicInput').onchange = async (ev) => {
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if(!file) return;
+  if(file.size > MAX_SPLASH_MUSIC_BYTES){
+    toast('Файл слишком большой (больше 15 МБ) — возьми файл покороче или пожми битрейт');
+    return;
+  }
+  try{
+    const dataUrl = await readFileAsDataUrl(file);
+    settings.splashMusic = dataUrl;
+    settings.splashMusicName = file.name;
+    await repo.setSetting('splashMusic', dataUrl);
+    await repo.setSetting('splashMusicName', file.name);
+    syncSplashMusicUI();
+    toast('Музыка заставки обновлена');
+  }catch(err){
+    toast('Не получилось загрузить музыку: ' + err.message);
+  }
+};
+$('splashMusicRemove').onclick = async () => {
+  settings.splashMusic = '';
+  settings.splashMusicName = '';
+  await repo.setSetting('splashMusic', '');
+  await repo.setSetting('splashMusicName', '');
+  $('ddMusic').pause();
+  syncSplashMusicUI();
+  toast('Музыка заставки убрана');
+};
+$('splashMusicDur').oninput = async (e) => {
+  settings.splashMusicDuration = Number(e.target.value);
+  $('splashMusicDurVal').textContent = settings.splashMusicDuration + ' сек';
+  await repo.setSetting('splashMusicDuration', String(settings.splashMusicDuration));
+};
+$('splashMusicTest').onclick = () => {
+  if(!settings.splashMusic){ toast('Сначала загрузи музыку'); return; }
+  playSplashMusic(settings.splashMusic, settings.splashMusicDuration);
+};
+
 function syncSched(){
   [...$('schedModes').children].forEach(b =>
     b.setAttribute('aria-pressed', String(b.dataset.s === settings.schedule)));
@@ -7351,6 +7454,7 @@ $('service').onclick = () => {
   syncStatusNotify();
   syncSplashAnim();
   syncSplashPhotoUI();
+  syncSplashMusicUI();
   $('fBudget').value = settings.budget || '';
   $('serviceBg').classList.add('open');
 };
@@ -7659,6 +7763,7 @@ $('readerClose').onclick = closeReader;
     } else {
       $('ddSplash').dataset.hasPhoto = '0';
     }
+    if(settings.splashMusic) playSplashMusic(settings.splashMusic, settings.splashMusicDuration);
     await render();
     if(settings.statusNotify !== 'off'){
       requestStatusNotifPermission().then(updateStatusNotification);
