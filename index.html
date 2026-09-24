@@ -1716,9 +1716,11 @@
       <button id="seedEuroCuisine">Курс: европейская кухня</button>
       <button id="fillBartendingTheory">Барменство: залить теорию</button>
       <button id="seedBartending">Курс: барменство (базовый)</button>
+      <button id="fillCalmTheory">Спокойствие: залить теорию</button>
+      <button id="seedCalm">Курс: спокойствие и самообладание</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 77 — фон заставки: своя картинка позади любой анимации, с загрузкой/заменой, затемнением и показом названия</div>
+    <div class="hint sv-version" id="version">Версия 78 — новый курс «Спокойствие и самообладание» (6 модулей, 24 темы)</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -1741,6 +1743,7 @@
 <script src="theory-astronomy.js"></script>
 <script src="theory-eurocuisine.js"></script>
 <script src="theory-bartending.js"></script>
+<script src="theory-calm.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.2/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -7473,6 +7476,18 @@ courseButton('seedBartending', 'Барменство (базовый)', () => BA
   'профессиональных пособиях по барному делу.',
   'Курс: барменство (базовый)');
 
+courseButton('seedCalm', 'Спокойствие и самообладание', () => CALM_COURSE, 'часов',
+  'Прикладной курс о невозмутимости: физиология стрессовой реакции (симпатика/парасимпатика, гормоны стресса, ' +
+  'вариабельность сердечного ритма, поливагальная теория), дыхательные техники регуляции (тактическое дыхание, ' +
+  'физиологический вздох, диафрагмальное дыхание, удлинённый выдох), когнитивные техники (дихотомия контроля, ' +
+  'когнитивные искажения, рефрейминг, взгляд со стороны — на стыке стоицизма и КПТ), тело как инструмент ' +
+  'регуляции (мышечная релаксация, заземление, холодовой стресс, осанка), поведение в конфликте и под давлением ' +
+  '(пауза перед реакцией, деэскалация, решения в неопределённости, работа с провокацией), долгосрочная устойчивость ' +
+  '(сон, медитация, дневник, прививка стрессом). Основан на открытых источниках: нейрофизиология стресса ' +
+  '(Sapolsky), поливагальная теория (Porges), когнитивно-поведенческая терапия (Beck, Ellis), античный стоицизм ' +
+  '(Эпиктет, Марк Аврелий), MBSR (Kabat-Zinn) и stress inoculation training (Meichenbaum).',
+  'Курс: спокойствие и самообладание');
+
 courseButton('seedExcel', 'Excel', () => EXCEL_COURSE, 'часов',
   'Академический курс: от модели данных до Power Query, DAX и автоматизации.',
   'Загрузить курс: Excel');
@@ -7525,6 +7540,7 @@ theoryButton('fillNavigationTheory', () => theorySet('NAVIGATION_THEORY'), 'Ор
 theoryButton('fillAstronomyTheory', () => theorySet('ASTRONOMY_THEORY'), 'Астрономия: залить теорию');
 theoryButton('fillEuroCuisineTheory', () => theorySet('EURO_CUISINE_THEORY'), 'Европейская кухня: залить теорию');
 theoryButton('fillBartendingTheory', () => theorySet('BARTENDING_THEORY'), 'Барменство: залить теорию');
+theoryButton('fillCalmTheory', () => theorySet('CALM_THEORY'), 'Спокойствие: залить теорию');
 
 $('fillSqlTheory').onclick = async () => {
   const btn = $('fillSqlTheory');
