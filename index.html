@@ -1864,7 +1864,7 @@
       <button id="openReset">Сбросить настройки…</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 85 — Excel переписан в полноценные уроки: 54 темы по 2 части, практика в файле «Excel-практикум.xlsx» с ответами; уроки подтягиваются в уже загруженный курс автоматически</div>
+    <div class="hint sv-version" id="version">Версия 86 — в плане занятий физическое 4 дня в неделю: тренировка по программе атлета чередуется с физкурсом; уроками стали «Первая помощь», «Выживание», «Ориентирование», «Слежка и контрнаблюдение»</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -2225,6 +2225,10 @@ async function openDatabase(){
   settings.studyStart = s.studyStart || '';
   settings.studyToday = parseJSON(s.studyToday, null);
   settings.studyHist = parseJSON(s.studyHist, {});
+  settings.physDays = (() => { const d = parseJSON(s.physDays, null); return Array.isArray(d) ? d.map(Number).filter(x => x >= 0 && x <= 6) : PHYS_DEFAULT_DAYS.slice(); })();
+  settings.physAthlete = s.physAthlete || '';
+  settings.physStart = s.physStart || '';
+  settings.physToday = parseJSON(s.physToday, null);
   settings.resetPassHash = s.resetPassHash || '';
   for(const key of Object.keys(SRS_DEFAULTS))
     settings[key] = s[key] !== undefined && s[key] !== ''
@@ -4837,6 +4841,222 @@ async function undoStudyBlock(i){
   await renderStudy();
 }
 
+/* ===================== Физическое в плане =====================
+   4 дня в неделю (дни настраиваются). Физические дни чередуются:
+   тренировка по программе атлета (текущая фаза по неделям) ↔ урок из
+   физического курса (боевая система, паркур — по очереди). Учебный план
+   (минуты, курсы, отдых) от этого не меняется: это отдельный блок дня. */
+const PHYS_DEFAULT_DAYS = [1, 2, 4, 6];            // Пн, Вт, Чт, Сб — между парами день восстановления
+const PHYS_COURSE_NAMES = ['Боевая система: самбо + Кадочников + удары', 'Паркур и акробатика'];
+const PHYS_COURSE_MIN = 30;
+
+function physCourses(){
+  return studyCourses().filter(c => PHYS_COURSE_NAMES.includes(c.name) ||
+    ((index.byId.get(c.parent_id) || {}).name === 'Физподготовка'))
+    .sort((a, b) => { const i = x => { const k = PHYS_COURSE_NAMES.indexOf(x.name); return k < 0 ? 99 : k; }; return i(a) - i(b) || a.id - b.id; });
+}
+/* атлеты: категории внутри «Тренировки», у которых есть фазы с упражнениями */
+function physAthletes(kids){
+  kids = kids || studyKids();
+  const tops = index.all.filter(n => n.kind === 'category' && n.name === 'Тренировки');
+  const out = [];
+  for(const t of tops) for(const a of (kids.get(t.id) || []))
+    if(a.kind === 'category' && !isLockedNode(a) && (kids.get(a.id) || []).some(ph => ph.kind === 'category' && /^Фаза/.test(ph.name)))
+      out.push(a);
+  return out;
+}
+function physAthlete(kids){
+  const all = physAthletes(kids);
+  return all.find(a => a.name === settings.physAthlete) || all[0] || null;
+}
+function physPhase(ath, date, kids){
+  const phases = (kids.get(ath.id) || []).filter(ph => ph.kind === 'category' && /^Фаза/.test(ph.name));
+  if(!phases.length) return null;
+  const week = Math.floor(Math.max(0, dayDiff(settings.physStart || todayISO(), date)) / 7) + 1;
+  for(const ph of phases){
+    const m = ph.name.match(/недели (\d+)\s*[-–]\s*(\d+)/);
+    if(m && week >= +m[1] && week <= +m[2]) return {ph, week};
+  }
+  return {ph: phases[phases.length - 1], week};
+}
+const isPhysDay = date => (settings.physDays || []).includes(new Date(date + 'T00:00:00').getDay());
+function physIndex(date){
+  let n = 0;
+  for(let d = settings.physStart || todayISO(); d < date; d = addDays(d, 1)) if(isPhysDay(d)) n++;
+  return n;
+}
+/* что по плану в физический день: {sub:'train'|'course', ...} или null */
+function physPlanFor(date, kids){
+  if(!isPhysDay(date)) return null;
+  kids = kids || studyKids();
+  const ath = physAthlete(kids);
+  const courses = physCourses().filter(c => courseModel(c.id, kids).left() > 0);
+  if(!ath && !courses.length) return null;
+  const k = physIndex(date);
+  const wantTrain = ath && (!courses.length || k % 2 === 0);
+  if(wantTrain){
+    const p = physPhase(ath, date, kids);
+    if(!p) return null;
+    const items = (kids.get(p.ph.id) || []).filter(n => n.kind === 'entry')
+      .map(n => ({id: n.id, name: n.name, sets: Number(n.plan) || 0, note: n.note || ''}));
+    const sets = items.reduce((x, i) => x + i.sets, 0);
+    return {sub: 'train', athleteId: ath.id, athlete: ath.name, phaseId: p.ph.id, phase: p.ph.name, week: p.week, items,
+            minutes: Math.max(20, Math.round(sets * 2.5 / 5) * 5)};
+  }
+  const c = courses[Math.floor(k / 2) % courses.length];
+  return {sub: 'course', courseId: c.id, courseName: c.name, minutes: PHYS_COURSE_MIN};
+}
+const physKey = () => JSON.stringify([settings.physDays, settings.physAthlete, settings.physStart]);
+
+async function ensurePhysToday(){
+  const today = todayISO();
+  if(!settings.physStart && (settings.physDays || []).length){
+    settings.physStart = today;
+    await repo.setSetting('physStart', today);
+  }
+  let t = settings.physToday;
+  if(t && t.date === today && (t.key === physKey() || (t.block && t.block.done))) return t;
+  const kids = studyKids();
+  const plan = physPlanFor(today, kids);
+  let block = null;
+  if(plan && plan.sub === 'course'){
+    const segs = courseModel(plan.courseId, kids).take(plan.minutes);
+    const mins = segs.reduce((x, g) => x + g.minutes, 0);
+    if(mins) block = Object.assign(plan, {segs, minutes: mins});
+  } else block = plan;
+  t = {date: today, key: physKey(), block};
+  settings.physToday = t;
+  await repo.setSetting('physToday', JSON.stringify(t));
+  return t;
+}
+async function savePhysToday(){ await repo.setSetting('physToday', JSON.stringify(settings.physToday)); }
+
+async function markPhysBlock(minutes){
+  const t = settings.physToday, b = t && t.block;
+  if(!b || b.done) return;
+  if(b.sub === 'course'){
+    minutes = Math.max(0, Math.min(minutes || b.minutes, b.minutes * 3));
+    if(!minutes) return;
+    b.applied = await applyStudyBlock(b, minutes);
+    b.done = minutes;
+    await addStudyMinutes(minutes);
+  } else {
+    const applied = [];
+    for(const it of b.items){
+      const node = index.byId.get(it.id);
+      if(!node || !it.sets) continue;
+      const sets = await repo.listSets(node.id);
+      await repo.addSet({node_id: node.id, date: todayISO(), attempt: sets.filter(x => x.date === todayISO()).length + 1,
+                         value: it.sets, rpe: null, note: 'тренировка по плану'});
+      const fact = (Number(node.fact) || 0) + it.sets;
+      await repo.update(node.id, {fact});
+      node.fact = fact;
+      applied.push({nodeId: node.id, sets: it.sets});
+    }
+    b.applied = applied;
+    b.done = b.minutes;
+  }
+  await savePhysToday();
+  toast(b.sub === 'train' ? 'Тренировка записана в журнал подходов' : 'Записано ' + b.done + ' мин · ' + b.courseName);
+  await renderStudy();
+}
+async function undoPhysBlock(){
+  const t = settings.physToday, b = t && t.block;
+  if(!b || !b.done) return;
+  if(b.sub === 'course'){
+    b.segs = b.segs || [];
+    const fake = {segs: [], done: b.done, applied: b.applied};
+    for(const a of (b.applied || [])){
+      const node = index.byId.get(a.nodeId);
+      if(!node) continue;
+      const patch = {fact: Math.max(0, Math.round(((Number(node.fact) || 0) - a.hrs) * 100) / 100)};
+      if(a.done) patch.done = 0;
+      if(a.due && node.due === a.due && !(Number(node.reps) > 0)) patch.due = null;
+      await repo.update(node.id, patch); Object.assign(node, patch);
+      const sets = await repo.listSets(node.id);
+      const s = sets.find(x => x.date === todayISO() && x.note === 'план' && Math.abs(Number(x.value) - a.hrs) < 0.001);
+      if(s) await repo.removeSet(s.id);
+    }
+    await addStudyMinutes(-fake.done);
+  } else {
+    for(const a of (b.applied || [])){
+      const node = index.byId.get(a.nodeId);
+      if(!node) continue;
+      const fact = Math.max(0, (Number(node.fact) || 0) - a.sets);
+      await repo.update(node.id, {fact}); node.fact = fact;
+      const sets = await repo.listSets(node.id);
+      const s = sets.find(x => x.date === todayISO() && x.note === 'тренировка по плану' && Number(x.value) === a.sets);
+      if(s) await repo.removeSet(s.id);
+    }
+  }
+  b.done = 0; delete b.applied;
+  await savePhysToday();
+  toast('Отметка снята');
+  await renderStudy();
+}
+function physLabel(p){
+  return p.sub === 'train' ? 'Тренировка · ' + p.athlete : 'Физкурс · ' + p.courseName;
+}
+function physSectionHTML(){
+  const t = settings.physToday, b = t && t.block;
+  const wds = [1, 2, 3, 4, 5, 6, 0].filter(d => (settings.physDays || []).includes(d)).map(d => STUDY_WD[d]).join(', ');
+  let h = '<h3>Физическое</h3>';
+  if(!(settings.physDays || []).length) return h + '<div class="sp-note">Физические дни выключены — включи их в настройках плана ниже.</div>';
+  if(!b){
+    const kids = studyKids();
+    const any = physAthlete(kids) || physCourses().length;
+    return h + '<div class="sp-note">' + (any ? 'Сегодня без физической нагрузки — восстановление. Физические дни: ' + wds + '.'
+      : 'Нет ни программы тренировок, ни физических курсов. Загрузи их: Сервис → Готовые наборы → «Залить всё».') + '</div>';
+  }
+  h += '<div class="sp-block phys' + (b.done ? ' done' : '') + '">';
+  if(b.sub === 'train'){
+    h += '<div class="sp-bh"><b>Тренировка · ≈' + b.minutes + ' мин</b><span class="sp-course">' + escHtml(b.athlete) + '</span></div>' +
+         '<div class="sp-note">' + escHtml(b.phase) + ' · идёт ' + b.week + '-я неделя программы. Разминка 5–10 мин, между подходами 60–90 сек отдыха.</div>';
+    for(const it of b.items)
+      h += '<div class="sp-seg" data-act="phread" data-node="' + it.id + '">' + escHtml(it.name) +
+           '<span class="where">' + it.sets + ' подх. · ' + escHtml(it.note.replace(/^[^.]*\.\s*/, '')) + '</span></div>';
+  } else {
+    h += '<div class="sp-bh"><b>Физкурс · ' + b.minutes + ' мин</b><span class="sp-course">' + escHtml(b.courseName) + '</span></div>';
+    for(const s of (b.segs || [])){
+      const lp = segLessonParts(index.byId.get(s.nodeId), s.offset, s.minutes);
+      h += '<div class="sp-seg" data-act="read" data-node="' + s.nodeId + '"' + (lp ? ' data-part="' + lp.from + '"' : '') + '>' + escHtml(s.name) +
+           '<span class="where">' + (lp ? 'часть ' + (lp.from + 1) + ' из ' + lp.n + ' · ' : (s.cont ? 'продолжение · ' : '')) + escHtml(s.module) + ' · ' + s.minutes + ' мин</span></div>';
+    }
+    h += '<div class="sp-note">Сначала разминка 5–10 минут. Приёмы с партнёром и акробатику — только с партнёром или страховкой.</div>';
+  }
+  h += '<div class="sp-btns">' + (b.done ? '<button data-act="phundo">Отменить</button>'
+        : '<button class="go" data-act="phdone">Сделал</button>' + (b.sub === 'course' ? '<button data-act="phpart">Частично</button>' : '')) + '</div></div>';
+  h += '<div class="sp-note">Физические дни: ' + wds + '. Тренировка по программе чередуется с физкурсом.</div>';
+  return h;
+}
+function physSettingsHTML(){
+  const kids = studyKids();
+  let h = '<label>Физическое — дни недели (рекомендую 4, не подряд больше двух)</label><div class="sp-week">';
+  for(const wd of [1, 2, 3, 4, 5, 6, 0]){
+    const on = (settings.physDays || []).includes(wd);
+    h += '<button data-act="pday" data-v="' + wd + '" data-mode="' + (on ? 'full' : 'rest') + '">' + STUDY_WD[wd] + '<br>' + (on ? 'физ.' : '—') + '</button>';
+  }
+  h += '</div><div class="sp-note">Выбрано дней: ' + (settings.physDays || []).length + '. Тренировка по программе и физкурс идут через раз.</div>';
+  const aths = physAthletes(kids), cur = physAthlete(kids);
+  if(aths.length){
+    h += '<label>Программа тренировок</label><div class="sp-chips">';
+    for(const a of aths) h += '<button data-act="path" data-v="' + escHtml(a.name) + '" aria-pressed="' + (cur && cur.id === a.id) + '">' + escHtml(a.name) + '</button>';
+    h += '</div>';
+  }
+  const pc = physCourses();
+  h += '<div class="sp-note">Физкурсы для чередования: ' + (pc.length ? pc.map(c => escHtml(c.name)).join(' → ') : 'пока не загружены') + '.</div>';
+  return h;
+}
+async function savePhysCfg(){
+  await repo.setSetting('physDays', JSON.stringify(settings.physDays));
+  await repo.setSetting('physAthlete', settings.physAthlete || '');
+  const cfgOpen = $('studyBody').querySelector('.sp-cfg');
+  const wasOpen = cfgOpen && cfgOpen.open;
+  await renderStudy();
+  const again = $('studyBody').querySelector('.sp-cfg');
+  if(again && wasOpen) again.open = true;
+}
+
 /* прогноз: сегодняшние несделанные блоки считаем выполненными и гоним
    тот же алгоритм вперёд — даёт превью недели и ожидаемые даты окончания */
 function studyForecast(cfg, snap, kids, days){
@@ -4901,6 +5121,8 @@ async function renderStudy(){
     html += '<div class="sp-note">Собери очередь курсов — или нажми «Рекомендованная очередь». ' +
             'Одновременно идут только первые курсы (по умолчанию два), остальные ждут и подключаются сами, ' +
             'как только освобождается место. Больше трёх предметов сразу — прямой путь к выгоранию.</div>';
+    await ensurePhysToday();
+    html += physSectionHTML();
     html += studySettingsHTML(cfg, kids, true);
     box.innerHTML = html;
     return;
@@ -4965,6 +5187,9 @@ async function renderStudy(){
     html += '<div class="sp-note">Нажми на тему — откроется нужная часть урока с теорией и практикой.</div>';
   }
 
+  await ensurePhysToday();
+  html += physSectionHTML();
+
   const fc = studyForecast(cfg, snap, kids, 1830);
   html += '<h3>Следующие дни</h3>';
   for(const d of fc.preview){
@@ -4983,6 +5208,8 @@ async function renderStudy(){
           (rv ? (first.length ? ' · ' : '') + 'повторение ' + rv.cards + ' карт.' : '') +
           (d.meta.mode === 'light' ? ' · лёгкий день' : '') + (d.meta.deload ? ' · разгрузка' : '') + '</span>';
     }
+    const pp = physPlanFor(d.date, kids);
+    if(pp) t += '<span class="where">+ ' + escHtml(physLabel(pp)) + '</span>';
     html += '<div class="sp-prev"><span class="d">' + studyDateLabel(d.date) + '</span>' +
             '<span class="t">' + t + '</span><span class="m">' + (mins ? mins + ' мин' : '') + '</span></div>';
   }
@@ -5055,7 +5282,7 @@ function studySettingsHTML(cfg, kids, open){
     h += '<button data-act="wd" data-v="' + wd + '" data-mode="' + mode + '">' + STUDY_WD[wd] + '<br>' +
          ({full: 'учёба', light: 'лёгк.', rest: 'отдых'})[mode] + '</button>';
   }
-  h += '</div><div class="sp-note">учёба — полный день · лёгк. — половина нагрузки · отдых — без занятий</div>' +
+  h += '</div><div class="sp-note">учёба — полный день · лёгк. — половина нагрузки · отдых — без занятий</div>' + physSettingsHTML() +
        '<div class="sp-note" style="margin-top:12px">Как устроен план, чтобы не выгореть:<br>' +
        '• не больше 2 предметов в день, в лёгкий день — один;<br>' +
        '• блоки с перерывами, предметы в блоках чередуются — так лучше запоминается;<br>' +
@@ -5149,6 +5376,29 @@ $('studyBody').addEventListener('click', async e => {
     settings.studyMinutes = Number(el.dataset.v); await saveStudyCfg();
   } else if(act === 'blk'){
     settings.studyBlock = Number(el.dataset.v); await saveStudyCfg();
+  } else if(act === 'phdone'){
+    await markPhysBlock();
+  } else if(act === 'phundo'){
+    await undoPhysBlock();
+  } else if(act === 'phpart'){
+    studyPartBlock = 'phys';
+    const b = settings.physToday.block;
+    $('studyPartTitle').textContent = b.courseName;
+    $('fStudyPart').value = '';
+    $('studyPartHint').textContent = 'По плану ' + b.minutes + ' мин. Недоделанное само перейдёт на следующий физический день.';
+    $('studyPartBg').classList.add('open');
+    setTimeout(() => $('fStudyPart').focus(), 50);
+  } else if(act === 'phread'){
+    const node = index.byId.get(Number(el.dataset.node));
+    if(node) openReader(node);
+  } else if(act === 'pday'){
+    const wd = Number(el.dataset.v);
+    const d = new Set(settings.physDays || []);
+    d.has(wd) ? d.delete(wd) : d.add(wd);
+    settings.physDays = [...d].sort();
+    await savePhysCfg();
+  } else if(act === 'path'){
+    settings.physAthlete = el.dataset.v; await savePhysCfg();
   } else if(act === 'wd'){
     const wd = Number(el.dataset.v);
     const order = ['full', 'light', 'rest'];
@@ -5164,7 +5414,8 @@ $('studyPartSave').onclick = async () => {
   const v = num($('fStudyPart').value);
   if(!v || v <= 0){ toast('Введи минуты'); return; }
   $('studyPartBg').classList.remove('open');
-  await markStudyBlock(studyPartBlock, Math.round(v));
+  if(studyPartBlock === 'phys') await markPhysBlock(Math.round(v));
+  else await markStudyBlock(studyPartBlock, Math.round(v));
 };
 
 async function openStudy(){
@@ -8678,11 +8929,7 @@ theoryButton('fillEngTheory', () => theorySet('ENG_THEORY'), 'Английски
 theoryButton('fillAraTheory', () => theorySet('ARA_THEORY'), 'Арабский: залить теорию');
 theoryButton('fillSpaTheory', () => theorySet('SPA_THEORY'), 'Испанский: залить теорию');
 theoryButton('fillMartialTheory', () => theorySet('MARTIAL_THEORY'), 'Боевая система: залить теорию');
-theoryButton('fillFirstAidTheory', () => theorySet('FIRSTAID_THEORY'), 'Первая помощь: залить теорию');
 theoryButton('fillParkourTheory', () => theorySet('PARKOUR_THEORY'), 'Паркур и акробатика: залить теорию');
-theoryButton('fillSurveillanceTheory', () => theorySet('SURVEILLANCE_THEORY'), 'Слежка и контрнаблюдение: залить теорию');
-theoryButton('fillSurvivalTheory', () => theorySet('SURVIVAL_THEORY'), 'Выживание: залить теорию');
-theoryButton('fillNavigationTheory', () => theorySet('NAVIGATION_THEORY'), 'Ориентирование на местности: залить теорию');
 theoryButton('fillAstronomyTheory', () => theorySet('ASTRONOMY_THEORY'), 'Астрономия: залить теорию');
 theoryButton('fillEuroCuisineTheory', () => theorySet('EURO_CUISINE_THEORY'), 'Европейская кухня: залить теорию');
 theoryButton('fillBartendingTheory', () => theorySet('BARTENDING_THEORY'), 'Барменство: залить теорию');
@@ -8692,6 +8939,10 @@ theoryButton('fillBartendingTheory', () => theorySet('BARTENDING_THEORY'), 'Ба
 const LESSON_COURSES = [
   ['Спокойствие и самообладание', () => CALM_COURSE, 'CALM_THEORY', 'fillCalmTheory', 'Спокойствие: залить теорию', 'Курс: спокойствие и самообладание'],
   ['Excel', () => EXCEL_COURSE, 'EXCEL_THEORY', 'fillExcelTheory', 'Excel: залить теорию', 'Загрузить курс: Excel'],
+  ['Первая медицинская помощь', () => FIRSTAID_COURSE, 'FIRSTAID_THEORY', 'fillFirstAidTheory', 'Первая помощь: залить теорию', 'Курс: первая медицинская помощь'],
+  ['Выживание', () => SURVIVAL_COURSE, 'SURVIVAL_THEORY', 'fillSurvivalTheory', 'Выживание: залить теорию', 'Курс: выживание'],
+  ['Ориентирование на местности', () => NAVIGATION_COURSE, 'NAVIGATION_THEORY', 'fillNavigationTheory', 'Ориентирование на местности: залить теорию', 'Курс: ориентирование на местности'],
+  ['Слежка и контрнаблюдение', () => SURVEILLANCE_COURSE, 'SURVEILLANCE_THEORY', 'fillSurveillanceTheory', 'Слежка и контрнаблюдение: залить теорию', 'Курс: слежка и контрнаблюдение'],
 ];
 function lessonSig(course, th){
   let chars = 0, hrs = 0;
@@ -8931,7 +9182,7 @@ $('seedAll').onclick = async () => {
    (книги, закладки, люди, журнал приложений, история занятий) — их
    сброс не касается никогда.
 ==================================================================*/
-const RESET_PLAN_KEYS = ['studyActive','studyOrder','studySlots','studyMinutes','studyBlock','studyWeek','studyStart','studyToday'];
+const RESET_PLAN_KEYS = ['studyActive','studyOrder','studySlots','studyMinutes','studyBlock','studyWeek','studyStart','studyToday','physDays','physAthlete','physStart','physToday'];
 const RESET_ALL_KEYS = [...new Set([...RESET_PLAN_KEYS,
   'theme','splashAnim','splashPhoto','splashPhotoDim','splashShowTitle',
   'splashMusic','splashMusicName','splashMusicDuration','readerFont','readerTheme',
