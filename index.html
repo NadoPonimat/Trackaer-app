@@ -1864,7 +1864,7 @@
       <button id="openReset">Сбросить настройки…</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 83 — «Спокойствие» переписан в полноценные уроки: части по ~25 мин с практикой и дневником; время тем по реальному объёму</div>
+    <div class="hint sv-version" id="version">Версия 84 — честное время для всех курсов (по реальному объёму текста) и памятка «как заниматься» в каждом блоке; «Спокойствие» — полноценные уроки</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -3828,6 +3828,97 @@ function lessonParts(note){
   });
 }
 
+/* ===== честное время для тем-конспектов (ещё не переписанных в уроки) =====
+   Время темы = чтение текста + ответы на «Проверь себя» + пересказ + практика,
+   а не академическая оценка. Под каждый курс — своя короткая практика. */
+const COURSE_PRACTICE = {
+  'Английский язык': [8, 'прочитай все примеры из текста вслух, выпиши новые слова и составь с ними 5 своих предложений'],
+  'Арабский язык': [8, 'прочитай все примеры из текста вслух, выпиши новые слова и составь с ними 5 своих предложений'],
+  'Испанский язык': [8, 'прочитай все примеры из текста вслух, выпиши новые слова и составь с ними 5 своих предложений'],
+  'Excel': [8, 'открой Excel или Google Таблицы и повтори руками примеры из текста на своих данных'],
+  'SQL и базы данных': [8, 'напиши запросы из текста руками — в любой SQL-песочнице (например, sqliteonline.com) или на бумаге'],
+  'Право Казахстана': [5, 'разбери пример из своей жизни или бизнеса, к которому применяется эта норма'],
+  'Боевая система: самбо + Кадочников + удары': [10, 'отработай описанные движения медленно, 3 подхода; приёмы с пометкой «требует партнёра» — только с партнёром и контролем'],
+  'Паркур и акробатика': [10, 'отработай описанные движения, 3 подхода; вращения и сальто — только со страховкой'],
+  'Первая медицинская помощь': [6, 'проговори алгоритм вслух по шагам и отработай движения (без реальных компрессий грудной клетки на живом человеке)'],
+  'Выживание': [5, 'продумай, как применить это в ближайшей поездке или прогулке, и запиши план'],
+  'Ориентирование на местности': [6, 'попробуй на практике: карта в телефоне, компас или ориентиры за окном'],
+  'Слежка и контрнаблюдение': [5, 'понаблюдай 5 минут за окружением по методике из текста и запиши наблюдения'],
+  'Астрономия': [5, 'найди описанное на карте неба (например, в приложении Stellarium) или вечером на небе'],
+  'Европейская кухня': [5, 'выпиши, что приготовишь по этой теме на неделе, и какие продукты понадобятся'],
+  'Барменство (базовый)': [5, 'выпиши, что смешаешь или попробуешь по этой теме, и какие ингредиенты нужны'],
+};
+const DEFAULT_PRACTICE = [5, 'запиши, как применишь это в своей жизни или работе'];
+
+function studyGuideFor(text, title){
+  if(!text || lessonParts(text).length) return null;
+  const split = text.split(/ПРОВЕРЬ СЕБЯ\s*\n/);
+  if(split.length < 2) return null;
+  const q = split[1].split('\n').filter(l => /^\s*\d+[.)]/.test(l)).length;
+  const read = Math.max(3, Math.ceil(split[0].trim().length / 600));
+  const quiz = Math.min(12, q * 2);
+  const retell = 5;
+  const [prac, hint] = COURSE_PRACTICE[title] || DEFAULT_PRACTICE;
+  return {read, quiz, retell, prac, hint, total: Math.ceil((read + quiz + retell + prac) / 5) * 5};
+}
+
+function courseRootOf(node){
+  let p = node;
+  while(p){ if(isStudyCourse(p)) return p; p = p.parent_id != null ? index.byId.get(p.parent_id) : null; }
+  return null;
+}
+
+/* курс с часами тем по реальному объёму теории (для тем-конспектов) */
+function honestCourse(title, course){
+  const row = (typeof SEED_ALL_PLAN !== 'undefined' ? SEED_ALL_PLAN : []).find(x => x[1] === title);
+  const th = new Map(row ? theorySet(row[2]) : []);
+  if(!th.size) return course;
+  return course.map(([m, src, ts]) => [m, src, ts.map(([t, h, note]) => {
+    const g = studyGuideFor(th.get(t), title);
+    return [t, g ? Math.round(g.total / 60 * 100) / 100 : h, note];
+  })]);
+}
+
+/* Переводит уже загруженные курсы на честное время. Трогает только темы, у которых
+   план совпадает с исходной (академической) оценкой — свои правки плана не меняются. */
+async function migrateHonestHours(){
+  await reindex();
+  const kids = studyKids();
+  let changed = 0;
+  for(const [, title] of SEED_ALL_PLAN){
+    const reg = COURSE_REGISTRY[title];
+    let orig;
+    try{ orig = reg && reg.getCourse(); }catch(e){ orig = null; }
+    if(!Array.isArray(orig)) continue;
+    const eff = honestCourse(title, orig);
+    const origH = new Map(), effH = new Map();
+    orig.forEach(([, , ts]) => ts.forEach(t => origH.set(t[0], t[1])));
+    eff.forEach(([, , ts]) => ts.forEach(t => effH.set(t[0], t[1])));
+    for(const root of index.all.filter(n => n.kind === 'category' && n.name === title && Number(n.volume) > 0)){
+      const ups = [];
+      let vol = 0;
+      (function walk(pid){
+        for(const n of (kids.get(pid) || [])){
+          if(n.kind !== 'entry'){ walk(n.id); continue; }
+          if(!effH.has(n.name)) continue;
+          const cur = Number(n.plan) || 0, target = effH.get(n.name);
+          if(Math.abs(cur - target) > 0.005 && Math.abs(cur - origH.get(n.name)) < 0.005){
+            const patch = {plan: target};
+            if(!n.done && (Number(n.fact) || 0) >= target - 0.01) patch.done = 1;
+            ups.push([n, patch]);
+            vol += target;
+          } else vol += cur;
+        }
+      })(root.id);
+      for(const [n, patch] of ups){ await repo.update(n.id, patch); Object.assign(n, patch); changed++; }
+      vol = Math.round(vol * 100) / 100;
+      if(Math.abs((Number(root.volume) || 0) - vol) > 0.005){ await repo.update(root.id, {volume: vol}); root.volume = vol; changed++; }
+    }
+  }
+  if(changed && settings.studyToday){ settings.studyToday.key = ''; await saveStudyToday(); }
+  return changed;
+}
+
 /* какие части урока покрывает кусок занятия [offset, offset + minutes) внутри темы */
 function segLessonParts(node, offset, minutes){
   const parts = lessonParts(node && node.note);
@@ -4851,8 +4942,11 @@ async function renderStudy(){
           const lp = segLessonParts(index.byId.get(s.nodeId), s.offset, s.minutes);
           const partTxt = lp ? (lp.from === lp.to ? 'часть ' + (lp.from + 1) + ' из ' + lp.n + ' «' + escHtml(lp.name) + '»'
                                                   : 'части ' + (lp.from + 1) + '–' + (lp.to + 1) + ' из ' + lp.n) + ' · ' : '';
+          const gd = lp ? null : studyGuideFor((index.byId.get(s.nodeId) || {}).note, b.courseName);
           html += '<div class="sp-seg" data-act="read" data-node="' + s.nodeId + '"' +
                   (lp ? ' data-part="' + lp.from + '"' : '') + '>' + escHtml(s.name) +
+                  (gd ? '<span class="where">как: читать ~' + gd.read + ' · вопросы ~' + gd.quiz +
+                        ' · пересказ ~' + gd.retell + ' · практика ~' + gd.prac + ' мин</span>' : '') +
                   '<span class="where">' + (partTxt || (s.cont ? 'продолжение · ' : '')) + escHtml(s.module) + ' · ' + s.minutes + ' мин' +
                   (s.finishes ? ' · закончишь тему' : (s.done != null ? ' · тема будет пройдена на ' + s.done + '%' : '')) + '</span></div>';
         }
@@ -8414,7 +8508,7 @@ function courseButton(id, title, getCourse, unit, note, label){
     btn.disabled = true;
     btn.textContent = 'Загружаю…';
     try{
-      const r = await seedCourse(title, getCourse(), unit, note);
+      const r = await seedCourse(title, honestCourse(title, getCourse()), unit, note);
       $('serviceBg').classList.remove('open');
       toast('Загружено тем: ' + r.added + ', всего ' + r.hours + ' часов');
       await render();
@@ -8569,6 +8663,7 @@ function theoryButton(id, arr, label){
     btn.textContent = 'Заливаю…';
     try{
       const r = await fillTheoryFrom(arr());
+      await migrateHonestHours();
       $('serviceBg').classList.remove('open');
       toast('Тем с теорией: ' + r.done + (r.missed ? ', не найдено ' + r.missed : ''));
       await render();
@@ -8762,7 +8857,7 @@ $('seedAll').onclick = async () => {
       btn.textContent = 'Заливаю ' + (i + 1) + ' из ' + total + ': ' + title + '…';
       const reg = COURSE_REGISTRY[title];
       let course = null;
-      try{ course = reg && reg.getCourse(); }catch(e){ course = null; }
+      try{ course = reg && honestCourse(title, reg.getCourse()); }catch(e){ course = null; }
       if(!Array.isArray(course) || !course.length){ skipped.push(title); continue; }
       const catId = await ensureCategory(devId, cat);
       const r = await seedCourseInto(catId, title, course, reg.unit || 'часов', reg.note || '');
@@ -8944,7 +9039,16 @@ function openReader(node, part){
     body.appendChild(nav);
   } else {
     $('readerSub').textContent = nodePath(node) || '';
-    body.textContent = node.note || '';
+    const root = courseRootOf(node);
+    const g = root ? studyGuideFor(node.note, root.name) : null;
+    body.textContent = (g
+      ? 'КАК ПРОЙТИ ЭТУ ТЕМУ · ~' + g.total + ' МИН\n' +
+        '1. Прочитай теорию ниже (~' + g.read + ' мин).\n' +
+        '2. Закрой текст и ответь на вопросы «Проверь себя» в конце — вслух или письменно (~' + g.quiz + ' мин). Потом сверься с текстом.\n' +
+        '3. Перескажи тему своими словами в 5–7 предложениях, как объяснял бы другу (~' + g.retell + ' мин).\n' +
+        '4. Практика (~' + g.prac + ' мин): ' + g.hint + '.\n\n' +
+        '————————————\n\n'
+      : '') + (node.note || '');
   }
   body.scrollTop = 0;
   applyReaderFont();
@@ -8979,6 +9083,7 @@ $('readerClose').onclick = closeReader;
     }
     if(settings.splashMusic) playSplashMusic(settings.splashMusic, settings.splashMusicDuration);
     await render();
+    migrateHonestHours().then(n => { if(n) render(); }).catch(() => {});
     if(settings.statusNotify !== 'off'){
       requestStatusNotifPermission().then(updateStatusNotification);
     }
