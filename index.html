@@ -336,6 +336,57 @@
   .st-colnum{font-size:9px;color:var(--muted);text-align:center;min-height:11px}
   .st-bar{background:var(--accent);border-radius:3px 3px 0 0;min-height:2px}
   .st-colday{font-size:9px;color:var(--muted);text-align:center;min-height:11px}
+
+  /* план занятий на день */
+  #studyPartBg{z-index:30}
+  .sp-day{font-size:14px;margin-bottom:6px}
+  .sp-day b{font-weight:650}
+  .sp-note{font-size:12px;color:var(--muted);margin:4px 0 10px}
+  .sp-block{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:12px;margin-bottom:6px;
+  }
+  .sp-block.done{opacity:.6}
+  .sp-block.done .sp-bh b::after{content:' — готово';color:var(--income);font-weight:600}
+  .sp-bh{display:flex;justify-content:space-between;gap:8px;align-items:baseline;margin-bottom:6px}
+  .sp-bh b{font-size:14px}
+  .sp-course{font-size:12px;color:var(--accent);text-align:right}
+  .sp-seg{font-size:13px;padding:6px 0;border-top:1px dashed var(--line);cursor:pointer}
+  .sp-seg:first-of-type{border-top:none}
+  .sp-seg .where{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+  .sp-btns{display:flex;gap:6px;margin-top:8px}
+  .sp-btns button{
+    flex:1;padding:10px 6px;border-radius:8px;border:1px solid var(--line);
+    background:var(--bg);color:var(--text);font:inherit;font-size:13px;cursor:pointer;
+  }
+  .sp-btns button.go{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  .sp-break{font-size:11px;color:var(--muted);text-align:center;margin:0 0 6px}
+  .sp-prev{
+    display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px;
+  }
+  .sp-prev .d{width:62px;flex:none;color:var(--muted)}
+  .sp-prev .t{flex:1}
+  .sp-prev .t .where{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+  .sp-prev .m{flex:none;color:var(--muted);font-variant-numeric:tabular-nums}
+  .sp-cfg{margin-top:18px;border-top:1px solid var(--line);padding-top:6px}
+  .sp-cfg summary{padding:10px 0;font-weight:600;cursor:pointer;color:var(--muted);font-size:13px}
+  .sp-cfg label{display:block;font-size:12px;color:var(--muted);margin:12px 0 6px}
+  .sp-chips{display:flex;flex-wrap:wrap;gap:6px}
+  .sp-chips button,.sp-week button{
+    padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);
+    color:var(--muted);font:inherit;font-size:12px;cursor:pointer;
+  }
+  .sp-chips button[aria-pressed="true"]{border-color:var(--accent);color:var(--text);background:var(--surface-2)}
+  .sp-week{display:flex;gap:4px}
+  .sp-week button{flex:1;padding:7px 2px;text-align:center;line-height:1.3}
+  .sp-week button[data-mode="full"]{border-color:var(--accent);color:var(--text)}
+  .sp-week button[data-mode="light"]{border-style:dashed;color:var(--text)}
+  .sp-banner{
+    display:block;width:100%;text-align:left;margin-top:8px;padding:10px 12px;
+    background:var(--surface);border:1px solid var(--accent);border-radius:var(--radius);
+    color:var(--text);font:inherit;font-size:13px;cursor:pointer;
+  }
+  .sp-banner .pl-bar{margin-top:6px}
   .table-body{flex:1;overflow:auto;padding:10px 12px calc(env(safe-area-inset-bottom) + 16px)}
   .rel-table{width:100%;border-collapse:collapse;font-size:13px}
   .rel-table th{
@@ -1233,6 +1284,32 @@
   </div>
 </div>
 
+<div class="graph-bg" id="studyBg">
+  <div class="graph-top">
+    <div>
+      <div class="graph-title">План занятий</div>
+      <div class="graph-sub" id="studySub"></div>
+    </div>
+    <button class="more" id="studyClose" aria-label="Закрыть">✕</button>
+  </div>
+  <div class="st-body" id="studyBody"></div>
+</div>
+
+<div class="sheet-bg" id="studyPartBg">
+  <div class="sheet">
+    <h2 id="studyPartTitle">Сколько успел</h2>
+    <div class="field">
+      <label for="fStudyPart">Минут занятия</label>
+      <input id="fStudyPart" type="number" inputmode="numeric">
+      <div class="hint" id="studyPartHint"></div>
+    </div>
+    <div class="actions">
+      <button id="studyPartCancel">Отмена</button>
+      <button id="studyPartSave" class="primary">Записать</button>
+    </div>
+  </div>
+</div>
+
 <div class="graph-bg" id="readerBg">
   <div class="graph-top">
     <div>
@@ -1547,6 +1624,7 @@
     <h2>Сервис</h2>
 
     <div class="sv-actions">
+      <button id="openStudy">План занятий на день</button>
       <button id="openPlan">План и сроки</button>
       <button id="openReview">Повторение</button>
       <button id="openStats">Статистика учёбы</button>
@@ -2051,6 +2129,20 @@ async function openDatabase(){
   settings.splashMusicName = s.splashMusicName || '';
   settings.splashMusicDuration = (s.splashMusicDuration !== undefined && s.splashMusicDuration !== '')
     ? Number(s.splashMusicDuration) : 5;
+  // План занятий: какие курсы в работе, сколько минут в день, длина блока,
+  // режим каждого дня недели, дата старта (для разгрузочных недель),
+  // снимок плана на сегодня и история минут по дням.
+  const parseJSON = (v, d) => { try{ const x = JSON.parse(v); return x == null ? d : x; }catch(e){ return d; } };
+  settings.studyActive = parseJSON(s.studyActive, []).map(Number).filter(Boolean);
+  settings.studyMinutes = Number(s.studyMinutes) || 60;
+  settings.studyBlock = Number(s.studyBlock) || 25;
+  settings.studyWeek = (() => {
+    const w = parseJSON(s.studyWeek, null);
+    return Array.isArray(w) && w.length === 7 ? w : ['rest','full','full','full','full','full','light'];
+  })();
+  settings.studyStart = s.studyStart || '';
+  settings.studyToday = parseJSON(s.studyToday, null);
+  settings.studyHist = parseJSON(s.studyHist, {});
   for(const key of Object.keys(SRS_DEFAULTS))
     settings[key] = s[key] !== undefined && s[key] !== ''
       ? (key === 'srsOrder' ? s[key] : Number(s[key]))
@@ -2460,6 +2552,10 @@ async function render(){
         'Выполнено <b>' + a.done + '</b> из <b>' + a.count + '</b>' +
         (a.plan ? ' · <b>' + fmt(a.fact) + '</b> из <b>' + fmt(a.plan) + '</b>' +
                   (unit ? ' ' + unit : '') : '');
+  } else {
+    totalEl.innerHTML = studyBannerHTML();
+    const sb = $('spBanner');
+    if(sb) sb.onclick = openStudy;
   }
 
   const list = $('list');
@@ -3207,6 +3303,9 @@ $('quickSave').onclick = async () => {
       value: add, rpe: null, note: null
     });
   }
+  /* часы, отмеченные вручную по теме курса, тоже идут в статистику учёбы */
+  if(quickMode === 'fact' && add && isHourUnit(quickNode))
+    await addStudyMinutes(add * 60);
   closeQuick();
   toast(quickMode === 'pages'
     ? 'Записано, всего ' + now + ' стр.'
@@ -3473,14 +3572,14 @@ $('menuDelete').onclick = async () => {
   render();
 };
 
-['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg','bookTocBg','lockBg','tmplBg','tmplEditBg'].forEach(id => {
+['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg','bookTocBg','lockBg','tmplBg','tmplEditBg','studyPartBg'].forEach(id => {
   const bg = $(id);
   bg.onclick = e => { if(e.target === bg) bg.classList.remove('open'); };
 });
 
 if(window.Capacitor && window.Capacitor.Plugins.App){
   window.Capacitor.Plugins.App.addListener('backButton', () => {
-    for(const id of ['tmplEditBg','tmplBg','pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg','newsBg','lockBg']){
+    for(const id of ['studyPartBg','tmplEditBg','tmplBg','pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg','newsBg','lockBg','studyBg']){
       if($(id).classList.contains('open')){ $(id).classList.remove('open'); return; }
     }
     if(path.length){ path.pop(); render(); return; }
@@ -4075,19 +4174,96 @@ function studyStats(){
           young, mature, reps, lapses, ease, avgIvl, forecast, hard};
 }
 
+/* занятия по дням (из истории минут) и прогресс по курсам в текущем разделе */
+function studyProgressHTML(){
+  const today = todayISO();
+  const hist = settings.studyHist || {};
+  const minOn = d => Number(hist[d]) || 0;
+  let week = 0, month = 0;
+  for(let i = 0; i < 30; i++){
+    const v = minOn(addDays(today, -i));
+    month += v; if(i < 7) week += v;
+  }
+  /* серия: подряд идущие учебные дни с занятиями; дни отдыха по плану её не рвут */
+  const wk = settings.studyWeek || [];
+  let streak = 0;
+  for(let i = minOn(today) > 0 ? 0 : 1; i < 400; i++){
+    const d = addDays(today, -i);
+    if(minOn(d) > 0){ streak++; continue; }
+    if(wk[new Date(d + 'T00:00:00').getDay()] === 'rest') continue;
+    break;
+  }
+  const hm = m => m >= 60 ? fmt(Math.round(m / 6) / 10) + ' ч' : Math.round(m) + ' мин';
+
+  /* курсы в области видимости: сам раздел, его потомки или курс, внутри которого стоим */
+  const scope = current();
+  const within = (n, anc) => { let p = n; while(p){ if(p.id === anc) return true; p = p.parent_id != null ? index.byId.get(p.parent_id) : null; } return false; };
+  const courses = studyCourses().filter(c => scope === null || within(c, scope) || within(index.byId.get(scope), c.id));
+  const kids = studyKids();
+  const active = settings.studyActive || [];
+  let plan = 0, fact = 0;
+  const rows = courses.map(c => {
+    let p = 0, f = 0;
+    for(const t of courseModel(c.id, kids).topics){
+      const n = index.byId.get(t.id);
+      p += Number(n.plan) || 0;
+      f += Math.min(Number(n.fact) || 0, Number(n.plan) || 0);
+    }
+    plan += p; fact += f;
+    return {c, p, f, pct: p ? Math.round(f / p * 100) : 0, on: active.includes(c.id)};
+  }).sort((a, b) => (b.on - a.on) || (b.pct - a.pct));
+
+  if(!Object.keys(hist).length && !rows.length) return '';
+
+  let html = '<h3>Занятия</h3><div class="st-grid">' +
+    stTile('Сегодня', hm(minOn(today))) +
+    stTile('За 7 дней', hm(week)) +
+    stTile('За 30 дней', hm(month)) +
+    stTile('Серия', streak + ' дн.') +
+    (rows.length ? stTile('Пройдено', fmt(Math.round(fact * 10) / 10) + ' из ' + fmt(plan) + ' ч') : '') +
+    (rows.length ? stTile('Готово', (plan ? Math.round(fact / plan * 100) : 0) + '%') : '') +
+    '</div>';
+
+  const days = [];
+  for(let i = 13; i >= 0; i--){ const d = addDays(today, -i); days.push({d, v: minOn(d)}); }
+  const max = Math.max(1, ...days.map(x => x.v));
+  html += '<h3>Минут учёбы за две недели</h3><div class="st-forecast">';
+  days.forEach((x, i) => {
+    html += '<div class="st-col"><div class="st-colnum">' + (x.v ? Math.round(x.v) : '') + '</div>' +
+            '<div class="st-bar" style="height:' + Math.max(2, Math.round(x.v / max * 100)) + '%"></div>' +
+            '<div class="st-colday">' + (i % 2 === 1 ? x.d.slice(8) : '') + '</div></div>';
+  });
+  html += '</div><div class="hint">Считаются блоки из «Плана занятий» и часы, добавленные к темам вручную.</div>';
+
+  if(rows.length){
+    html += '<h3>Прогресс по курсам</h3>';
+    for(const r of rows)
+      html += '<div class="setrow"><span style="flex:1"><span>' + escHtml(r.c.name) +
+              (r.on ? ' <span class="today">в работе</span>' : '') + '</span>' +
+              '<span class="where">' + fmt(Math.round(r.f * 10) / 10) + ' из ' + fmt(r.p) + ' ч · ' + r.pct + '%</span>' +
+              '<span class="pl-bar"><i style="width:' + r.pct + '%"></i></span></span></div>';
+  }
+  return html;
+}
+function stTile(label, value){
+  return '<div class="st-tile"><div class="st-val">' + value + '</div><div class="st-lab">' + label + '</div></div>';
+}
+
 function renderStats(){
   const s = studyStats();
   const box = $('statsBody');
+  const progress = studyProgressHTML();
 
   if(s.total === 0){
-    box.innerHTML = '<div class="empty">В этом разделе нет тем с вопросами для повторения.</div>';
+    box.innerHTML = progress ||
+      '<div class="empty">Пока нечего считать: загрузи курс или начни «План занятий».</div>';
     return;
   }
 
   const pct = n => s.total ? Math.round(n / s.total * 100) : 0;
   const retention = s.reps ? Math.round((1 - s.lapses / s.reps) * 100) : null;
 
-  let html = '';
+  let html = progress + '<h3>Интервальное повторение</h3>';
 
   html += '<div class="st-grid">' +
     tile('Всего тем', s.total) +
@@ -4164,6 +4340,546 @@ async function openStats(){
 }
 $('openStats').onclick = openStats;
 $('statsClose').onclick = () => $('statsBg').classList.remove('open');
+
+/* ======================= план занятий на день =====================
+   Раскладывает курсы, которые сейчас «в работе», по дням так, чтобы
+   учиться регулярно и не выгореть:
+   • не больше двух предметов в день (в лёгкий день — один);
+   • блоки с перерывами (25+5 или 45+15), курсы в блоках чередуются;
+   • сначала повторение уже пройденного, потом новое;
+   • у каждого дня недели свой режим: полный, лёгкий (половина) или отдых;
+   • каждая 4-я неделя — разгрузочная, 60% нагрузки;
+   • пропуск не копит долгов: каждый день план строится заново от того,
+     что реально пройдено (факт по темам), а не от календаря;
+   • тема, пройденная до конца, на следующий день попадает в интервальное
+     повторение.
+   План на сегодня сохраняется снимком, чтобы блоки не «переезжали»
+   в течение дня, когда ты отмечаешь сделанное.
+==================================================================*/
+
+const STUDY_WD = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+const STUDY_MODE = {full:'полный день', light:'лёгкий день', rest:'отдых'};
+const STUDY_MAX_ACTIVE = 3;
+let studyPartBlock = null;
+
+function isHourUnit(node){
+  let n = node;
+  while(n){
+    if(n.unit) return /^час/i.test(n.unit);
+    n = n.parent_id != null ? index.byId.get(n.parent_id) : null;
+  }
+  return false;
+}
+
+async function addStudyMinutes(min){
+  const d = todayISO();
+  const h = settings.studyHist || {};
+  h[d] = Math.max(0, Math.round(((h[d] || 0) + min) * 10) / 10);
+  const cutoff = addDays(d, -400);
+  for(const k of Object.keys(h)) if(k < cutoff) delete h[k];
+  settings.studyHist = h;
+  await repo.setSetting('studyHist', JSON.stringify(h));
+}
+
+/* дети каждого узла в том же порядке, что и в списке приложения */
+function studyKids(){
+  const m = new Map();
+  for(const n of index.all){
+    const k = n.parent_id ?? null;
+    if(!m.has(k)) m.set(k, []);
+    m.get(k).push(n);
+  }
+  for(const arr of m.values())
+    arr.sort((a, b) => (Number(a.sort) || 0) - (Number(b.sort) || 0) || a.id - b.id);
+  return m;
+}
+
+/* курс — категория с заданным объёмом (так же, как направление в «Плане и сроках») */
+function isStudyCourse(n){
+  return n && n.kind === 'category' && Number(n.volume) > 0 &&
+         !n.mode && !isLockedNode(n) && !hasLockedAncestor(n);
+}
+function studyCourses(){
+  return index.all.filter(isStudyCourse);
+}
+
+function courseModel(courseId, kids){
+  const root = index.byId.get(courseId);
+  const topics = [];
+  (function walk(pid, mod){
+    for(const n of (kids.get(pid) || [])){
+      if(n.kind === 'entry'){
+        if(Number(n.plan) > 0 && n.amount == null && n.entry_kind == null)
+          topics.push({id: n.id, name: n.name, module: mod,
+            rem: n.done ? 0 : Math.max(0, Math.round((Number(n.plan) - (Number(n.fact) || 0)) * 60))});
+      } else if(n.kind === 'category') walk(n.id, n.name);
+    }
+  })(courseId, root.name);
+  return {
+    id: courseId, name: root.name, topics,
+    left(){ return this.topics.reduce((s, t) => s + t.rem, 0); },
+    take(min){
+      const segs = [];
+      for(const t of this.topics){
+        if(min <= 0) break;
+        if(t.rem <= 0) continue;
+        const m = Math.min(t.rem, min);
+        t.rem -= m; min -= m;
+        segs.push({nodeId: t.id, name: t.name, module: t.module, minutes: m, finishes: t.rem === 0});
+      }
+      return segs;
+    },
+    consume(nodeId, min){
+      const t = this.topics.find(x => x.id === nodeId);
+      if(t) t.rem = Math.max(0, t.rem - min);
+    }
+  };
+}
+
+function studyCfg(){
+  return {
+    active: (settings.studyActive || []).filter(id => isStudyCourse(index.byId.get(id))),
+    minutes: settings.studyMinutes || 60,
+    block: settings.studyBlock || 25,
+    week: settings.studyWeek,
+    start: settings.studyStart || todayISO()
+  };
+}
+const studyCfgKey = c => JSON.stringify([c.active, c.minutes, c.block, c.week]);
+
+function studyDayMeta(date, cfg){
+  const wd = new Date(date + 'T00:00:00').getDay();
+  const mode = cfg.week[wd] || 'full';
+  const week = Math.max(0, Math.floor(dayDiff(cfg.start, date) / 7));
+  const deload = week % 4 === 3;
+  let min = mode === 'rest' ? 0 : mode === 'light' ? cfg.minutes / 2 : cfg.minutes;
+  if(deload) min *= 0.6;
+  return {mode, deload, wd, minutes: Math.round(min / 5) * 5};
+}
+
+/* порядковый номер учебного (не выходного) дня — по нему вращаются курсы */
+function studyDayIndex(date, cfg){
+  let n = 0;
+  for(let d = cfg.start; d < date; d = addDays(d, 1))
+    if(cfg.week[new Date(d + 'T00:00:00').getDay()] !== 'rest') n++;
+  return n;
+}
+
+function splitMinutes(total, n){
+  const units = Math.round(total / 5), base = Math.floor(units / n), extra = units % n;
+  return Array.from({length: n}, (_, i) => (base + (i < extra ? 1 : 0)) * 5).filter(x => x > 0);
+}
+
+/* карточки повторения в курсах «в работе», которым пора (для сегодня — всё просроченное) */
+function studyReviewCards(cfg, date, isToday, kids){
+  const ids = new Set();
+  (function walk(list){ for(const n of list){ ids.add(n.id); walk(kids.get(n.id) || []); } })
+    (cfg.active.map(id => index.byId.get(id)).filter(Boolean));
+  return index.all.filter(n => ids.has(n.id) && isStudyCard(n) && n.due &&
+                               (isToday ? n.due <= date : n.due === date));
+}
+
+function buildStudyDay(date, models, cfg, reviewCount, dayIdx, budgetOverride){
+  const meta = studyDayMeta(date, cfg);
+  const blocks = [];
+  let budget = budgetOverride != null ? budgetOverride : meta.minutes;
+  if(meta.mode === 'rest' || budget <= 0) return {meta, blocks};
+
+  if(reviewCount > 0){
+    const rmin = Math.max(5, Math.round(Math.min(reviewCount, 15, budget * 0.4) / 5) * 5);
+    blocks.push({kind: 'review', minutes: rmin, cards: reviewCount, segs: []});
+    budget -= rmin;
+  }
+  if(budget < 10) return {meta, blocks};
+
+  const alive = models.filter(m => m.left() > 0);
+  if(!alive.length) return {meta, blocks};
+  const perDay = meta.mode === 'light' ? 1 : Math.min(2, alive.length);
+  const dayCourses = [];
+  for(let i = 0; i < perDay; i++){
+    const c = alive[(dayIdx * perDay + i) % alive.length];
+    if(!dayCourses.includes(c)) dayCourses.push(c);
+  }
+  const n = Math.max(1, Math.round(budget / cfg.block));
+  splitMinutes(budget, n).forEach((size, j) => {
+    let c = dayCourses[j % dayCourses.length];
+    if(c.left() <= 0) c = dayCourses.find(x => x.left() > 0) || alive.find(x => x.left() > 0);
+    if(!c) return;
+    const segs = c.take(size);
+    const mins = segs.reduce((s, x) => s + x.minutes, 0);
+    if(mins > 0) blocks.push({kind: 'new', courseId: c.id, courseName: c.name, minutes: mins, segs});
+  });
+  return {meta, blocks};
+}
+
+/* снимок плана на сегодня: создаётся раз в день и пересобирается,
+   только если поменялись настройки (сделанные блоки при этом остаются) */
+async function ensureStudyToday(){
+  const today = todayISO();
+  const cfg = studyCfg();
+  let snap = settings.studyToday;
+  if(snap && snap.date === today && snap.key === studyCfgKey(cfg)) return snap;
+
+  const keep = snap && snap.date === today ? snap.blocks.filter(b => b.done) : [];
+  const doneMin = keep.reduce((s, b) => s + (b.done || 0), 0);
+  const kids = studyKids();
+  const models = cfg.active.map(id => courseModel(id, kids));
+  const meta = studyDayMeta(today, cfg);
+  const rc = keep.some(b => b.kind === 'review') ? 0 : studyReviewCards(cfg, today, true, kids).length;
+  const day = buildStudyDay(today, models, cfg, rc, studyDayIndex(today, cfg),
+                            Math.max(0, meta.minutes - doneMin));
+  snap = {date: today, key: studyCfgKey(cfg), blocks: [...keep, ...day.blocks]};
+  settings.studyToday = snap;
+  await repo.setSetting('studyToday', JSON.stringify(snap));
+  return snap;
+}
+async function saveStudyToday(){
+  await repo.setSetting('studyToday', JSON.stringify(settings.studyToday));
+}
+
+/* разносит минуты блока по темам: факт в часах, журнал подходов,
+   тема закрыта — отметка «выполнено» и первое повторение на завтра */
+async function applyStudyBlock(block, minutes){
+  let left = minutes;
+  const applied = [];
+  for(const s of block.segs){
+    if(left <= 0) break;
+    const m = Math.min(s.minutes, left);
+    left -= m;
+    const node = index.byId.get(s.nodeId);
+    if(!node) continue;
+    const hrs = Math.round(m / 60 * 100) / 100;
+    const fact = Math.round(((Number(node.fact) || 0) + hrs) * 100) / 100;
+    const patch = {fact};
+    if(Number(node.plan) && fact >= Number(node.plan) - 0.01 && !node.done){
+      patch.done = 1;
+      if(isStudyCard(node) && !node.due) patch.due = addDays(todayISO(), 1);
+    }
+    await repo.update(node.id, patch);
+    Object.assign(node, patch);
+    const sets = await repo.listSets(node.id);
+    await repo.addSet({node_id: node.id, date: todayISO(),
+      attempt: sets.filter(x => x.date === todayISO()).length + 1,
+      value: hrs, rpe: null, note: 'план'});
+    applied.push({nodeId: node.id, hrs, done: !!patch.done, due: patch.due || null});
+  }
+  return applied;
+}
+
+async function markStudyBlock(i, minutes){
+  const b = settings.studyToday.blocks[i];
+  if(!b || b.done) return;
+  minutes = Math.max(0, Math.min(minutes, b.minutes * 3));
+  if(!minutes) return;
+  b.applied = b.kind === 'new' ? await applyStudyBlock(b, minutes) : [];
+  b.done = minutes;
+  await addStudyMinutes(minutes);
+  await saveStudyToday();
+  const closed = (b.applied || []).filter(a => a.done).length;
+  toast('Записано ' + minutes + ' мин' + (closed ? ' · тем закрыто: ' + closed : ''));
+  await renderStudy();
+  updateStatusNotification();
+}
+
+async function undoStudyBlock(i){
+  const b = settings.studyToday.blocks[i];
+  if(!b || !b.done) return;
+  for(const a of (b.applied || [])){
+    const node = index.byId.get(a.nodeId);
+    if(!node) continue;
+    const patch = {fact: Math.max(0, Math.round(((Number(node.fact) || 0) - a.hrs) * 100) / 100)};
+    if(a.done) patch.done = 0;
+    if(a.due && node.due === a.due && !(Number(node.reps) > 0)) patch.due = null;
+    await repo.update(node.id, patch);
+    Object.assign(node, patch);
+    const sets = await repo.listSets(node.id);
+    const s = sets.find(x => x.date === todayISO() && x.note === 'план' && Math.abs(Number(x.value) - a.hrs) < 0.001);
+    if(s) await repo.removeSet(s.id);
+  }
+  await addStudyMinutes(-b.done);
+  b.done = 0;
+  delete b.applied;
+  await saveStudyToday();
+  toast('Отметка снята');
+  await renderStudy();
+}
+
+/* прогноз: сегодняшние несделанные блоки считаем выполненными и гоним
+   тот же алгоритм вперёд — даёт превью недели и ожидаемые даты окончания */
+function studyForecast(cfg, snap, kids, days){
+  const models = cfg.active.map(id => courseModel(id, kids));
+  for(const b of snap.blocks)
+    if(!b.done) for(const s of b.segs){
+      const m = models.find(x => x.topics.some(t => t.id === s.nodeId));
+      if(m) m.consume(s.nodeId, s.minutes);
+    }
+  const today = todayISO();
+  let idx = studyDayIndex(today, cfg) + (studyDayMeta(today, cfg).mode === 'rest' ? 0 : 1);
+  const preview = [], finish = {};
+  for(const m of models) if(m.left() <= 0) finish[m.id] = today;
+  for(let d = 1; d <= days; d++){
+    const date = addDays(today, d);
+    const rc = d <= 14 ? studyReviewCards(cfg, date, false, kids).length : 0;
+    const day = buildStudyDay(date, models, cfg, rc, idx);
+    if(day.meta.mode !== 'rest') idx++;
+    if(d <= 6) preview.push({date, ...day});
+    for(const m of models) if(!finish[m.id] && m.left() <= 0) finish[m.id] = date;
+    if(models.every(m => finish[m.id]) && d > 6) break;
+  }
+  return {preview, finish};
+}
+
+function studyDateLabel(iso){
+  const d = new Date(iso + 'T00:00:00');
+  return STUDY_WD[d.getDay()] + ' ' + iso.slice(8) + '.' + iso.slice(5, 7);
+}
+function studyMonthLabel(iso){
+  return MONTHS[Number(iso.slice(5, 7)) - 1] + ' ' + iso.slice(0, 4);
+}
+const escHtml = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+async function renderStudy(){
+  await reindex();
+  const cfg = studyCfg();
+  const box = $('studyBody');
+  const kids = studyKids();
+  let html = '';
+
+  if(!cfg.active.length){
+    $('studySub').textContent = 'Курсы ещё не выбраны';
+    html += '<div class="sp-note">Выбери до ' + STUDY_MAX_ACTIVE + ' курсов, которые проходишь сейчас, — ' +
+            'план на каждый день соберётся сам. Остальные подождут своей очереди: ' +
+            'больше трёх предметов одновременно — прямой путь к выгоранию.</div>';
+    html += studySettingsHTML(cfg, kids, true);
+    box.innerHTML = html;
+    return;
+  }
+
+  const snap = await ensureStudyToday();
+  const today = todayISO();
+  const meta = studyDayMeta(today, cfg);
+  const total = snap.blocks.reduce((s, b) => s + b.minutes, 0);
+  const done = snap.blocks.reduce((s, b) => s + (b.done || 0), 0);
+  $('studySub').textContent = 'Сегодня, ' + studyDateLabel(today) + ' · ' + STUDY_MODE[meta.mode] +
+                              (meta.deload ? ' · разгрузочная неделя' : '');
+
+  if(meta.mode === 'rest' && !snap.blocks.length){
+    html += '<div class="sp-block"><b>Сегодня отдых.</b><div class="sp-note">Это часть плана, а не пропуск: ' +
+            'во время отдыха мозг закрепляет выученное. Завтра продолжим.</div></div>';
+  } else if(!snap.blocks.length){
+    html += '<div class="sp-block"><b>На сегодня занятий нет.</b><div class="sp-note">' +
+            (cfg.active.every(id => courseModel(id, kids).left() <= 0)
+              ? 'Все выбранные курсы пройдены — выбери следующие в настройках ниже.'
+              : 'Всё запланированное на сегодня уже сделано.') + '</div></div>';
+  } else {
+    const pct = total ? Math.min(100, Math.round(done / total * 100)) : 0;
+    html += '<div class="sp-day">Сделано <b>' + done + '</b> из <b>' + total + '</b> мин' +
+            '<span class="pl-bar"><i style="width:' + pct + '%"></i></span></div>';
+    if(meta.deload)
+      html += '<div class="sp-note">Разгрузочная неделя: нагрузка 60%, чтобы восстановиться и не выгореть.</div>';
+    const rest = cfg.block >= 45 ? 15 : 5;
+    snap.blocks.forEach((b, i) => {
+      html += '<div class="sp-block' + (b.done ? ' done' : '') + '">';
+      if(b.kind === 'review'){
+        html += '<div class="sp-bh"><b>Повторение · ' + b.minutes + ' мин</b>' +
+                '<span class="sp-course">' + b.cards + ' карт.</span></div>' +
+                '<div class="sp-note">Сначала освежаем пройденное — так новое ложится на знакомую основу.</div>';
+      } else {
+        html += '<div class="sp-bh"><b>Блок ' + (snap.blocks.slice(0, i + 1).filter(x => x.kind === 'new').length) +
+                ' · ' + b.minutes + ' мин</b><span class="sp-course">' + escHtml(b.courseName) + '</span></div>';
+        for(const s of b.segs)
+          html += '<div class="sp-seg" data-act="read" data-node="' + s.nodeId + '">' + escHtml(s.name) +
+                  '<span class="where">' + escHtml(s.module) + ' · ' + s.minutes + ' мин' +
+                  (s.finishes ? ' · закончишь тему' : '') + '</span></div>';
+      }
+      html += '<div class="sp-btns">';
+      if(b.done){
+        html += '<button data-act="undo" data-i="' + i + '">Отменить (' + b.done + ' мин)</button>';
+      } else {
+        if(b.kind === 'review') html += '<button data-act="review" data-i="' + i + '">Начать</button>';
+        html += '<button class="go" data-act="done" data-i="' + i + '">Сделал</button>' +
+                '<button data-act="part" data-i="' + i + '">Частично</button>';
+      }
+      html += '</div></div>';
+      if(i < snap.blocks.length - 1) html += '<div class="sp-break">перерыв ' + rest + ' мин</div>';
+    });
+    html += '<div class="sp-note">Нажми на тему, чтобы открыть теорию.</div>';
+  }
+
+  const fc = studyForecast(cfg, snap, kids, 730);
+  html += '<h3>Следующие дни</h3>';
+  for(const d of fc.preview){
+    const mins = d.blocks.reduce((s, b) => s + b.minutes, 0);
+    let t;
+    if(!d.blocks.length) t = d.meta.mode === 'rest' ? 'Отдых' : 'Нет занятий';
+    else {
+      const names = [...new Set(d.blocks.filter(b => b.kind === 'new').map(b => b.courseName))];
+      const first = d.blocks.filter(b => b.kind === 'new').map(b => b.segs[0] && b.segs[0].name).filter(Boolean);
+      const rv = d.blocks.find(b => b.kind === 'review');
+      t = escHtml(names.join(' + ') || 'Повторение') +
+          '<span class="where">' + escHtml([...new Set(first)].slice(0, 2).join(' · ')) +
+          (rv ? (first.length ? ' · ' : '') + 'повторение ' + rv.cards + ' карт.' : '') +
+          (d.meta.mode === 'light' ? ' · лёгкий день' : '') + (d.meta.deload ? ' · разгрузка' : '') + '</span>';
+    }
+    html += '<div class="sp-prev"><span class="d">' + studyDateLabel(d.date) + '</span>' +
+            '<span class="t">' + t + '</span><span class="m">' + (mins ? mins + ' мин' : '') + '</span></div>';
+  }
+
+  html += '<h3>Курсы в работе</h3>';
+  for(const id of cfg.active){
+    const n = index.byId.get(id);
+    const m = courseModel(id, kids);
+    const planMin = m.topics.reduce((s, t) => s + (Number(index.byId.get(t.id).plan) || 0) * 60, 0);
+    const pct = planMin ? Math.round((1 - m.left() / planMin) * 100) : 0;
+    const f = fc.finish[id];
+    html += '<div class="setrow"><span style="flex:1"><span>' + escHtml(n.name) + '</span>' +
+            '<span class="where">пройдено ' + pct + '% · ' +
+            (f ? (f === today ? 'курс пройден' : 'закончишь ≈ ' + studyMonthLabel(f)) : 'больше двух лет при текущей нагрузке') +
+            '</span><span class="pl-bar"><i style="width:' + pct + '%"></i></span></span></div>';
+  }
+
+  html += studySettingsHTML(cfg, kids, false);
+  box.innerHTML = html;
+}
+
+function studySettingsHTML(cfg, kids, open){
+  let h = '<details class="sp-cfg"' + (open ? ' open' : '') + '><summary>Настройки плана</summary>';
+  h += '<label>Курсы в работе — до ' + STUDY_MAX_ACTIVE + ' (порядок нажатия = очерёдность)</label><div class="sp-chips">';
+  const courses = studyCourses();
+  if(!courses.length)
+    h += '<div class="sp-note">Курсов пока нет. Загрузи курс в Сервис → Данные, и он появится здесь.</div>';
+  for(const c of courses){
+    const on = cfg.active.includes(c.id);
+    const pos = on ? cfg.active.indexOf(c.id) + 1 + '. ' : '';
+    h += '<button data-act="course" data-id="' + c.id + '" aria-pressed="' + on + '">' + pos + escHtml(c.name) + '</button>';
+  }
+  h += '</div><label>Минут учёбы в день (без перерывов)</label><div class="seg wrap">';
+  for(const m of [30, 45, 60, 90, 120])
+    h += '<button data-act="min" data-v="' + m + '" aria-pressed="' + (cfg.minutes === m) + '">' + m + '</button>';
+  h += '</div><label>Длина блока</label><div class="seg">' +
+       '<button data-act="blk" data-v="25" aria-pressed="' + (cfg.block === 25) + '">25 мин + 5 отдых</button>' +
+       '<button data-act="blk" data-v="45" aria-pressed="' + (cfg.block === 45) + '">45 мин + 15 отдых</button></div>';
+  h += '<label>Дни недели — нажми, чтобы сменить режим</label><div class="sp-week">';
+  for(const wd of [1, 2, 3, 4, 5, 6, 0]){
+    const mode = cfg.week[wd];
+    h += '<button data-act="wd" data-v="' + wd + '" data-mode="' + mode + '">' + STUDY_WD[wd] + '<br>' +
+         ({full: 'полный', light: 'лёгкий', rest: 'отдых'})[mode] + '</button>';
+  }
+  h += '</div><div class="sp-note" style="margin-top:12px">Как устроен план, чтобы не выгореть:<br>' +
+       '• не больше 2 предметов в день, в лёгкий день — один;<br>' +
+       '• блоки с перерывами, предметы в блоках чередуются — так лучше запоминается;<br>' +
+       '• сначала повторение пройденного, потом новое;<br>' +
+       '• лёгкий день — половина нагрузки, день отдыха — ноль;<br>' +
+       '• каждая 4-я неделя разгрузочная — 60% нагрузки;<br>' +
+       '• пропуск не копит долгов: план каждый день строится от того, что реально пройдено;<br>' +
+       '• закрытая тема на следующий день сама попадает в интервальное повторение.</div>';
+  return h + '</details>';
+}
+
+async function saveStudyCfg(){
+  if(!settings.studyStart){
+    settings.studyStart = todayISO();
+    await repo.setSetting('studyStart', settings.studyStart);
+  }
+  await repo.setSetting('studyActive', JSON.stringify(settings.studyActive));
+  await repo.setSetting('studyMinutes', String(settings.studyMinutes));
+  await repo.setSetting('studyBlock', String(settings.studyBlock));
+  await repo.setSetting('studyWeek', JSON.stringify(settings.studyWeek));
+  const cfgOpen = $('studyBody').querySelector('.sp-cfg');
+  const wasOpen = cfgOpen && cfgOpen.open;
+  await renderStudy();
+  const again = $('studyBody').querySelector('.sp-cfg');
+  if(again && wasOpen) again.open = true;
+}
+
+$('studyBody').addEventListener('click', async e => {
+  const el = e.target.closest('[data-act]');
+  if(!el) return;
+  const act = el.dataset.act;
+  const i = Number(el.dataset.i);
+  if(act === 'done'){
+    const b = settings.studyToday.blocks[i];
+    await markStudyBlock(i, b.minutes);
+  } else if(act === 'part'){
+    const b = settings.studyToday.blocks[i];
+    studyPartBlock = i;
+    $('studyPartTitle').textContent = b.kind === 'review' ? 'Повторение' : b.courseName;
+    $('fStudyPart').value = '';
+    $('studyPartHint').textContent = 'По плану ' + b.minutes + ' мин. Недоделанное само перейдёт на следующие дни.';
+    $('studyPartBg').classList.add('open');
+    setTimeout(() => $('fStudyPart').focus(), 50);
+  } else if(act === 'undo'){
+    await undoStudyBlock(i);
+  } else if(act === 'review'){
+    const cfg = studyCfg();
+    const kids = studyKids();
+    const cards = studyReviewCards(cfg, todayISO(), true, kids)
+      .sort((a, b) => (a.due < b.due ? -1 : 1)).slice(0, srsNum('srsLimit'));
+    if(!cards.length){ toast('Карточек к повторению уже нет'); return; }
+    review.queue = cards; review.pos = 0; review.done = 0;
+    $('reviewBg').classList.add('open');
+    nextCard();
+  } else if(act === 'read'){
+    const node = index.byId.get(Number(el.dataset.node));
+    if(node) openReader(node);
+  } else if(act === 'course'){
+    const id = Number(el.dataset.id);
+    const a = settings.studyActive = studyCfg().active;
+    if(a.includes(id)) a.splice(a.indexOf(id), 1);
+    else if(a.length >= STUDY_MAX_ACTIVE){ toast('Не больше ' + STUDY_MAX_ACTIVE + ' курсов одновременно — сначала сними один'); return; }
+    else a.push(id);
+    await saveStudyCfg();
+  } else if(act === 'min'){
+    settings.studyMinutes = Number(el.dataset.v); await saveStudyCfg();
+  } else if(act === 'blk'){
+    settings.studyBlock = Number(el.dataset.v); await saveStudyCfg();
+  } else if(act === 'wd'){
+    const wd = Number(el.dataset.v);
+    const order = ['full', 'light', 'rest'];
+    const w = [...settings.studyWeek];
+    w[wd] = order[(order.indexOf(w[wd]) + 1) % 3];
+    if(w.every(x => x === 'rest')){ toast('Хотя бы один день должен быть учебным'); return; }
+    settings.studyWeek = w; await saveStudyCfg();
+  }
+});
+
+$('studyPartCancel').onclick = () => $('studyPartBg').classList.remove('open');
+$('studyPartSave').onclick = async () => {
+  const v = num($('fStudyPart').value);
+  if(!v || v <= 0){ toast('Введи минуты'); return; }
+  $('studyPartBg').classList.remove('open');
+  await markStudyBlock(studyPartBlock, Math.round(v));
+};
+
+async function openStudy(){
+  $('serviceBg').classList.remove('open');
+  await renderStudy();
+  $('studyBg').classList.add('open');
+}
+$('openStudy').onclick = openStudy;
+$('studyClose').onclick = () => { $('studyBg').classList.remove('open'); render(); };
+
+/* строка на главном экране: что сегодня по плану */
+function studyBannerHTML(){
+  const active = (settings.studyActive || []).filter(id => isStudyCourse(index.byId.get(id)));
+  if(!active.length) return '';
+  const today = todayISO();
+  const snap = settings.studyToday;
+  if(!snap || snap.date !== today){
+    const meta = studyDayMeta(today, studyCfg());
+    return '<button class="sp-banner" id="spBanner">' +
+           (meta.mode === 'rest' ? 'Сегодня по плану отдых' : 'План занятий на сегодня готов — открыть') + '</button>';
+  }
+  const total = snap.blocks.reduce((s, b) => s + b.minutes, 0);
+  const done = snap.blocks.reduce((s, b) => s + (b.done || 0), 0);
+  if(!total) return '<button class="sp-banner" id="spBanner">Сегодня по плану отдых</button>';
+  const pct = Math.min(100, Math.round(done / total * 100));
+  const left = snap.blocks.filter(b => !b.done).length;
+  return '<button class="sp-banner" id="spBanner">' +
+         (left ? 'Сегодня по плану: осталось блоков ' + left + ' · ' + done + ' из ' + total + ' мин'
+               : 'План на сегодня выполнен · ' + done + ' мин') +
+         '<span class="pl-bar"><i style="width:' + pct + '%"></i></span></button>';
+}
 
 /* ------------------------- карта связей -------------------------
    Граф узлов: вложенность рисуется тонкими линиями, связи «ведёт к» —
