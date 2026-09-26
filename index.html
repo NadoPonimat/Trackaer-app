@@ -408,6 +408,8 @@
   .wo-st.near{color:#d9a441}
   .wo-st.far{color:var(--accent)}
   .wo-ex .tot{font-size:12px;margin-top:6px;color:var(--muted)}
+  .wo-int{border:1px solid #d9a441;color:#d9a441;border-radius:var(--radius);padding:8px 10px;margin-bottom:10px;font-size:12px;line-height:1.45}
+  .wo-row.extra span:first-child{color:#d9a441;font-weight:600}
   .st-ath{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px}
   .st-ath-h{display:flex;align-items:baseline;gap:8px}
   .st-ath-h b{font-size:15px}
@@ -1904,7 +1906,7 @@
       <button id="openReset">Сбросить настройки…</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 88 — статистика тренировок по каждому атлету: итог в %, пропуски, что недотягивает; тренировки по дням: Пн Крис Хериа, Вт Фрэнк Медрано, Чт Деян Стипич, Сб Майк Вазкез; кнопка «Начать тренировку» с нормой, результатом по подходам и отставанием от нормы; фазы по неделям атлета; уроками стали «Первая помощь», «Выживание», «Ориентирование», «Слежка и контрнаблюдение»</div>
+    <div class="hint sv-version" id="version">Версия 89 — интенсив раз в неделю (+1 подход к каждому упражнению: Сб → Чт → Пн → Вт по кругу), учитывается в статистике; статистика тренировок по каждому атлету: итог в %, пропуски, что недотягивает; тренировки по дням: Пн Крис Хериа, Вт Фрэнк Медрано, Чт Деян Стипич, Сб Майк Вазкез; кнопка «Начать тренировку» с нормой, результатом по подходам и отставанием от нормы; фазы по неделям атлета; уроками стали «Первая помощь», «Выживание», «Ориентирование», «Слежка и контрнаблюдение»</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -4937,6 +4939,26 @@ function physTarget(note){
   return {value: Number(m[1].replace(',', '.')), unit};
 }
 /* что по плану в физический день: {sub:'train'|'course', ...} или null */
+/* Интенсив: раз в неделю одна тренировка — +1 подход к каждому упражнению.
+   Неделя 1 — суббота, 2 — четверг, 3 — понедельник, 4 — вторник, дальше по кругу:
+   после интенсива следующий никогда не идёт подряд. */
+const PHYS_INTENSIVE_ORDER = [6, 4, 1, 2];
+function physIntensiveBase(){
+  const start = settings.physStart || todayISO();
+  let d = start;
+  for(let i = 0; i < 7 && !(physSlot(d) && physSlot(d) !== 'course'); i++) d = addDays(d, 1);
+  const wd = new Date(d + 'T00:00:00').getDay();
+  return addDays(d, -((wd + 6) % 7));                 // понедельник той недели
+}
+function physIntensiveDay(date){
+  const days = [...PHYS_INTENSIVE_ORDER, 0, 3, 5].filter(wd => { const v = physSlot0(wd); return v && v !== 'course'; });
+  if(!days.length) return null;
+  const k = Math.floor(dayDiff(physIntensiveBase(), date) / 7);
+  if(k < 0) return null;
+  return days[k % days.length];
+}
+const isIntensive = date => { const wd = new Date(date + 'T00:00:00').getDay(); return physIntensiveDay(date) === wd && !!physSlot(date) && physSlot(date) !== 'course'; };
+
 function physPlanFor(date, kids){
   const slot = physSlot(date);
   if(!slot) return null;
@@ -4953,10 +4975,11 @@ function physPlanFor(date, kids){
   const p = physPhase(ath, date, kids);
   if(!p) return null;
   const m = p.ph.name.match(/недели (\d+)\s*[-–]\s*(\d+)/);
+  const intensive = isIntensive(date);
   const items = (kids.get(p.ph.id) || []).filter(n => n.kind === 'entry')
-    .map(n => ({id: n.id, name: n.name, sets: Number(n.plan) || 0, note: n.note || '', target: physTarget(n.note)}));
+    .map(n => { const base = Number(n.plan) || 0; return {id: n.id, name: n.name, base, sets: base + (intensive && base ? 1 : 0), note: n.note || '', target: physTarget(n.note)}; });
   const sets = items.reduce((x, i) => x + i.sets, 0);
-  return {sub: 'train', athleteId: ath.id, athlete: ath.name, phaseId: p.ph.id, phase: p.ph.name, week: p.week,
+  return {sub: 'train', intensive, athleteId: ath.id, athlete: ath.name, phaseId: p.ph.id, phase: p.ph.name, week: p.week,
           phaseWeek: m ? p.week - Number(m[1]) + 1 : null, phaseLen: m ? Number(m[2]) - Number(m[1]) + 1 : null, items,
           minutes: Math.max(20, Math.round(sets * 2.5 / 5) * 5)};
 }
@@ -5024,7 +5047,7 @@ async function undoPhysBlock(){
   await renderStudy();
 }
 function physLabel(p){
-  return p.sub === 'train' ? 'Тренировка · ' + p.athlete : 'Физкурс · ' + p.courseName;
+  return p.sub === 'train' ? (p.intensive ? '⚡ Интенсив · ' : 'Тренировка · ') + p.athlete : 'Физкурс · ' + p.courseName;
 }
 function physSectionHTML(){
   const t = settings.physToday, b = t && t.block;
@@ -5039,7 +5062,7 @@ function physSectionHTML(){
   }
   h += '<div class="sp-block phys' + (b.done ? ' done' : '') + '">';
   if(b.sub === 'train'){
-    h += '<div class="sp-bh"><b>Тренировка · ≈' + b.minutes + ' мин</b><span class="sp-course">' + escHtml(b.athlete) + '</span></div>' +
+    h += '<div class="sp-bh"><b>' + (b.intensive ? '⚡ Интенсив' : 'Тренировка') + ' · ≈' + b.minutes + ' мин</b><span class="sp-course">' + escHtml(b.athlete) + '</span></div>' +
          '<div class="sp-note">' + escHtml(b.phase) + ' · неделя ' + b.week + (b.phaseWeek ? ' (' + b.phaseWeek + '-я из ' + b.phaseLen + ' в фазе)' : '') +
          (b.result ? ' · выполнено ' + b.result.pct + '% нормы' : '') + '</div>';
     for(const it of b.items)
@@ -5137,14 +5160,15 @@ async function openWorkout(){
 }
 function renderWorkout(){
   const b = woBlock, vals = woVals();
-  $('woTitle').textContent = b.athlete;
+  $('woTitle').textContent = b.athlete + (b.intensive ? ' · интенсив' : '');
   $('woSub').textContent = b.phase + ' · неделя ' + b.week + (b.phaseWeek ? ' (' + b.phaseWeek + '-я из ' + b.phaseLen + ' в фазе)' : '');
   let h = '<div class="wo-sum" id="woSum">' + woSumHTML() + '</div>' +
+          (b.intensive ? '<div class="wo-int">ИНТЕНСИВ НЕДЕЛИ — к каждому упражнению +1 подход. Норма повторов та же. Засчитывается, если сделаны все подходы, включая дополнительный.</div>' : '') +
           '<div class="sp-note" style="margin-bottom:10px">Разминка 5–10 минут. Между подходами 60–90 секунд отдыха. ' +
           'Впиши, сколько сделал в каждом подходе — справа сразу видно, насколько это близко к норме. Всё сохраняется на ходу.</div>';
   for(const it of b.items){
     const arr = vals[it.id] || [];
-    const tg = it.target ? it.sets + ' × ' + fmt(it.target.value) + ' ' + it.target.unit : it.sets + ' подх.';
+    const tg = (it.target ? it.sets + ' × ' + fmt(it.target.value) + ' ' + it.target.unit : it.sets + ' подх.') + (b.intensive && it.base ? ' (' + it.base + ' + 1 интенсив)' : '');
     const desc = it.note.replace(/^[^.]*\.\s*/, '');
     const cat = (it.note.match(/^([^.]*)\./) || [])[1] || '';
     h += '<div class="wo-ex" data-ex="' + it.id + '"><h4>' + escHtml(it.name) + '</h4>' +
@@ -5155,7 +5179,7 @@ function renderWorkout(){
     for(let k = 0; k < it.sets; k++){
       const v = arr[k];
       const st = woStatus(v === '' || v == null ? '' : Number(v), it.target);
-      h += '<div class="wo-row"><span>' + (k + 1) + '</span><input type="number" inputmode="decimal" min="0" data-wo="' + it.id + '" data-k="' + k + '" value="' + (v == null ? '' : v) + '"' +
+      h += '<div class="wo-row' + (b.intensive && it.base && k === it.sets - 1 ? ' extra' : '') + '"><span>' + (k + 1) + (b.intensive && it.base && k === it.sets - 1 ? ' +' : '') + '</span><input type="number" inputmode="decimal" min="0" data-wo="' + it.id + '" data-k="' + k + '" value="' + (v == null ? '' : v) + '"' +
            (it.target ? ' placeholder="' + fmt(it.target.value) + '"' : '') + '><span class="wo-st ' + st.cls + '" id="wost-' + it.id + '-' + k + '">' + st.txt + '</span></div>';
     }
     h += '<div class="tot" id="wotot-' + it.id + '">' + woExTotal(it) + '</div></div>';
@@ -5259,8 +5283,9 @@ async function saveWorkoutLog(b, vals){
             target: it.target ? it.target.value : null, unit: it.target ? it.target.unit : ''};
   });
   const log = (settings.workoutLog || []).filter(r => !(r.date === todayISO() && r.athlete === b.athlete));
+  const extraOk = !!b.intensive && ex.every(e => !e.sets || e.filled >= e.sets);
   log.push({date: todayISO(), athlete: b.athlete, phase: b.phase, week: b.week, pct: b.result.pct,
-            filled: b.result.filled, total: b.result.total, ex});
+            filled: b.result.filled, total: b.result.total, intensive: !!b.intensive, extraOk, ex});
   log.sort((x, y) => (x.date < y.date ? -1 : x.date > y.date ? 1 : 0));
   settings.workoutLog = log.slice(-800);
   await repo.setSetting('workoutLog', JSON.stringify(settings.workoutLog));
@@ -5295,12 +5320,25 @@ function athleteStats(name){
     .filter(o => o.pct < 100).sort((x, y) => x.pct - y.pct);
   const wds = [1, 2, 3, 4, 5, 6, 0].filter(wd => physSlot0(wd) === name);
   const next = (() => { for(let d = addDays(today, byDate.has(today) ? 1 : 0), i = 0; i < 14; i++, d = addDays(d, 1)) if(physSlot(d) === name) return d; return null; })();
-  return {name, days: days.length, done: done.length, missed: days.length - done.length, score, avgNorm, weak, recent: log.slice(-6), last: log[log.length - 1], wds, next, hasRecent: recent.length > 0};
+  const intDays = days.filter(d => isIntensive(d) || (byDate.get(d) || {}).intensive);
+  const intDone = intDays.filter(d => byDate.has(d) && byDate.get(d).intensive);
+  const intOk = intDone.filter(d => byDate.get(d).extraOk);
+  return {name, days: days.length, done: done.length, missed: days.length - done.length, score, avgNorm, weak, recent: log.slice(-6), last: log[log.length - 1], wds, next, hasRecent: recent.length > 0,
+          intDays: intDays.length, intDone: intDone.length, intOk: intOk.length};
 }
 function trainStatsHTML(){
   const names = [...new Set([...physAthletes().map(a => a.name), ...(settings.workoutLog || []).map(r => r.athlete)])];
   if(!names.length) return '';
   let h = '<h3>Тренировки по атлетам</h3>';
+  {
+    const all = names.map(athleteStats);
+    const d = all.reduce((x, a) => x + a.intDays, 0), dn = all.reduce((x, a) => x + a.intDone, 0), ok = all.reduce((x, a) => x + a.intOk, 0);
+    const nx = (() => { for(let t = todayISO(), i = 0; i < 28; i++, t = addDays(t, 1)) if(isIntensive(t)) return t; return null; })();
+    h += '<div class="st-ath"><div class="st-ath-h"><b>⚡ Интенсивы</b><span class="st-ath-p' + (!d ? '' : ok === d ? ' ok' : dn === d ? ' near' : ' far') + '">' + (d ? Math.round(ok / d * 100) + '%' : '—') + '</span></div>' +
+         '<div class="st-ath-l">Раз в неделю одна тренировка с +1 подходом к каждому упражнению: суббота → четверг → понедельник → вторник → по кругу.</div>' +
+         (d ? '<div class="st-ath-l">Было <b>' + d + '</b> · сделано <b>' + dn + '</b> · полностью, с доп. подходом везде — <b>' + ok + '</b></div>' : '') +
+         (nx ? '<div class="st-ath-l">Следующий: ' + studyDateLabel(nx) + ' · ' + escHtml(physSlot(nx)) + '</div>' : '') + '</div>';
+  }
   for(const n of names){
     const a = athleteStats(n);
     const dayWord = a.wds.length === 1 ? WD_PLURAL[a.wds[0]] : 'дни';
@@ -5315,10 +5353,12 @@ function trainStatsHTML(){
     }
     h += '<div class="st-ath-l">' + dayWord[0].toUpperCase() + dayWord.slice(1) + ': выполнено <b>' + a.done + '</b> из <b>' + a.days + '</b>' +
          (a.missed ? ' · пропущено ' + a.missed : '') + (a.avgNorm != null ? ' · норма в среднем ' + a.avgNorm + '%' : '') + '</div>';
+    if(a.intDays) h += '<div class="st-ath-l">Интенсивы: сделано <b>' + a.intDone + '</b> из <b>' + a.intDays + '</b>' +
+                       (a.intDone ? ', с дополнительным подходом во всех упражнениях — ' + a.intOk : '') + '</div>';
     if(a.last) h += '<div class="st-ath-l">Сейчас: ' + escHtml(a.last.phase) + ', неделя ' + a.last.week + '</div>';
     if(a.recent.length)
       h += '<div class="st-ath-l">Последние: ' + a.recent.map(r => '<span class="st-chip' + (r.pct >= 95 ? ' ok' : r.pct >= 75 ? ' near' : ' far') + '">' +
-           r.date.slice(8) + '.' + r.date.slice(5, 7) + ' · ' + r.pct + '%</span>').join(' ') + '</div>';
+           r.date.slice(8) + '.' + r.date.slice(5, 7) + ' · ' + r.pct + '%' + (r.intensive ? ' ⚡' : '') + '</span>').join(' ') + '</div>';
     if(a.score === 100) h += '<div class="st-ath-l ok">Все дни сделаны, норма выполнена полностью ✓</div>';
     else if(a.hasRecent && !a.weak.length) h += '<div class="st-ath-l ok">Все упражнения последних тренировок — в норме ✓' + (a.missed ? ' Итог снижают пропуски.' : '') + '</div>';
     else if(a.weak.length){
@@ -5343,7 +5383,7 @@ async function workoutBannerHTML(){
   const b = t && t.block;
   if(!b || b.sub !== 'train') return '';
   return '<button class="sp-banner wo" id="woBanner">' + (b.done ? 'Тренировка сделана · ' + b.athlete + (b.result ? ' · ' + b.result.pct + '% нормы' : '')
-          : 'Начать тренировку · ' + escHtml(b.athlete) + ' · неделя ' + b.week) + '</button>';
+          : 'Начать тренировку · ' + escHtml(b.athlete) + ' · неделя ' + b.week + (b.intensive ? ' · ⚡ интенсив +1 подход' : '')) + '</button>';
 }
 
 async function savePhysCfg(){
