@@ -1864,7 +1864,7 @@
       <button id="openReset">Сбросить настройки…</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 84 — честное время для всех курсов (по реальному объёму текста) и памятка «как заниматься» в каждом блоке; «Спокойствие» — полноценные уроки</div>
+    <div class="hint sv-version" id="version">Версия 85 — Excel переписан в полноценные уроки: 54 темы по 2 части, практика в файле «Excel-практикум.xlsx» с ответами; уроки подтягиваются в уже загруженный курс автоматически</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -8509,6 +8509,8 @@ function courseButton(id, title, getCourse, unit, note, label){
     btn.textContent = 'Загружаю…';
     try{
       const r = await seedCourse(title, honestCourse(title, getCourse()), unit, note);
+      const lc = LESSON_COURSES.find(x => x[0] === title);
+      if(lc && lessonSetReady(lc[2])) await fillLessonCourse(title, getCourse, lc[2]);   // курс-уроки — сразу с уроками
       $('serviceBg').classList.remove('open');
       toast('Загружено тем: ' + r.added + ', всего ' + r.hours + ' часов');
       await render();
@@ -8675,7 +8677,6 @@ function theoryButton(id, arr, label){
 theoryButton('fillEngTheory', () => theorySet('ENG_THEORY'), 'Английский: залить теорию');
 theoryButton('fillAraTheory', () => theorySet('ARA_THEORY'), 'Арабский: залить теорию');
 theoryButton('fillSpaTheory', () => theorySet('SPA_THEORY'), 'Испанский: залить теорию');
-theoryButton('fillExcelTheory', () => theorySet('EXCEL_THEORY'), 'Excel: залить теорию');
 theoryButton('fillMartialTheory', () => theorySet('MARTIAL_THEORY'), 'Боевая система: залить теорию');
 theoryButton('fillFirstAidTheory', () => theorySet('FIRSTAID_THEORY'), 'Первая помощь: залить теорию');
 theoryButton('fillParkourTheory', () => theorySet('PARKOUR_THEORY'), 'Паркур и акробатика: залить теорию');
@@ -8685,23 +8686,68 @@ theoryButton('fillNavigationTheory', () => theorySet('NAVIGATION_THEORY'), 'Ор
 theoryButton('fillAstronomyTheory', () => theorySet('ASTRONOMY_THEORY'), 'Астрономия: залить теорию');
 theoryButton('fillEuroCuisineTheory', () => theorySet('EURO_CUISINE_THEORY'), 'Европейская кухня: залить теорию');
 theoryButton('fillBartendingTheory', () => theorySet('BARTENDING_THEORY'), 'Барменство: залить теорию');
-/* «Спокойствие» переработан в уроки по частям — заливаем уроки прямо в курс и
-   обновляем часы тем под реальный объём */
-$('fillCalmTheory').onclick = async () => {
-  const btn = $('fillCalmTheory');
-  if(btn.disabled) return;
+/* Курсы, переписанные в уроки по частям. Кнопка «залить теорию» кладёт уроки прямо
+   в загруженный курс (свои заметки не трогаются) и ставит часы тем по реальному объёму.
+   При запуске то же самое делается автоматически — один раз на каждую версию уроков. */
+const LESSON_COURSES = [
+  ['Спокойствие и самообладание', () => CALM_COURSE, 'CALM_THEORY', 'fillCalmTheory', 'Спокойствие: залить теорию', 'Курс: спокойствие и самообладание'],
+  ['Excel', () => EXCEL_COURSE, 'EXCEL_THEORY', 'fillExcelTheory', 'Excel: залить теорию', 'Загрузить курс: Excel'],
+];
+function lessonSig(course, th){
+  let chars = 0, hrs = 0;
+  for(const [, t] of th) chars += t.length;
+  course.forEach(([, , ts]) => ts.forEach(t => hrs += t[1]));
+  return th.length + ':' + chars + ':' + Math.round(hrs * 100);
+}
+function lessonSetReady(theoryVar){
+  const th = theorySet(theoryVar);
+  return th.length > 0 && lessonParts(th[0][1]).length > 0;
+}
+async function fillLessonCourse(title, getCourse, theoryVar){
   await reindex();
-  const root = index.all.find(n => n.kind === 'category' && n.name === 'Спокойствие и самообладание' && Number(n.volume) > 0);
-  if(!root){ toast('Сначала загрузи сам курс: «Курс: спокойствие и самообладание» или «Залить всё»'); return; }
-  btn.disabled = true; btn.textContent = 'Заливаю…';
-  try{
-    const done = await fillTheoryInto(root.id, CALM_COURSE, theorySet('CALM_THEORY'));
-    $('serviceBg').classList.remove('open');
-    toast('Уроков залито: ' + done + '. Время тем обновлено под реальный объём.');
-    await render();
-  }catch(err){ toast('Не получилось: ' + err.message); }
-  btn.disabled = false; btn.textContent = 'Спокойствие: залить теорию';
-};
+  const roots = index.all.filter(n => n.kind === 'category' && n.name === title && Number(n.volume) > 0);
+  if(!roots.length) return -1;
+  let done = 0;
+  for(const r of roots) done += await fillTheoryInto(r.id, getCourse(), theorySet(theoryVar));
+  return done;
+}
+async function upgradeLessonCourses(){
+  let applied = {};
+  try{ applied = JSON.parse((await repo.getSettings()).lessonsApplied || '{}') || {}; }catch(e){ applied = {}; }
+  let changed = 0;
+  for(const [title, getCourse, tv] of LESSON_COURSES){
+    let course;
+    try{ course = getCourse(); }catch(e){ continue; }
+    if(!Array.isArray(course) || !lessonSetReady(tv)) continue;
+    await reindex();
+    const ids = index.all.filter(n => n.kind === 'category' && n.name === title && Number(n.volume) > 0).map(n => n.id).sort((x, y) => x - y);
+    const sig = lessonSig(course, theorySet(tv)) + '@' + ids.join(',');   // новая версия уроков или заново загруженный курс
+    if(applied[title] === sig) continue;
+    const done = await fillLessonCourse(title, getCourse, tv);
+    if(done < 0) continue;              // курса ещё нет — зальётся при загрузке
+    applied[title] = sig;
+    changed += done;
+  }
+  await repo.setSetting('lessonsApplied', JSON.stringify(applied));
+  return changed;
+}
+for(const [title, getCourse, tv, btnId, label, seedLabel] of LESSON_COURSES){
+  $(btnId).onclick = async () => {
+    const btn = $(btnId);
+    if(btn.disabled) return;
+    btn.disabled = true; btn.textContent = 'Заливаю…';
+    try{
+      const done = await fillLessonCourse(title, getCourse, tv);
+      if(done < 0) toast('Сначала загрузи сам курс: «' + seedLabel + '» или «Залить всё»');
+      else {
+        $('serviceBg').classList.remove('open');
+        toast('Уроков залито: ' + done + '. Время тем обновлено под реальный объём.');
+        await render();
+      }
+    }catch(err){ toast('Не получилось: ' + err.message); }
+    btn.disabled = false; btn.textContent = label;
+  };
+}
 
 /* ========================= «Залить всё» ===========================
    Все курсы по очереди, каждый в свою категорию внутри «Развития»,
@@ -9083,7 +9129,7 @@ $('readerClose').onclick = closeReader;
     }
     if(settings.splashMusic) playSplashMusic(settings.splashMusic, settings.splashMusicDuration);
     await render();
-    migrateHonestHours().then(n => { if(n) render(); }).catch(() => {});
+    upgradeLessonCourses().catch(() => 0).then(a => migrateHonestHours().then(b => { if(a || b) render(); })).catch(() => {});
     if(settings.statusNotify !== 'off'){
       requestStatusNotifPermission().then(updateStatusNotification);
     }
