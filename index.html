@@ -338,7 +338,7 @@
   .st-colday{font-size:9px;color:var(--muted);text-align:center;min-height:11px}
 
   /* план занятий на день */
-  #studyPartBg{z-index:30}
+  #studyPartBg,#resetBg{z-index:30}
   .sp-day{font-size:14px;margin-bottom:6px}
   .sp-day b{font-weight:650}
   .sp-note{font-size:12px;color:var(--muted);margin:4px 0 10px}
@@ -378,7 +378,7 @@
   }
   .sp-chips button[aria-pressed="true"]{border-color:var(--accent);color:var(--text);background:var(--surface-2)}
   .sp-week{display:flex;gap:4px}
-  .sp-week button{flex:1;padding:7px 2px;text-align:center;line-height:1.3}
+  .sp-week button{flex:1 1 0;min-width:0;padding:7px 0;text-align:center;line-height:1.3;font-size:11px;overflow:hidden}
   .sp-week button[data-mode="full"]{border-color:var(--accent);color:var(--text)}
   .sp-week button[data-mode="light"]{border-style:dashed;color:var(--text)}
   .sp-banner{
@@ -387,6 +387,7 @@
     color:var(--text);font:inherit;font-size:13px;cursor:pointer;
   }
   .sp-banner .pl-bar{margin-top:6px}
+  .st-body .setrow .where{display:block;font-size:12px;color:var(--muted);margin-top:3px}
   .table-body{flex:1;overflow:auto;padding:10px 12px calc(env(safe-area-inset-bottom) + 16px)}
   .rel-table{width:100%;border-collapse:collapse;font-size:13px}
   .rel-table th{
@@ -1295,6 +1296,30 @@
   <div class="st-body" id="studyBody"></div>
 </div>
 
+<div class="sheet-bg" id="resetBg">
+  <div class="sheet">
+    <h2>Сброс настроек</h2>
+    <div class="seg" id="resetScope">
+      <button data-s="plan" aria-pressed="true">Только план занятий</button>
+      <button data-s="all" aria-pressed="false">Все настройки</button>
+    </div>
+    <div class="hint" id="resetWhat" style="margin:10px 0 4px"></div>
+    <div class="field">
+      <label for="fResetPass" id="resetPassLabel">Пароль сброса</label>
+      <input id="fResetPass" type="password" autocomplete="off">
+    </div>
+    <div class="field" id="resetPass2Wrap" style="display:none">
+      <label for="fResetPass2">Повтори пароль</label>
+      <input id="fResetPass2" type="password" autocomplete="off">
+    </div>
+    <div class="hint" id="resetHint"></div>
+    <div class="actions">
+      <button id="resetCancel">Отмена</button>
+      <button id="resetDo" class="primary">Сбросить</button>
+    </div>
+  </div>
+</div>
+
 <div class="sheet-bg" id="studyPartBg">
   <div class="sheet">
     <h2 id="studyPartTitle">Сколько успел</h2>
@@ -1777,7 +1802,9 @@
 
     <button class="sv-head" data-sec="secData">Готовые наборы</button>
     <div class="sv-sec" id="secData">
-      <div class="hint">Загружается в ту категорию, в которой ты сейчас находишься.</div>
+      <button id="seedAll" class="q-add">Залить всё</button>
+      <div class="hint">Все курсы и программа тренировок разом, каждый в свою категорию внутри «Развития». Уже загруженное не дублируется — дольются только недостающие темы и теория.</div>
+      <div class="hint">Кнопки ниже загружают по одному курсу в ту категорию, в которой ты сейчас находишься.</div>
       <button id="seedScaffold">Создать базовую структуру</button>
       <button id="seedTraining">Программа тренировок</button>
       <button id="seedEng">Курс: английский</button>
@@ -1814,7 +1841,13 @@
       <button id="seedCalm">Курс: спокойствие и самообладание</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 79 — музыка при входе: своя, с настраиваемой длительностью проигрывания</div>
+    <button class="sv-head" data-sec="secReset">Сброс настроек</button>
+    <div class="sv-sec" id="secReset">
+      <div class="hint">Если что-то нажал не так — верни настройки по умолчанию. Записи, курсы, прогресс, книги, финансы и статистика не удаляются. Кнопка под паролем, чтобы не сработать случайно.</div>
+      <button id="openReset">Сбросить настройки…</button>
+    </div>
+
+    <div class="hint sv-version" id="version">Версия 80 — план занятий на каждый день (без выгорания), отметки блоков, статистика занятий и прогресса по курсам</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -2030,6 +2063,10 @@ const SqliteRepo = {
       statement:'INSERT OR REPLACE INTO setting (key, value) VALUES (?,?)',
       values:[key, value], transaction:true});
   },
+  async removeSetting(key){
+    await this.S.run({database:DB, statement:'DELETE FROM setting WHERE key = ?',
+                      values:[key], transaction:true});
+  },
   async removeLink(from, to){
     await this.S.run({database:DB,
       statement:'DELETE FROM link WHERE from_id = ? AND to_id = ?',
@@ -2090,6 +2127,10 @@ const MemoryRepo = {
   async setSetting(key, value){
     if(!this.d.settings) this.d.settings = {};
     this.d.settings[key] = value;
+    this.save();
+  },
+  async removeSetting(key){
+    if(this.d.settings) delete this.d.settings[key];
     this.save();
   },
   async removeLink(from, to){
@@ -3572,14 +3613,14 @@ $('menuDelete').onclick = async () => {
   render();
 };
 
-['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg','bookTocBg','lockBg','tmplBg','tmplEditBg','studyPartBg'].forEach(id => {
+['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg','bookTocBg','lockBg','tmplBg','tmplEditBg','studyPartBg','resetBg'].forEach(id => {
   const bg = $(id);
   bg.onclick = e => { if(e.target === bg) bg.classList.remove('open'); };
 });
 
 if(window.Capacitor && window.Capacitor.Plugins.App){
   window.Capacitor.Plugins.App.addListener('backButton', () => {
-    for(const id of ['studyPartBg','tmplEditBg','tmplBg','pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg','newsBg','lockBg','studyBg']){
+    for(const id of ['resetBg','studyPartBg','tmplEditBg','tmplBg','pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg','newsBg','lockBg','studyBg']){
       if($(id).classList.contains('open')){ $(id).classList.remove('open'); return; }
     }
     if(path.length){ path.pop(); render(); return; }
@@ -4410,7 +4451,7 @@ function courseModel(courseId, kids){
     for(const n of (kids.get(pid) || [])){
       if(n.kind === 'entry'){
         if(Number(n.plan) > 0 && n.amount == null && n.entry_kind == null)
-          topics.push({id: n.id, name: n.name, module: mod,
+          topics.push({id: n.id, name: n.name, module: mod, full: Math.round(Number(n.plan) * 60),
             rem: n.done ? 0 : Math.max(0, Math.round((Number(n.plan) - (Number(n.fact) || 0)) * 60))});
       } else if(n.kind === 'category') walk(n.id, n.name);
     }
@@ -4424,8 +4465,10 @@ function courseModel(courseId, kids){
         if(min <= 0) break;
         if(t.rem <= 0) continue;
         const m = Math.min(t.rem, min);
+        const cont = t.rem < t.full;
         t.rem -= m; min -= m;
-        segs.push({nodeId: t.id, name: t.name, module: t.module, minutes: m, finishes: t.rem === 0});
+        segs.push({nodeId: t.id, name: t.name, module: t.module, minutes: m, finishes: t.rem === 0, cont,
+                   done: Math.round((t.full - t.rem) / t.full * 100)});
       }
       return segs;
     },
@@ -4689,8 +4732,8 @@ async function renderStudy(){
                 ' · ' + b.minutes + ' мин</b><span class="sp-course">' + escHtml(b.courseName) + '</span></div>';
         for(const s of b.segs)
           html += '<div class="sp-seg" data-act="read" data-node="' + s.nodeId + '">' + escHtml(s.name) +
-                  '<span class="where">' + escHtml(s.module) + ' · ' + s.minutes + ' мин' +
-                  (s.finishes ? ' · закончишь тему' : '') + '</span></div>';
+                  '<span class="where">' + (s.cont ? 'продолжение · ' : '') + escHtml(s.module) + ' · ' + s.minutes + ' мин' +
+                  (s.finishes ? ' · закончишь тему' : (s.done != null ? ' · тема будет пройдена на ' + s.done + '%' : '')) + '</span></div>';
       }
       html += '<div class="sp-btns">';
       if(b.done){
@@ -4714,7 +4757,10 @@ async function renderStudy(){
     if(!d.blocks.length) t = d.meta.mode === 'rest' ? 'Отдых' : 'Нет занятий';
     else {
       const names = [...new Set(d.blocks.filter(b => b.kind === 'new').map(b => b.courseName))];
-      const first = d.blocks.filter(b => b.kind === 'new').map(b => b.segs[0] && b.segs[0].name).filter(Boolean);
+      const first = d.blocks.filter(b => b.kind === 'new').map(b => {
+        const s = b.segs[b.segs.length - 1];
+        return s ? s.name + (s.finishes ? ' (финиш)' : ' (до ' + s.done + '%)') : null;
+      }).filter(Boolean);
       const rv = d.blocks.find(b => b.kind === 'review');
       t = escHtml(names.join(' + ') || 'Повторение') +
           '<span class="where">' + escHtml([...new Set(first)].slice(0, 2).join(' · ')) +
@@ -4763,9 +4809,10 @@ function studySettingsHTML(cfg, kids, open){
   for(const wd of [1, 2, 3, 4, 5, 6, 0]){
     const mode = cfg.week[wd];
     h += '<button data-act="wd" data-v="' + wd + '" data-mode="' + mode + '">' + STUDY_WD[wd] + '<br>' +
-         ({full: 'полный', light: 'лёгкий', rest: 'отдых'})[mode] + '</button>';
+         ({full: 'учёба', light: 'лёгк.', rest: 'отдых'})[mode] + '</button>';
   }
-  h += '</div><div class="sp-note" style="margin-top:12px">Как устроен план, чтобы не выгореть:<br>' +
+  h += '</div><div class="sp-note">учёба — полный день · лёгк. — половина нагрузки · отдых — без занятий</div>' +
+       '<div class="sp-note" style="margin-top:12px">Как устроен план, чтобы не выгореть:<br>' +
        '• не больше 2 предметов в день, в лёгкий день — один;<br>' +
        '• блоки с перерывами, предметы в блоках чередуются — так лучше запоминается;<br>' +
        '• сначала повторение пройденного, потом новое;<br>' +
@@ -8177,7 +8224,14 @@ $('service').onclick = () => {
 $('serviceClose').onclick = () => $('serviceBg').classList.remove('open');
 
 
+/* реестр курсов: название → откуда брать данные, единица и описание (нужен «Залить всё») */
+const COURSE_REGISTRY = {
+  'Право Казахстана': {getCourse: () => KZ_LAW, unit: 'часов',
+    note: 'Базовый курс. Тексты всех кодексов — на adilet.zan.kz, там же отслеживаются изменения.'}
+};
+
 function courseButton(id, title, getCourse, unit, note, label){
+  COURSE_REGISTRY[title] = {getCourse, unit, note};
   $(id).onclick = async () => {
     const btn = $(id);
     if(btn.disabled) return;
@@ -8361,6 +8415,204 @@ theoryButton('fillAstronomyTheory', () => theorySet('ASTRONOMY_THEORY'), 'Аст
 theoryButton('fillEuroCuisineTheory', () => theorySet('EURO_CUISINE_THEORY'), 'Европейская кухня: залить теорию');
 theoryButton('fillBartendingTheory', () => theorySet('BARTENDING_THEORY'), 'Барменство: залить теорию');
 theoryButton('fillCalmTheory', () => theorySet('CALM_THEORY'), 'Спокойствие: залить теорию');
+
+/* ========================= «Залить всё» ===========================
+   Все курсы по очереди, каждый в свою категорию внутри «Развития»,
+   плюс программа тренировок и теория. Повторное нажатие безопасно:
+   курс, который уже есть (где бы он ни лежал), не создаётся заново —
+   в него доливаются только недостающие модули и темы; теория кладётся
+   только в пустые заметки или туда, где лежит исходное описание/старая
+   теория — свои заметки не перезаписываются.
+==================================================================*/
+const SEED_ALL_PLAN = [
+  ['Языки', 'Английский язык', 'ENG_THEORY'],
+  ['Языки', 'Арабский язык', 'ARA_THEORY'],
+  ['Языки', 'Испанский язык', 'SPA_THEORY'],
+  ['Право', 'Право Казахстана', 'KZ_THEORY'],
+  ['Технологии', 'Excel', 'EXCEL_THEORY'],
+  ['Технологии', 'SQL и базы данных', 'SQL_THEORY'],
+  ['Физподготовка', 'Боевая система: самбо + Кадочников + удары', 'MARTIAL_THEORY'],
+  ['Физподготовка', 'Паркур и акробатика', 'PARKOUR_THEORY'],
+  ['Безопасность и выживание', 'Первая медицинская помощь', 'FIRSTAID_THEORY'],
+  ['Безопасность и выживание', 'Выживание', 'SURVIVAL_THEORY'],
+  ['Безопасность и выживание', 'Ориентирование на местности', 'NAVIGATION_THEORY'],
+  ['Безопасность и выживание', 'Слежка и контрнаблюдение', 'SURVEILLANCE_THEORY'],
+  ['Кулинария и бар', 'Европейская кухня', 'EURO_CUISINE_THEORY'],
+  ['Кулинария и бар', 'Барменство (базовый)', 'BARTENDING_THEORY'],
+  ['Наука', 'Астрономия', 'ASTRONOMY_THEORY'],
+  ['Психология', 'Спокойствие и самообладание', 'CALM_THEORY'],
+];
+
+async function ensureCategory(parentId, name, data){
+  const found = (await repo.listChildren(parentId)).find(n => n.kind === 'category' && n.name === name);
+  if(found) return found.id;
+  return await createNode(parentId, Object.assign({name, kind: 'category'}, data || {}));
+}
+
+async function seedCourseInto(parentId, title, course, unit, note){
+  await reindex();
+  let root = index.all.find(n => n.kind === 'category' && n.name === title && Number(n.volume) > 0);
+  let hours = 0;
+  course.forEach(([, , topics]) => topics.forEach(t => hours += t[1]));
+  const created = !root;
+  const rootId = root ? root.id
+    : await createNode(parentId, {name: title, kind: 'category', unit, volume: hours, note});
+  let added = 0;
+  const mods = new Map((await repo.listChildren(rootId)).map(n => [n.name, n]));
+  for(const [name, src, topics] of course){
+    const modId = mods.has(name) ? mods.get(name).id
+      : await createNode(rootId, {name, kind: 'category', note: 'Источники: ' + src});
+    const have = new Set((await repo.listChildren(modId)).map(n => n.name));
+    for(const [topic, hrs, what] of topics){
+      if(have.has(topic)) continue;
+      await createNode(modId, {name: topic, kind: 'entry', plan: hrs, fact: 0, note: what});
+      added++;
+    }
+  }
+  return {rootId, created, added};
+}
+
+async function fillTheoryInto(rootId, course, theory){
+  if(!theory.length) return 0;
+  await reindex();
+  const short = new Map();
+  course.forEach(([, , ts]) => ts.forEach(t => short.set(t[0], t[2])));
+  const kids = studyKids();
+  const byName = new Map();
+  (function walk(pid){
+    for(const n of (kids.get(pid) || [])){
+      if(n.kind === 'entry'){ if(!byName.has(n.name)) byName.set(n.name, n); }
+      else walk(n.id);
+    }
+  })(rootId);
+  let done = 0;
+  for(const [name, text] of theory){
+    const n = byName.get(name);
+    if(!n) continue;
+    const note = n.note || '';
+    if(note === text){ done++; continue; }
+    if(!note || note === short.get(name) || note.includes('ПРОВЕРЬ СЕБЯ')){
+      await repo.update(n.id, {note: text});
+      done++;
+    }
+  }
+  return done;
+}
+
+async function seedTrainingInto(devId){
+  await reindex();
+  /* программа уже загружена раньше старой кнопкой — доливаем туда же */
+  const athletes = new Set(TRAIN.map(t => t[0]));
+  const oldAth = index.all.find(n => n.kind === 'category' && athletes.has(n.name) && n.parent_id != null &&
+                                    (index.byId.get(n.parent_id) || {}).name === 'Тренировки');
+  const topId = oldAth ? oldAth.parent_id : await ensureCategory(devId, 'Тренировки', {unit: 'подходов'});
+  const top = index.byId.get(topId);
+  if(top && !top.unit) await repo.update(topId, {unit: 'подходов'});
+  let added = 0;
+  for(const [athlete, phase, weeks, items] of TRAIN){
+    const aId = await ensureCategory(topId, athlete);
+    const pId = await ensureCategory(aId, 'Фаза ' + phase + ' (недели ' + weeks + ')');
+    const have = new Set((await repo.listChildren(pId)).map(n => n.name));
+    for(const [name, sets, cat, note] of items){
+      if(have.has(name)) continue;
+      await createNode(pId, {name, kind: 'entry', plan: sets, fact: 0, note: cat + '. ' + note});
+      added++;
+    }
+  }
+  return added;
+}
+
+$('seedAll').onclick = async () => {
+  const btn = $('seedAll');
+  if(btn.disabled) return;
+  if(!confirm('Залить все курсы, теорию и программу тренировок по категориям в «Развитие»? ' +
+              'Уже загруженное не задвоится. Займёт до пары минут — не закрывай приложение.')) return;
+  btn.disabled = true;
+  const total = SEED_ALL_PLAN.length + 1;
+  let newCourses = 0, topics = 0, theory = 0, skipped = [];
+  try{
+    const devId = await ensureCategory(null, 'Развитие', {unit: 'часов'});
+    for(let i = 0; i < SEED_ALL_PLAN.length; i++){
+      const [cat, title, theoryVar] = SEED_ALL_PLAN[i];
+      btn.textContent = 'Заливаю ' + (i + 1) + ' из ' + total + ': ' + title + '…';
+      const reg = COURSE_REGISTRY[title];
+      let course = null;
+      try{ course = reg && reg.getCourse(); }catch(e){ course = null; }
+      if(!Array.isArray(course) || !course.length){ skipped.push(title); continue; }
+      const catId = await ensureCategory(devId, cat);
+      const r = await seedCourseInto(catId, title, course, reg.unit || 'часов', reg.note || '');
+      if(r.created) newCourses++;
+      topics += r.added;
+      theory += await fillTheoryInto(r.rootId, course, theorySet(theoryVar));
+    }
+    btn.textContent = 'Заливаю ' + total + ' из ' + total + ': программа тренировок…';
+    const trainAdded = typeof TRAIN !== 'undefined' ? await seedTrainingInto(devId) : 0;
+    $('serviceBg').classList.remove('open');
+    toast('Готово: новых курсов ' + newCourses + ', тем добавлено ' + topics +
+          ', с теорией ' + theory + ', упражнений ' + trainAdded +
+          (skipped.length ? '. Нет данных для: ' + skipped.join(', ') : ''));
+    await render();
+  }catch(err){
+    toast('Не получилось: ' + err.message);
+  }
+  btn.disabled = false;
+  btn.textContent = 'Залить всё';
+};
+
+/* ======================= сброс настроек ===========================
+   Под паролем (задаётся при первом сбросе, хранится хэшем). Трогает
+   только перечисленные ключи-настройки: в той же таблице лежат и данные
+   (книги, закладки, люди, журнал приложений, история занятий) — их
+   сброс не касается никогда.
+==================================================================*/
+const RESET_PLAN_KEYS = ['studyActive','studyMinutes','studyBlock','studyWeek','studyStart','studyToday'];
+const RESET_ALL_KEYS = [...new Set([...RESET_PLAN_KEYS,
+  'theme','splashAnim','splashPhoto','splashPhotoDim','splashShowTitle',
+  'splashMusic','splashMusicName','splashMusicDuration','readerFont','readerTheme',
+  'schedule','planUnit','budget','statusNotify','srsOrder', ...Object.keys(SRS_DEFAULTS)])];
+let resetScope = 'plan';
+
+function syncResetScope(){
+  [...$('resetScope').children].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.s === resetScope)));
+  $('resetWhat').textContent = resetScope === 'plan'
+    ? 'Сбросятся: выбранные курсы, минуты в день, длина блока, дни недели и план на сегодня. Пройденное по темам и статистика останутся.'
+    : 'Сбросятся: цветовая тема, заставка (анимация, фото, музыка), план занятий, параметры повторения, режим расписания, единица плана, бюджет, уведомления, шрифт читалки. ' +
+      'Записи, курсы, прогресс, книги, люди, финансы и статистика останутся.';
+}
+function openResetSheet(scope){
+  resetScope = scope || 'plan';
+  const has = !!settings.resetPassHash;
+  $('resetPass2Wrap').style.display = has ? 'none' : '';
+  $('resetPassLabel').textContent = has ? 'Пароль сброса' : 'Придумай пароль для сброса';
+  $('resetHint').textContent = has
+    ? 'Если забыл пароль — сбросить не выйдет, но любую настройку можно поменять вручную.'
+    : 'Пароль задаётся один раз, дальше кнопка сброса будет спрашивать его. Минимум 4 символа.';
+  $('fResetPass').value = '';
+  $('fResetPass2').value = '';
+  syncResetScope();
+  $('resetBg').classList.add('open');
+  setTimeout(() => $('fResetPass').focus(), 50);
+}
+[...$('resetScope').children].forEach(b => b.onclick = () => { resetScope = b.dataset.s; syncResetScope(); });
+$('openReset').onclick = () => openResetSheet('plan');
+$('resetCancel').onclick = () => $('resetBg').classList.remove('open');
+$('resetDo').onclick = async () => {
+  const p1 = $('fResetPass').value;
+  if(!settings.resetPassHash){
+    if(p1.length < 4){ toast('Пароль — минимум 4 символа'); return; }
+    if(p1 !== $('fResetPass2').value){ toast('Пароли не совпадают'); return; }
+    settings.resetPassHash = await hashPass(p1);
+    await repo.setSetting('resetPassHash', settings.resetPassHash);
+  } else if(await hashPass(p1) !== settings.resetPassHash){
+    $('fResetPass').value = '';
+    toast('Неверный пароль');
+    return;
+  }
+  for(const k of (resetScope === 'all' ? RESET_ALL_KEYS : RESET_PLAN_KEYS)) await repo.removeSetting(k);
+  $('resetBg').classList.remove('open');
+  toast(resetScope === 'all' ? 'Все настройки сброшены' : 'Настройки плана сброшены');
+  setTimeout(() => location.reload(), 700);
+};
 
 $('fillSqlTheory').onclick = async () => {
   const btn = $('fillSqlTheory');
