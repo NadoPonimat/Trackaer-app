@@ -393,6 +393,21 @@
     color:var(--text);font:inherit;font-size:13px;cursor:pointer;
   }
   .sp-banner .pl-bar{margin-top:6px}
+  .sp-banner.wo{border-color:var(--income)}
+  .wo-sum{position:sticky;top:-16px;z-index:2;background:var(--bg);padding:8px 0 10px;border-bottom:1px solid var(--line);margin:-4px 0 10px;font-size:13px}
+  .wo-ex{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px}
+  .wo-ex h4{margin:0;font-size:14px;font-weight:600}
+  .wo-ex .tg{font-size:12px;color:var(--muted);margin:3px 0 6px}
+  .wo-ex .tg b{color:var(--text)}
+  .wo-ex .prev{font-size:11px;color:var(--muted);margin-bottom:4px}
+  .wo-row{display:grid;grid-template-columns:70px 1fr 1.25fr;gap:8px;align-items:center;padding:4px 0;border-top:1px dashed var(--line);font-size:13px}
+  .wo-row.hd{border-top:none;font-size:11px;color:var(--muted);padding-top:0}
+  .wo-row input{width:100%;box-sizing:border-box;padding:7px 8px;font:inherit;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px}
+  .wo-st{font-size:12px;color:var(--muted)}
+  .wo-st.ok{color:var(--income)}
+  .wo-st.near{color:#d9a441}
+  .wo-st.far{color:var(--accent)}
+  .wo-ex .tot{font-size:12px;margin-top:6px;color:var(--muted)}
   .sp-q{display:flex;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
   .sp-q .n{width:20px;color:var(--muted);flex:none}
   .sp-q .t{flex:1;min-width:0}
@@ -1313,6 +1328,17 @@
   <div class="st-body" id="studyBody"></div>
 </div>
 
+<div class="graph-bg" id="workoutBg">
+  <div class="graph-top">
+    <div>
+      <div class="graph-title" id="woTitle">Тренировка</div>
+      <div class="graph-sub" id="woSub"></div>
+    </div>
+    <button class="more" id="woClose" aria-label="Закрыть">✕</button>
+  </div>
+  <div class="st-body" id="woBody"></div>
+</div>
+
 <div class="sheet-bg" id="resetBg">
   <div class="sheet">
     <h2>Сброс настроек</h2>
@@ -1864,7 +1890,7 @@
       <button id="openReset">Сбросить настройки…</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 86 — в плане занятий физическое 4 дня в неделю: тренировка по программе атлета чередуется с физкурсом; уроками стали «Первая помощь», «Выживание», «Ориентирование», «Слежка и контрнаблюдение»</div>
+    <div class="hint sv-version" id="version">Версия 87 — тренировки по дням: Пн Крис Хериа, Вт Фрэнк Медрано, Чт Деян Стипич, Сб Майк Вазкез; кнопка «Начать тренировку» с нормой, результатом по подходам и отставанием от нормы; фазы по неделям атлета; уроками стали «Первая помощь», «Выживание», «Ориентирование», «Слежка и контрнаблюдение»</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -2225,8 +2251,8 @@ async function openDatabase(){
   settings.studyStart = s.studyStart || '';
   settings.studyToday = parseJSON(s.studyToday, null);
   settings.studyHist = parseJSON(s.studyHist, {});
-  settings.physDays = (() => { const d = parseJSON(s.physDays, null); return Array.isArray(d) ? d.map(Number).filter(x => x >= 0 && x <= 6) : PHYS_DEFAULT_DAYS.slice(); })();
-  settings.physAthlete = s.physAthlete || '';
+  settings.physSchedule = (() => { const d = parseJSON(s.physSchedule, null); return d && typeof d === 'object' && !Array.isArray(d) ? d : Object.assign({}, PHYS_DEFAULT_SCHEDULE); })();
+  settings.workoutDraft = parseJSON(s.workoutDraft, null);
   settings.physStart = s.physStart || '';
   settings.physToday = parseJSON(s.physToday, null);
   settings.resetPassHash = s.resetPassHash || '';
@@ -2640,9 +2666,11 @@ async function render(){
         (a.plan ? ' · <b>' + fmt(a.fact) + '</b> из <b>' + fmt(a.plan) + '</b>' +
                   (unit ? ' ' + unit : '') : '');
   } else {
-    totalEl.innerHTML = studyBannerHTML();
+    totalEl.innerHTML = studyBannerHTML() + await workoutBannerHTML().catch(() => '');
     const sb = $('spBanner');
     if(sb) sb.onclick = openStudy;
+    const wb = $('woBanner');
+    if(wb) wb.onclick = openWorkout;
   }
 
   const list = $('list');
@@ -4842,11 +4870,12 @@ async function undoStudyBlock(i){
 }
 
 /* ===================== Физическое в плане =====================
-   4 дня в неделю (дни настраиваются). Физические дни чередуются:
-   тренировка по программе атлета (текущая фаза по неделям) ↔ урок из
-   физического курса (боевая система, паркур — по очереди). Учебный план
-   (минуты, курсы, отдых) от этого не меняется: это отдельный блок дня. */
-const PHYS_DEFAULT_DAYS = [1, 2, 4, 6];            // Пн, Вт, Чт, Сб — между парами день восстановления
+   У каждого дня недели свой атлет: Пн — Крис Хериа, Вт — Фрэнк Медрано,
+   Чт — Деян Стипич, Сб — Майк Вазкез (меняется в настройках, можно
+   поставить и физкурс). Неделя программы атлета = сколько его дней прошло
+   с начала: 13 понедельников — и у Криса открывается фаза 2, и т. д.
+   Учебный план (минуты, курсы, отдых) от этого не меняется. */
+const PHYS_DEFAULT_SCHEDULE = {1: 'Крис Хериа', 2: 'Фрэнк Медрано', 4: 'Деян Стипич', 6: 'Майк Вазкез'};
 const PHYS_COURSE_NAMES = ['Боевая система: самбо + Кадочников + удары', 'Паркур и акробатика'];
 const PHYS_COURSE_MIN = 30;
 
@@ -4865,52 +4894,62 @@ function physAthletes(kids){
       out.push(a);
   return out;
 }
-function physAthlete(kids){
-  const all = physAthletes(kids);
-  return all.find(a => a.name === settings.physAthlete) || all[0] || null;
+const physSlot = date => (settings.physSchedule || {})[new Date(date + 'T00:00:00').getDay()] || null;
+/* номер недели программы атлета на дату: сколько его дней прошло от старта (включая эту дату) */
+function physWeek(name, date){
+  let n = 0;
+  for(let d = settings.physStart || todayISO(); d <= date; d = addDays(d, 1)) if(physSlot(d) === name) n++;
+  return Math.max(1, n);
 }
 function physPhase(ath, date, kids){
   const phases = (kids.get(ath.id) || []).filter(ph => ph.kind === 'category' && /^Фаза/.test(ph.name));
   if(!phases.length) return null;
-  const week = Math.floor(Math.max(0, dayDiff(settings.physStart || todayISO(), date)) / 7) + 1;
+  const week = physWeek(ath.name, date);
   for(const ph of phases){
     const m = ph.name.match(/недели (\d+)\s*[-–]\s*(\d+)/);
     if(m && week >= +m[1] && week <= +m[2]) return {ph, week};
   }
   return {ph: phases[phases.length - 1], week};
 }
-const isPhysDay = date => (settings.physDays || []).includes(new Date(date + 'T00:00:00').getDay());
-function physIndex(date){
-  let n = 0;
-  for(let d = settings.physStart || todayISO(); d < date; d = addDays(d, 1)) if(isPhysDay(d)) n++;
-  return n;
+const isPhysDay = date => !!physSlot(date);
+const physDays = () => Object.keys(settings.physSchedule || {}).map(Number).filter(wd => settings.physSchedule[wd]);
+/* цель подхода из описания упражнения: «12 повторений», «45 секунд», «60 прыжков» */
+function physTarget(note){
+  const m = String(note || '').match(/(\d+(?:[.,]\d+)?)\s*(повтор\S*|секунд\S*|сек\b|прыжк\S*|раз\b|метр\S*|м\b|минут\S*|шаг\S*)/i);
+  if(!m) return null;
+  const u = m[2].toLowerCase();
+  const unit = /^сек/.test(u) ? 'сек' : /^мин/.test(u) ? 'мин' : /^прыж/.test(u) ? 'прыжков' : /^м/.test(u) ? 'м' : /^шаг/.test(u) ? 'шагов' : 'повт.';
+  return {value: Number(m[1].replace(',', '.')), unit};
 }
 /* что по плану в физический день: {sub:'train'|'course', ...} или null */
 function physPlanFor(date, kids){
-  if(!isPhysDay(date)) return null;
+  const slot = physSlot(date);
+  if(!slot) return null;
   kids = kids || studyKids();
-  const ath = physAthlete(kids);
-  const courses = physCourses().filter(c => courseModel(c.id, kids).left() > 0);
-  if(!ath && !courses.length) return null;
-  const k = physIndex(date);
-  const wantTrain = ath && (!courses.length || k % 2 === 0);
-  if(wantTrain){
-    const p = physPhase(ath, date, kids);
-    if(!p) return null;
-    const items = (kids.get(p.ph.id) || []).filter(n => n.kind === 'entry')
-      .map(n => ({id: n.id, name: n.name, sets: Number(n.plan) || 0, note: n.note || ''}));
-    const sets = items.reduce((x, i) => x + i.sets, 0);
-    return {sub: 'train', athleteId: ath.id, athlete: ath.name, phaseId: p.ph.id, phase: p.ph.name, week: p.week, items,
-            minutes: Math.max(20, Math.round(sets * 2.5 / 5) * 5)};
+  if(slot === 'course'){
+    const courses = physCourses().filter(c => courseModel(c.id, kids).left() > 0);
+    if(!courses.length) return null;
+    const k = physWeek('course', date) - 1;
+    const c = courses[k % courses.length];
+    return {sub: 'course', courseId: c.id, courseName: c.name, minutes: PHYS_COURSE_MIN};
   }
-  const c = courses[Math.floor(k / 2) % courses.length];
-  return {sub: 'course', courseId: c.id, courseName: c.name, minutes: PHYS_COURSE_MIN};
+  const ath = physAthletes(kids).find(a => a.name === slot);
+  if(!ath) return null;
+  const p = physPhase(ath, date, kids);
+  if(!p) return null;
+  const m = p.ph.name.match(/недели (\d+)\s*[-–]\s*(\d+)/);
+  const items = (kids.get(p.ph.id) || []).filter(n => n.kind === 'entry')
+    .map(n => ({id: n.id, name: n.name, sets: Number(n.plan) || 0, note: n.note || '', target: physTarget(n.note)}));
+  const sets = items.reduce((x, i) => x + i.sets, 0);
+  return {sub: 'train', athleteId: ath.id, athlete: ath.name, phaseId: p.ph.id, phase: p.ph.name, week: p.week,
+          phaseWeek: m ? p.week - Number(m[1]) + 1 : null, phaseLen: m ? Number(m[2]) - Number(m[1]) + 1 : null, items,
+          minutes: Math.max(20, Math.round(sets * 2.5 / 5) * 5)};
 }
-const physKey = () => JSON.stringify([settings.physDays, settings.physAthlete, settings.physStart]);
+const physKey = () => JSON.stringify([settings.physSchedule, settings.physStart]);
 
 async function ensurePhysToday(){
   const today = todayISO();
-  if(!settings.physStart && (settings.physDays || []).length){
+  if(!settings.physStart && physDays().length){
     settings.physStart = today;
     await repo.setSetting('physStart', today);
   }
@@ -4940,22 +4979,7 @@ async function markPhysBlock(minutes){
     b.applied = await applyStudyBlock(b, minutes);
     b.done = minutes;
     await addStudyMinutes(minutes);
-  } else {
-    const applied = [];
-    for(const it of b.items){
-      const node = index.byId.get(it.id);
-      if(!node || !it.sets) continue;
-      const sets = await repo.listSets(node.id);
-      await repo.addSet({node_id: node.id, date: todayISO(), attempt: sets.filter(x => x.date === todayISO()).length + 1,
-                         value: it.sets, rpe: null, note: 'тренировка по плану'});
-      const fact = (Number(node.fact) || 0) + it.sets;
-      await repo.update(node.id, {fact});
-      node.fact = fact;
-      applied.push({nodeId: node.id, sets: it.sets});
-    }
-    b.applied = applied;
-    b.done = b.minutes;
-  }
+  } else { await openWorkout(); return; }
   await savePhysToday();
   toast(b.sub === 'train' ? 'Тренировка записана в журнал подходов' : 'Записано ' + b.done + ' мин · ' + b.courseName);
   await renderStudy();
@@ -4978,18 +5002,8 @@ async function undoPhysBlock(){
       if(s) await repo.removeSet(s.id);
     }
     await addStudyMinutes(-fake.done);
-  } else {
-    for(const a of (b.applied || [])){
-      const node = index.byId.get(a.nodeId);
-      if(!node) continue;
-      const fact = Math.max(0, (Number(node.fact) || 0) - a.sets);
-      await repo.update(node.id, {fact}); node.fact = fact;
-      const sets = await repo.listSets(node.id);
-      const s = sets.find(x => x.date === todayISO() && x.note === 'тренировка по плану' && Number(x.value) === a.sets);
-      if(s) await repo.removeSet(s.id);
-    }
-  }
-  b.done = 0; delete b.applied;
+  } else await removeWorkoutSets(b);
+  b.done = 0; delete b.applied; delete b.result;
   await savePhysToday();
   toast('Отметка снята');
   await renderStudy();
@@ -4999,19 +5013,20 @@ function physLabel(p){
 }
 function physSectionHTML(){
   const t = settings.physToday, b = t && t.block;
-  const wds = [1, 2, 3, 4, 5, 6, 0].filter(d => (settings.physDays || []).includes(d)).map(d => STUDY_WD[d]).join(', ');
+  const wds = [1, 2, 3, 4, 5, 6, 0].filter(d => physSlot0(d)).map(d => STUDY_WD[d] + ' — ' + (physSlot0(d) === 'course' ? 'физкурс' : physSlot0(d))).join(', ');
   let h = '<h3>Физическое</h3>';
-  if(!(settings.physDays || []).length) return h + '<div class="sp-note">Физические дни выключены — включи их в настройках плана ниже.</div>';
+  if(!physDays().length) return h + '<div class="sp-note">Физические дни выключены — включи их в настройках плана ниже.</div>';
   if(!b){
     const kids = studyKids();
-    const any = physAthlete(kids) || physCourses().length;
+    const any = physAthletes(kids).length || physCourses().length;
     return h + '<div class="sp-note">' + (any ? 'Сегодня без физической нагрузки — восстановление. Физические дни: ' + wds + '.'
       : 'Нет ни программы тренировок, ни физических курсов. Загрузи их: Сервис → Готовые наборы → «Залить всё».') + '</div>';
   }
   h += '<div class="sp-block phys' + (b.done ? ' done' : '') + '">';
   if(b.sub === 'train'){
     h += '<div class="sp-bh"><b>Тренировка · ≈' + b.minutes + ' мин</b><span class="sp-course">' + escHtml(b.athlete) + '</span></div>' +
-         '<div class="sp-note">' + escHtml(b.phase) + ' · идёт ' + b.week + '-я неделя программы. Разминка 5–10 мин, между подходами 60–90 сек отдыха.</div>';
+         '<div class="sp-note">' + escHtml(b.phase) + ' · неделя ' + b.week + (b.phaseWeek ? ' (' + b.phaseWeek + '-я из ' + b.phaseLen + ' в фазе)' : '') +
+         (b.result ? ' · выполнено ' + b.result.pct + '% нормы' : '') + '</div>';
     for(const it of b.items)
       h += '<div class="sp-seg" data-act="phread" data-node="' + it.id + '">' + escHtml(it.name) +
            '<span class="where">' + it.sets + ' подх. · ' + escHtml(it.note.replace(/^[^.]*\.\s*/, '')) + '</span></div>';
@@ -5024,32 +5039,208 @@ function physSectionHTML(){
     }
     h += '<div class="sp-note">Сначала разминка 5–10 минут. Приёмы с партнёром и акробатику — только с партнёром или страховкой.</div>';
   }
-  h += '<div class="sp-btns">' + (b.done ? '<button data-act="phundo">Отменить</button>'
-        : '<button class="go" data-act="phdone">Сделал</button>' + (b.sub === 'course' ? '<button data-act="phpart">Частично</button>' : '')) + '</div></div>';
-  h += '<div class="sp-note">Физические дни: ' + wds + '. Тренировка по программе чередуется с физкурсом.</div>';
+  if(b.sub === 'train')
+    h += '<div class="sp-btns"><button class="go" data-act="phstart">' + (b.done ? 'Открыть результаты' : 'Начать тренировку') + '</button>' +
+         (b.done ? '<button data-act="phundo">Отменить</button>' : '') + '</div></div>';
+  else
+    h += '<div class="sp-btns">' + (b.done ? '<button data-act="phundo">Отменить</button>'
+          : '<button class="go" data-act="phdone">Сделал</button><button data-act="phpart">Частично</button>') + '</div></div>';
+  h += '<div class="sp-note">Физические дни: ' + wds + '.</div>';
   return h;
 }
+const physSlot0 = wd => (settings.physSchedule || {})[wd] || null;
 function physSettingsHTML(){
   const kids = studyKids();
-  let h = '<label>Физическое — дни недели (рекомендую 4, не подряд больше двух)</label><div class="sp-week">';
+  const aths = physAthletes(kids).map(a => a.name);
+  let h = '<label>Физическое — кто в какой день (нажми на день, чтобы сменить)</label><div class="sp-week">';
   for(const wd of [1, 2, 3, 4, 5, 6, 0]){
-    const on = (settings.physDays || []).includes(wd);
-    h += '<button data-act="pday" data-v="' + wd + '" data-mode="' + (on ? 'full' : 'rest') + '">' + STUDY_WD[wd] + '<br>' + (on ? 'физ.' : '—') + '</button>';
+    const v = physSlot0(wd);
+    const short = !v ? '—' : v === 'course' ? 'физкурс' : v.split(' ')[0];
+    h += '<button data-act="pday" data-v="' + wd + '" data-mode="' + (v ? 'full' : 'rest') + '">' + STUDY_WD[wd] + '<br>' + escHtml(short) + '</button>';
   }
-  h += '</div><div class="sp-note">Выбрано дней: ' + (settings.physDays || []).length + '. Тренировка по программе и физкурс идут через раз.</div>';
-  const aths = physAthletes(kids), cur = physAthlete(kids);
-  if(aths.length){
-    h += '<label>Программа тренировок</label><div class="sp-chips">';
-    for(const a of aths) h += '<button data-act="path" data-v="' + escHtml(a.name) + '" aria-pressed="' + (cur && cur.id === a.id) + '">' + escHtml(a.name) + '</button>';
-    h += '</div>';
-  }
+  h += '</div><div class="sp-note">Порядок при нажатии: ' + escHtml(aths.join(' → ') || 'атлеты (загрузи программу тренировок)') +
+       ' → физкурс → нет. Неделя программы = сколько дней этого атлета уже прошло: 13 его дней — фаза 1, дальше фаза 2 и т. д.</div>';
   const pc = physCourses();
-  h += '<div class="sp-note">Физкурсы для чередования: ' + (pc.length ? pc.map(c => escHtml(c.name)).join(' → ') : 'пока не загружены') + '.</div>';
+  if(pc.length) h += '<div class="sp-note">Физкурсы (если поставишь «физкурс»): ' + pc.map(c => escHtml(c.name)).join(' → ') + '.</div>';
   return h;
 }
+/* ------------------------ экран тренировки ------------------------
+   «Начать тренировку»: программа атлета этого дня, текущая фаза. У каждого
+   упражнения — норма (подходы × повторы/секунды), поле результата на каждый
+   подход и насколько он близок к норме. Черновик сохраняется на ходу. */
+const WORKOUT_NOTE = 'тренировка';
+let woBlock = null, woPrev = {}, woSaveTimer = null;
+
+function woVals(){
+  const d = settings.workoutDraft;
+  if(!d || d.date !== todayISO() || d.phaseId !== woBlock.phaseId) settings.workoutDraft = {date: todayISO(), phaseId: woBlock.phaseId, vals: {}};
+  return settings.workoutDraft.vals;
+}
+function woStatus(v, t){
+  if(v === '' || v == null || isNaN(v)) return {cls: '', txt: t ? 'норма ' + t.value : ''};
+  if(!t) return {cls: 'ok', txt: 'записано'};
+  if(v >= t.value) return {cls: 'ok', txt: '✓ норма' + (v > t.value ? ' +' + fmt(v - t.value) : '')};
+  const pct = Math.round(v / t.value * 100);
+  return {cls: pct >= 80 ? 'near' : 'far', txt: '−' + fmt(Math.round((t.value - v) * 10) / 10) + ' · ' + pct + '%'};
+}
+function woTotals(){
+  const vals = woVals();
+  let need = 0, got = 0, filled = 0, total = 0;
+  for(const it of woBlock.items){
+    const arr = vals[it.id] || [];
+    for(let k = 0; k < it.sets; k++){
+      total++;
+      const v = arr[k];
+      const has = v !== '' && v != null && !isNaN(v);
+      if(has) filled++;
+      if(it.target){ need += it.target.value; if(has) got += Math.min(Number(v), it.target.value); }
+      else { need += 1; if(has) got += 1; }
+    }
+  }
+  return {pct: need ? Math.round(got / need * 100) : 0, filled, total};
+}
+function woSumHTML(){
+  const t = woTotals();
+  return 'Подходов записано <b>' + t.filled + '</b> из <b>' + t.total + '</b> · выполнено <b>' + t.pct + '%</b> нормы' +
+         '<span class="pl-bar"><i style="width:' + t.pct + '%"></i></span>';
+}
+async function openWorkout(){
+  const t = await ensurePhysToday();
+  const b = t && t.block;
+  if(!b || b.sub !== 'train'){ toast('Сегодня по плану тренировки нет'); return; }
+  woBlock = b;
+  woPrev = {};
+  for(const it of b.items){
+    const sets = (await repo.listSets(it.id)).filter(x => x.date < todayISO() && x.note === WORKOUT_NOTE);
+    if(sets.length){
+      const last = sets[0].date;
+      woPrev[it.id] = {date: last, vals: sets.filter(x => x.date === last).sort((x, y) => x.attempt - y.attempt).map(x => x.value)};
+    }
+  }
+  renderWorkout();
+  $('workoutBg').classList.add('open');
+}
+function renderWorkout(){
+  const b = woBlock, vals = woVals();
+  $('woTitle').textContent = b.athlete;
+  $('woSub').textContent = b.phase + ' · неделя ' + b.week + (b.phaseWeek ? ' (' + b.phaseWeek + '-я из ' + b.phaseLen + ' в фазе)' : '');
+  let h = '<div class="wo-sum" id="woSum">' + woSumHTML() + '</div>' +
+          '<div class="sp-note" style="margin-bottom:10px">Разминка 5–10 минут. Между подходами 60–90 секунд отдыха. ' +
+          'Впиши, сколько сделал в каждом подходе — справа сразу видно, насколько это близко к норме. Всё сохраняется на ходу.</div>';
+  for(const it of b.items){
+    const arr = vals[it.id] || [];
+    const tg = it.target ? it.sets + ' × ' + fmt(it.target.value) + ' ' + it.target.unit : it.sets + ' подх.';
+    const desc = it.note.replace(/^[^.]*\.\s*/, '');
+    const cat = (it.note.match(/^([^.]*)\./) || [])[1] || '';
+    h += '<div class="wo-ex" data-ex="' + it.id + '"><h4>' + escHtml(it.name) + '</h4>' +
+         '<div class="tg">Норма: <b>' + escHtml(tg) + '</b>' + (cat ? ' · ' + escHtml(cat) : '') + (desc ? '<br>' + escHtml(desc) : '') + '</div>';
+    const pv = woPrev[it.id];
+    if(pv) h += '<div class="prev">В прошлый раз (' + escHtml(pv.date.slice(8) + '.' + pv.date.slice(5, 7)) + '): ' + pv.vals.map(fmt).join(' · ') + '</div>';
+    h += '<div class="wo-row hd"><span>Подход</span><span>Результат' + (it.target ? ', ' + escHtml(it.target.unit) : '') + '</span><span>До нормы</span></div>';
+    for(let k = 0; k < it.sets; k++){
+      const v = arr[k];
+      const st = woStatus(v === '' || v == null ? '' : Number(v), it.target);
+      h += '<div class="wo-row"><span>' + (k + 1) + '</span><input type="number" inputmode="decimal" min="0" data-wo="' + it.id + '" data-k="' + k + '" value="' + (v == null ? '' : v) + '"' +
+           (it.target ? ' placeholder="' + fmt(it.target.value) + '"' : '') + '><span class="wo-st ' + st.cls + '" id="wost-' + it.id + '-' + k + '">' + st.txt + '</span></div>';
+    }
+    h += '<div class="tot" id="wotot-' + it.id + '">' + woExTotal(it) + '</div></div>';
+  }
+  h += '<div class="sp-btns" style="margin-top:6px"><button class="go" data-act="wofinish">' + (b.done ? 'Сохранить исправления' : 'Завершить тренировку') + '</button>' +
+       '<button data-act="woclose">Закрыть, закончу позже</button></div>';
+  $('woBody').innerHTML = h;
+}
+function woExTotal(it){
+  const arr = woVals()[it.id] || [];
+  const nums = arr.slice(0, it.sets).filter(v => v !== '' && v != null && !isNaN(v)).map(Number);
+  if(!nums.length) return '';
+  const sum = nums.reduce((x, y) => x + y, 0);
+  if(!it.target) return 'Записано подходов: ' + nums.length;
+  const need = it.target.value * it.sets;
+  const got = nums.reduce((x, y) => x + Math.min(y, it.target.value), 0);   // перевыполнение в одном подходе не закрывает недобор в другом
+  return 'Итого ' + fmt(sum) + ' из ' + fmt(need) + ' ' + it.target.unit + ' · ' + Math.round(got / need * 100) + '%';
+}
+$('woBody').addEventListener('input', e => {
+  const inp = e.target.closest('input[data-wo]');
+  if(!inp) return;
+  const id = Number(inp.dataset.wo), k = Number(inp.dataset.k);
+  const it = woBlock.items.find(x => x.id === id);
+  const vals = woVals();
+  const arr = vals[id] = (vals[id] || []).slice();
+  const v = inp.value === '' ? '' : Number(String(inp.value).replace(',', '.'));
+  arr[k] = inp.value === '' ? null : v;
+  const st = woStatus(v, it.target);
+  const el = $('wost-' + id + '-' + k);
+  el.className = 'wo-st ' + st.cls; el.textContent = st.txt;
+  $('wotot-' + id).textContent = woExTotal(it);
+  $('woSum').innerHTML = woSumHTML();
+  clearTimeout(woSaveTimer);
+  woSaveTimer = setTimeout(() => repo.setSetting('workoutDraft', JSON.stringify(settings.workoutDraft)), 400);
+});
+async function removeWorkoutSets(b){
+  for(const a of (b.applied || [])){
+    const node = index.byId.get(a.nodeId);
+    if(!node) continue;
+    const fact = Math.max(0, (Number(node.fact) || 0) - a.sets);
+    await repo.update(node.id, {fact}); node.fact = fact;
+    const sets = (await repo.listSets(node.id)).filter(x => x.date === todayISO() && x.note === WORKOUT_NOTE).slice(0, a.sets);
+    for(const x of sets) await repo.removeSet(x.id);
+  }
+  b.applied = [];
+}
+async function finishWorkout(){
+  const b = woBlock, vals = woVals();
+  const tot = woTotals();
+  if(!tot.filled){ toast('Впиши результат хотя бы одного подхода'); return; }
+  if(b.done) await removeWorkoutSets(b);
+  const applied = [];
+  for(const it of b.items){
+    const arr = (vals[it.id] || []).slice(0, it.sets);
+    let n = 0;
+    for(let k = 0; k < arr.length; k++){
+      const v = arr[k];
+      if(v === '' || v == null || isNaN(v)) continue;
+      n++;
+      await repo.addSet({node_id: it.id, date: todayISO(), attempt: n, value: Number(v), rpe: null, note: WORKOUT_NOTE});
+    }
+    if(n){
+      const node = index.byId.get(it.id);
+      const fact = (Number(node.fact) || 0) + n;
+      await repo.update(it.id, {fact}); if(node) node.fact = fact;
+      applied.push({nodeId: it.id, sets: n});
+    }
+  }
+  b.applied = applied; b.done = b.minutes; b.result = tot;
+  await savePhysToday();
+  await repo.setSetting('workoutDraft', JSON.stringify(settings.workoutDraft));
+  $('workoutBg').classList.remove('open');
+  toast('Тренировка записана: ' + tot.pct + '% нормы, подходов ' + tot.filled + ' из ' + tot.total);
+  if($('studyBg').classList.contains('open')) await renderStudy();
+  await render();
+}
+$('woBody').addEventListener('click', async e => {
+  const el = e.target.closest('[data-act]');
+  if(!el) return;
+  if(el.dataset.act === 'wofinish') await finishWorkout();
+  else if(el.dataset.act === 'woclose') closeWorkout();
+});
+function closeWorkout(){
+  clearTimeout(woSaveTimer);
+  if(settings.workoutDraft) repo.setSetting('workoutDraft', JSON.stringify(settings.workoutDraft));
+  $('workoutBg').classList.remove('open');
+}
+$('woClose').onclick = closeWorkout;
+/* кнопка на главном экране в день тренировки */
+async function workoutBannerHTML(){
+  if(!physDays().length || !physSlot(todayISO()) || physSlot(todayISO()) === 'course') return '';
+  const t = await ensurePhysToday();
+  const b = t && t.block;
+  if(!b || b.sub !== 'train') return '';
+  return '<button class="sp-banner wo" id="woBanner">' + (b.done ? 'Тренировка сделана · ' + b.athlete + (b.result ? ' · ' + b.result.pct + '% нормы' : '')
+          : 'Начать тренировку · ' + escHtml(b.athlete) + ' · неделя ' + b.week) + '</button>';
+}
+
 async function savePhysCfg(){
-  await repo.setSetting('physDays', JSON.stringify(settings.physDays));
-  await repo.setSetting('physAthlete', settings.physAthlete || '');
+  await repo.setSetting('physSchedule', JSON.stringify(settings.physSchedule));
   const cfgOpen = $('studyBody').querySelector('.sp-cfg');
   const wasOpen = cfgOpen && cfgOpen.open;
   await renderStudy();
@@ -5393,12 +5584,15 @@ $('studyBody').addEventListener('click', async e => {
     if(node) openReader(node);
   } else if(act === 'pday'){
     const wd = Number(el.dataset.v);
-    const d = new Set(settings.physDays || []);
-    d.has(wd) ? d.delete(wd) : d.add(wd);
-    settings.physDays = [...d].sort();
+    const opts = [...physAthletes().map(a => a.name), 'course', null];
+    const cur = physSlot0(wd);
+    const next = opts[(opts.indexOf(cur) + 1) % opts.length];
+    const sc = Object.assign({}, settings.physSchedule);
+    if(next) sc[wd] = next; else delete sc[wd];
+    settings.physSchedule = sc;
     await savePhysCfg();
-  } else if(act === 'path'){
-    settings.physAthlete = el.dataset.v; await savePhysCfg();
+  } else if(act === 'phstart'){
+    await openWorkout();
   } else if(act === 'wd'){
     const wd = Number(el.dataset.v);
     const order = ['full', 'light', 'rest'];
@@ -9182,7 +9376,7 @@ $('seedAll').onclick = async () => {
    (книги, закладки, люди, журнал приложений, история занятий) — их
    сброс не касается никогда.
 ==================================================================*/
-const RESET_PLAN_KEYS = ['studyActive','studyOrder','studySlots','studyMinutes','studyBlock','studyWeek','studyStart','studyToday','physDays','physAthlete','physStart','physToday'];
+const RESET_PLAN_KEYS = ['studyActive','studyOrder','studySlots','studyMinutes','studyBlock','studyWeek','studyStart','studyToday','physSchedule','physStart','physToday','workoutDraft'];
 const RESET_ALL_KEYS = [...new Set([...RESET_PLAN_KEYS,
   'theme','splashAnim','splashPhoto','splashPhotoDim','splashShowTitle',
   'splashMusic','splashMusicName','splashMusicDuration','readerFont','readerTheme',
