@@ -266,6 +266,12 @@
   .reader-body.font-s{font-size:14px;line-height:1.6}
   .reader-body.font-m{font-size:17px;line-height:1.65}
   .reader-body.font-l{font-size:21px;line-height:1.7}
+  .rd-nav{display:flex;gap:8px;margin-top:22px;white-space:normal}
+  .rd-nav button{
+    flex:1;padding:12px 8px;border-radius:var(--radius);border:1px solid var(--line);
+    background:var(--surface);color:var(--text);font:inherit;font-size:14px;cursor:pointer;
+  }
+  .rd-nav button.go{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
   #readerFontS{font-size:13px}
   #readerFontM{font-size:16px}
   #readerFontL{font-size:19px}
@@ -1858,7 +1864,7 @@
       <button id="openReset">Сбросить настройки…</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 82 — очередь курсов: следующий курс подключается сам, рекомендованный порядок, прогноз старта и финиша</div>
+    <div class="hint sv-version" id="version">Версия 83 — «Спокойствие» переписан в полноценные уроки: части по ~25 мин с практикой и дневником; время тем по реальному объёму</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -3801,6 +3807,40 @@ function questionsOf(node){
     .filter(s => s.length > 5);
 }
 
+/* Урок из частей: заголовки «ЧАСТЬ k ИЗ n · название · ~N мин». Возвращает части
+   с их текстом и отрезком минут внутри темы; итоговая «ПРОВЕРЬ СЕБЯ» — к последней части. */
+function lessonParts(note){
+  if(!note || note.indexOf('ЧАСТЬ 1 ИЗ ') < 0) return [];
+  const re = /^ЧАСТЬ (\d+) ИЗ (\d+) · (.+?) · ~(\d+) мин$/gm;
+  const heads = [];
+  let m;
+  while((m = re.exec(note))) heads.push({k: +m[1], n: +m[2], name: m[3], min: +m[4], at: m.index});
+  if(!heads.length) return [];
+  const finalAt = note.search(/ПРОВЕРЬ СЕБЯ\s*\n/);
+  let start = 0;
+  return heads.map((h, i) => {
+    const end = i + 1 < heads.length ? heads[i + 1].at : note.length;
+    let text = note.slice(h.at, end).trim();
+    if(i + 1 < heads.length && finalAt > h.at && finalAt < end) text = note.slice(h.at, finalAt).trim();
+    const part = Object.assign({}, h, {text, from: start, to: start + h.min});
+    start += h.min;
+    return part;
+  });
+}
+
+/* какие части урока покрывает кусок занятия [offset, offset + minutes) внутри темы */
+function segLessonParts(node, offset, minutes){
+  const parts = lessonParts(node && node.note);
+  if(!parts.length || offset == null) return null;
+  const total = parts[parts.length - 1].to;
+  const full = (Number(node.plan) || 0) * 60 || total;
+  const k = total / full;                    // план в часах может отличаться от суммы частей
+  const a = offset * k, b = (offset + minutes) * k - 0.01;
+  const idx = x => Math.max(0, parts.findIndex(p => x < p.to) < 0 ? parts.length - 1 : parts.findIndex(p => x < p.to));
+  const i = idx(a), j = idx(Math.max(a, b));
+  return {from: i, to: j, n: parts.length, name: parts[i].name};
+}
+
 function theoryOf(node){
   if(!node || !node.note) return '';
   return node.note.split(/ПРОВЕРЬ СЕБЯ\s*\n/)[0].trim();
@@ -4507,8 +4547,9 @@ function courseModel(courseId, kids){
         if(t.rem <= 0) continue;
         const m = Math.min(t.rem, min);
         const cont = t.rem < t.full;
+        const offset = Math.max(0, t.full - t.rem);
         t.rem -= m; min -= m;
-        segs.push({nodeId: t.id, name: t.name, module: t.module, minutes: m, finishes: t.rem === 0, cont,
+        segs.push({nodeId: t.id, name: t.name, module: t.module, minutes: m, finishes: t.rem === 0, cont, offset,
                    done: Math.round((t.full - t.rem) / t.full * 100)});
       }
       return segs;
@@ -4806,10 +4847,15 @@ async function renderStudy(){
       } else {
         html += '<div class="sp-bh"><b>Блок ' + (snap.blocks.slice(0, i + 1).filter(x => x.kind === 'new').length) +
                 ' · ' + b.minutes + ' мин</b><span class="sp-course">' + escHtml(b.courseName) + '</span></div>';
-        for(const s of b.segs)
-          html += '<div class="sp-seg" data-act="read" data-node="' + s.nodeId + '">' + escHtml(s.name) +
-                  '<span class="where">' + (s.cont ? 'продолжение · ' : '') + escHtml(s.module) + ' · ' + s.minutes + ' мин' +
+        for(const s of b.segs){
+          const lp = segLessonParts(index.byId.get(s.nodeId), s.offset, s.minutes);
+          const partTxt = lp ? (lp.from === lp.to ? 'часть ' + (lp.from + 1) + ' из ' + lp.n + ' «' + escHtml(lp.name) + '»'
+                                                  : 'части ' + (lp.from + 1) + '–' + (lp.to + 1) + ' из ' + lp.n) + ' · ' : '';
+          html += '<div class="sp-seg" data-act="read" data-node="' + s.nodeId + '"' +
+                  (lp ? ' data-part="' + lp.from + '"' : '') + '>' + escHtml(s.name) +
+                  '<span class="where">' + (partTxt || (s.cont ? 'продолжение · ' : '')) + escHtml(s.module) + ' · ' + s.minutes + ' мин' +
                   (s.finishes ? ' · закончишь тему' : (s.done != null ? ' · тема будет пройдена на ' + s.done + '%' : '')) + '</span></div>';
+        }
       }
       html += '<div class="sp-btns">';
       if(b.done){
@@ -4822,7 +4868,7 @@ async function renderStudy(){
       html += '</div></div>';
       if(i < snap.blocks.length - 1) html += '<div class="sp-break">перерыв ' + rest + ' мин</div>';
     });
-    html += '<div class="sp-note">Нажми на тему, чтобы открыть теорию.</div>';
+    html += '<div class="sp-note">Нажми на тему — откроется нужная часть урока с теорией и практикой.</div>';
   }
 
   const fc = studyForecast(cfg, snap, kids, 1830);
@@ -4976,7 +5022,7 @@ $('studyBody').addEventListener('click', async e => {
     nextCard();
   } else if(act === 'read'){
     const node = index.byId.get(Number(el.dataset.node));
-    if(node) openReader(node);
+    if(node) openReader(node, el.dataset.part != null ? Number(el.dataset.part) : null);
   } else if(act === 'course'){
     const id = Number(el.dataset.id);
     const o = settings.studyOrder = studyCfg().order;
@@ -8544,7 +8590,23 @@ theoryButton('fillNavigationTheory', () => theorySet('NAVIGATION_THEORY'), 'Ор
 theoryButton('fillAstronomyTheory', () => theorySet('ASTRONOMY_THEORY'), 'Астрономия: залить теорию');
 theoryButton('fillEuroCuisineTheory', () => theorySet('EURO_CUISINE_THEORY'), 'Европейская кухня: залить теорию');
 theoryButton('fillBartendingTheory', () => theorySet('BARTENDING_THEORY'), 'Барменство: залить теорию');
-theoryButton('fillCalmTheory', () => theorySet('CALM_THEORY'), 'Спокойствие: залить теорию');
+/* «Спокойствие» переработан в уроки по частям — заливаем уроки прямо в курс и
+   обновляем часы тем под реальный объём */
+$('fillCalmTheory').onclick = async () => {
+  const btn = $('fillCalmTheory');
+  if(btn.disabled) return;
+  await reindex();
+  const root = index.all.find(n => n.kind === 'category' && n.name === 'Спокойствие и самообладание' && Number(n.volume) > 0);
+  if(!root){ toast('Сначала загрузи сам курс: «Курс: спокойствие и самообладание» или «Залить всё»'); return; }
+  btn.disabled = true; btn.textContent = 'Заливаю…';
+  try{
+    const done = await fillTheoryInto(root.id, CALM_COURSE, theorySet('CALM_THEORY'));
+    $('serviceBg').classList.remove('open');
+    toast('Уроков залито: ' + done + '. Время тем обновлено под реальный объём.');
+    await render();
+  }catch(err){ toast('Не получилось: ' + err.message); }
+  btn.disabled = false; btn.textContent = 'Спокойствие: залить теорию';
+};
 
 /* ========================= «Залить всё» ===========================
    Все курсы по очереди, каждый в свою категорию внутри «Развития»,
@@ -8603,6 +8665,7 @@ async function seedCourseInto(parentId, title, course, unit, note){
 }
 
 async function fillTheoryInto(rootId, course, theory){
+  await syncCourseHours(rootId, course);
   if(!theory.length) return 0;
   await reindex();
   const short = new Map();
@@ -8627,6 +8690,38 @@ async function fillTheoryInto(rootId, course, theory){
     }
   }
   return done;
+}
+
+/* Часы тем берутся из данных курса: если курс переработан (например, уроки
+   разбиты на части с реальным временем), план тем и объём курса обновляются.
+   Пройденное (факт) не трогается; тема, у которой факт уже ≥ нового плана,
+   помечается выполненной. План на сегодня пересобирается (сделанное остаётся). */
+async function syncCourseHours(rootId, course){
+  await reindex();
+  const hrs = new Map();
+  course.forEach(([, , ts]) => ts.forEach(t => hrs.set(t[0], t[1])));
+  const kids = studyKids();
+  let changed = 0, total = 0;
+  course.forEach(([, , ts]) => ts.forEach(t => total += t[1]));
+  (function walk(pid){
+    for(const n of (kids.get(pid) || [])){
+      if(n.kind !== 'entry'){ walk(n.id); continue; }
+      if(!hrs.has(n.name)) continue;
+      const h = hrs.get(n.name);
+      if(Math.abs((Number(n.plan) || 0) - h) < 0.005) continue;
+      n._patch = {plan: h};
+      if(!n.done && (Number(n.fact) || 0) >= h - 0.01) n._patch.done = 1;
+      changed++;
+    }
+  })(rootId);
+  for(const n of index.all) if(n._patch){ await repo.update(n.id, n._patch); Object.assign(n, n._patch); delete n._patch; }
+  const root = index.byId.get(rootId);
+  if(root && Math.abs((Number(root.volume) || 0) - total) > 0.005){
+    await repo.update(rootId, {volume: Math.round(total * 100) / 100});
+    changed++;
+  }
+  if(changed && settings.studyToday){ settings.studyToday.key = ''; await saveStudyToday(); }
+  return changed;
 }
 
 async function seedTrainingInto(devId){
@@ -8827,10 +8922,31 @@ function applyReaderFont(){
   if(btn) $(btn).setAttribute('aria-pressed', 'true');
 }
 
-function openReader(node){
+function openReader(node, part){
   $('readerTitle').textContent = node.name;
-  $('readerSub').textContent = nodePath(node) || '';
-  $('readerBody').textContent = node.note || '';
+  const parts = lessonParts(node.note);
+  const body = $('readerBody');
+  if(parts.length && part != null){
+    const i = Math.max(0, Math.min(parts.length - 1, part));
+    const p = parts[i];
+    $('readerSub').textContent = 'Часть ' + p.k + ' из ' + p.n + ' · ' + p.name + ' · ~' + p.min + ' мин';
+    body.textContent = p.text;
+    const nav = document.createElement('div');
+    nav.className = 'rd-nav';
+    const btn = (label, fn, cls) => {
+      const b = document.createElement('button');
+      b.textContent = label; if(cls) b.className = cls;
+      b.onclick = fn; nav.appendChild(b);
+    };
+    if(i > 0) btn('← Часть ' + (i), () => openReader(node, i - 1));
+    btn('Весь урок', () => openReader(node));
+    if(i < parts.length - 1) btn('Часть ' + (i + 2) + ' →', () => openReader(node, i + 1), 'go');
+    body.appendChild(nav);
+  } else {
+    $('readerSub').textContent = nodePath(node) || '';
+    body.textContent = node.note || '';
+  }
+  body.scrollTop = 0;
   applyReaderFont();
   $('readerBg').classList.add('open');
 }
