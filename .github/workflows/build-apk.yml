@@ -7,6 +7,8 @@ name: Sborka APK
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -24,5 +26,13 @@ jobs:
       - run: npx cap sync android
       - run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
       - run: mkdir -p out && cp android/app/build/outputs/apk/debug/app-debug.apk out/tracker.apk
-      - uses: actions/upload-artifact@v4
-        with: {name: apk, path: out/tracker.apk}
+      - name: Publish APK to Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --repo "${{ github.repository }}" --yes --cleanup-tag || true
+          gh release create latest out/tracker.apk \
+            --repo "${{ github.repository }}" \
+            --target "${{ github.sha }}" \
+            --title "Трекер — последняя сборка" \
+            --notes "Собрано из коммита ${{ github.sha }}"
