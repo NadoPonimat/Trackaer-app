@@ -387,6 +387,17 @@
     color:var(--text);font:inherit;font-size:13px;cursor:pointer;
   }
   .sp-banner .pl-bar{margin-top:6px}
+  .sp-q{display:flex;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+  .sp-q .n{width:20px;color:var(--muted);flex:none}
+  .sp-q .t{flex:1;min-width:0}
+  .sp-q .t small{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+  .sp-q.on .t small{color:var(--accent)}
+  .sp-q.fin .t{opacity:.55}
+  .sp-q button{
+    flex:none;width:34px;height:34px;border-radius:8px;border:1px solid var(--line);
+    background:var(--bg);color:var(--text);font:inherit;cursor:pointer;
+  }
+  .sp-q button:disabled{opacity:.3;cursor:default}
   .st-body .setrow .where{display:block;font-size:12px;color:var(--muted);margin-top:3px}
   .table-body{flex:1;overflow:auto;padding:10px 12px calc(env(safe-area-inset-bottom) + 16px)}
   .rel-table{width:100%;border-collapse:collapse;font-size:13px}
@@ -1847,7 +1858,7 @@
       <button id="openReset">Сбросить настройки…</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 80 — план занятий на каждый день (без выгорания), отметки блоков, статистика занятий и прогресса по курсам</div>
+    <div class="hint sv-version" id="version">Версия 82 — очередь курсов: следующий курс подключается сам, рекомендованный порядок, прогноз старта и финиша</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -2081,7 +2092,23 @@ const MemoryRepo = {
     if(!this.d.sets) this.d.sets = [];
     if(!this.d.settings) this.d.settings = {};
   },
-  save(){ localStorage.setItem(DB, JSON.stringify(this.d)); },
+  /* Сохранения за одну пачку операций склеиваются в одно: при заливке
+     сотен тем с теорией полная перезапись JSON после каждой строки
+     съедала память. Сброс на диск — на следующем тике и при уходе со страницы. */
+  save(){
+    if(this._pending) return;
+    this._pending = true;
+    setTimeout(() => this.flush(), 0);
+  },
+  flush(){
+    if(!this._pending) return;
+    this._pending = false;
+    try{ localStorage.setItem(DB, JSON.stringify(this.d)); }
+    catch(e){
+      if(!this._warned){ this._warned = true;
+        try{ toast('Хранилище браузера переполнено — часть данных может не сохраниться'); }catch(_){} }
+    }
+  },
   async listChildren(parentId){
     return this.d.node.filter(n => n.parent_id === parentId)
                       .sort((a,b) => a.sort - b.sort || a.id - b.id);
@@ -2140,6 +2167,8 @@ const MemoryRepo = {
 };
 
 let repo;
+window.addEventListener('pagehide', () => { if(repo === MemoryRepo) MemoryRepo.flush(); });
+window.addEventListener('beforeunload', () => { if(repo === MemoryRepo) MemoryRepo.flush(); });
 
 async function openDatabase(){
   const native = window.Capacitor && window.Capacitor.isNativePlatform
@@ -2175,6 +2204,12 @@ async function openDatabase(){
   // снимок плана на сегодня и история минут по дням.
   const parseJSON = (v, d) => { try{ const x = JSON.parse(v); return x == null ? d : x; }catch(e){ return d; } };
   settings.studyActive = parseJSON(s.studyActive, []).map(Number).filter(Boolean);
+  {
+    const ord = parseJSON(s.studyOrder, null);
+    settings.studyOrder = (Array.isArray(ord) ? ord : settings.studyActive).map(Number).filter(Boolean);
+    const legacy = !Array.isArray(ord) && settings.studyActive.length;
+    settings.studySlots = Number(s.studySlots) || (legacy ? Math.min(3, settings.studyActive.length) : 2);
+  }
   settings.studyMinutes = Number(s.studyMinutes) || 60;
   settings.studyBlock = Number(s.studyBlock) || 25;
   settings.studyWeek = (() => {
@@ -2184,6 +2219,7 @@ async function openDatabase(){
   settings.studyStart = s.studyStart || '';
   settings.studyToday = parseJSON(s.studyToday, null);
   settings.studyHist = parseJSON(s.studyHist, {});
+  settings.resetPassHash = s.resetPassHash || '';
   for(const key of Object.keys(SRS_DEFAULTS))
     settings[key] = s[key] !== undefined && s[key] !== ''
       ? (key === 'srsOrder' ? s[key] : Number(s[key]))
@@ -4241,7 +4277,8 @@ function studyProgressHTML(){
   const within = (n, anc) => { let p = n; while(p){ if(p.id === anc) return true; p = p.parent_id != null ? index.byId.get(p.parent_id) : null; } return false; };
   const courses = studyCourses().filter(c => scope === null || within(c, scope) || within(index.byId.get(scope), c.id));
   const kids = studyKids();
-  const active = settings.studyActive || [];
+  const scfg = studyCfg(kids);
+  const active = scfg.active;
   let plan = 0, fact = 0;
   const rows = courses.map(c => {
     let p = 0, f = 0;
@@ -4251,8 +4288,9 @@ function studyProgressHTML(){
       f += Math.min(Number(n.fact) || 0, Number(n.plan) || 0);
     }
     plan += p; fact += f;
-    return {c, p, f, pct: p ? Math.round(f / p * 100) : 0, on: active.includes(c.id)};
-  }).sort((a, b) => (b.on - a.on) || (b.pct - a.pct));
+    return {c, p, f, pct: p ? Math.round(f / p * 100) : 0, on: active.includes(c.id),
+            q: scfg.queue.includes(c.id) ? scfg.queue.indexOf(c.id) + 1 : 0};
+  }).sort((a, b) => (b.on - a.on) || ((a.q || 999) - (b.q || 999)) || (b.pct - a.pct));
 
   if(!Object.keys(hist).length && !rows.length) return '';
 
@@ -4280,7 +4318,7 @@ function studyProgressHTML(){
     html += '<h3>Прогресс по курсам</h3>';
     for(const r of rows)
       html += '<div class="setrow"><span style="flex:1"><span>' + escHtml(r.c.name) +
-              (r.on ? ' <span class="today">в работе</span>' : '') + '</span>' +
+              (r.on ? ' <span class="today">в работе</span>' : r.q ? ' <span class="today">в очереди №' + r.q + '</span>' : '') + '</span>' +
               '<span class="where">' + fmt(Math.round(r.f * 10) / 10) + ' из ' + fmt(r.p) + ' ч · ' + r.pct + '%</span>' +
               '<span class="pl-bar"><i style="width:' + r.pct + '%"></i></span></span></div>';
   }
@@ -4401,6 +4439,9 @@ $('statsClose').onclick = () => $('statsBg').classList.remove('open');
 const STUDY_WD = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
 const STUDY_MODE = {full:'полный день', light:'лёгкий день', rest:'отдых'};
 const STUDY_MAX_ACTIVE = 3;
+/* рекомендованный порядок: короткий «лёгкий» курс + практичный «тяжёлый», дальше по пользе */
+const STUDY_RECOMMENDED = ['Спокойствие и самообладание', 'Excel', 'Первая медицинская помощь',
+                           'Английский язык', 'SQL и базы данных'];
 let studyPartBlock = null;
 
 function isHourUnit(node){
@@ -4479,9 +4520,18 @@ function courseModel(courseId, kids){
   };
 }
 
-function studyCfg(){
+function studyCfg(kids){
+  kids = kids || studyKids();
+  const order = [...new Set(settings.studyOrder || [])].filter(id => isStudyCourse(index.byId.get(id)));
+  const slots = Math.min(STUDY_MAX_ACTIVE, Math.max(1, settings.studySlots || 2));
+  const active = [], queue = [], finished = [];
+  for(const id of order){
+    if(courseModel(id, kids).left() <= 0) finished.push(id);
+    else if(active.length < slots) active.push(id);
+    else queue.push(id);
+  }
   return {
-    active: (settings.studyActive || []).filter(id => isStudyCourse(index.byId.get(id))),
+    order, slots, active, queue, finished,
     minutes: settings.studyMinutes || 60,
     block: settings.studyBlock || 25,
     week: settings.studyWeek,
@@ -4614,12 +4664,20 @@ async function markStudyBlock(i, minutes){
   if(!b || b.done) return;
   minutes = Math.max(0, Math.min(minutes, b.minutes * 3));
   if(!minutes) return;
+  const before = studyCfg();
   b.applied = b.kind === 'new' ? await applyStudyBlock(b, minutes) : [];
   b.done = minutes;
   await addStudyMinutes(minutes);
   await saveStudyToday();
+  const after = studyCfg();
+  const finished = before.active.filter(id => after.finished.includes(id));
+  const joined = after.active.filter(id => !before.active.includes(id));
   const closed = (b.applied || []).filter(a => a.done).length;
-  toast('Записано ' + minutes + ' мин' + (closed ? ' · тем закрыто: ' + closed : ''));
+  if(finished.length)
+    toast('Курс «' + index.byId.get(finished[0]).name + '» пройден!' +
+          (joined.length ? ' Дальше по очереди: «' + index.byId.get(joined[0]).name + '»' : ''));
+  else
+    toast('Записано ' + minutes + ' мин' + (closed ? ' · тем закрыто: ' + closed : ''));
   await renderStudy();
   updateStatusNotification();
 }
@@ -4650,26 +4708,44 @@ async function undoStudyBlock(i){
 /* прогноз: сегодняшние несделанные блоки считаем выполненными и гоним
    тот же алгоритм вперёд — даёт превью недели и ожидаемые даты окончания */
 function studyForecast(cfg, snap, kids, days){
-  const models = cfg.active.map(id => courseModel(id, kids));
+  let models = cfg.active.map(id => courseModel(id, kids));
   for(const b of snap.blocks)
     if(!b.done) for(const s of b.segs){
       const m = models.find(x => x.topics.some(t => t.id === s.nodeId));
       if(m) m.consume(s.nodeId, s.minutes);
     }
   const today = todayISO();
+  const queue = cfg.queue.slice();
+  const preview = [], finish = {}, start = {};
+  for(const id of cfg.finished) finish[id] = today;
+  for(const id of cfg.active) start[id] = today;
+  /* закончился курс — на его место со следующего дня встаёт следующий из очереди */
+  const refill = date => {
+    models = models.filter(m => {
+      if(m.left() > 0) return true;
+      if(!finish[m.id]) finish[m.id] = date;
+      return false;
+    });
+    while(models.length < cfg.slots && queue.length){
+      const id = queue.shift();
+      const m = courseModel(id, kids);
+      start[id] = addDays(date, 1);
+      if(m.left() <= 0){ finish[id] = date; continue; }
+      models.push(m);
+    }
+  };
+  refill(today);
   let idx = studyDayIndex(today, cfg) + (studyDayMeta(today, cfg).mode === 'rest' ? 0 : 1);
-  const preview = [], finish = {};
-  for(const m of models) if(m.left() <= 0) finish[m.id] = today;
   for(let d = 1; d <= days; d++){
     const date = addDays(today, d);
     const rc = d <= 14 ? studyReviewCards(cfg, date, false, kids).length : 0;
     const day = buildStudyDay(date, models, cfg, rc, idx);
     if(day.meta.mode !== 'rest') idx++;
     if(d <= 6) preview.push({date, ...day});
-    for(const m of models) if(!finish[m.id] && m.left() <= 0) finish[m.id] = date;
-    if(models.every(m => finish[m.id]) && d > 6) break;
+    refill(date);
+    if(!models.length && d > 6) break;
   }
-  return {preview, finish};
+  return {preview, finish, start};
 }
 
 function studyDateLabel(iso){
@@ -4688,11 +4764,11 @@ async function renderStudy(){
   const kids = studyKids();
   let html = '';
 
-  if(!cfg.active.length){
-    $('studySub').textContent = 'Курсы ещё не выбраны';
-    html += '<div class="sp-note">Выбери до ' + STUDY_MAX_ACTIVE + ' курсов, которые проходишь сейчас, — ' +
-            'план на каждый день соберётся сам. Остальные подождут своей очереди: ' +
-            'больше трёх предметов одновременно — прямой путь к выгоранию.</div>';
+  if(!cfg.order.length){
+    $('studySub').textContent = 'Очередь курсов пуста';
+    html += '<div class="sp-note">Собери очередь курсов — или нажми «Рекомендованная очередь». ' +
+            'Одновременно идут только первые курсы (по умолчанию два), остальные ждут и подключаются сами, ' +
+            'как только освобождается место. Больше трёх предметов сразу — прямой путь к выгоранию.</div>';
     html += studySettingsHTML(cfg, kids, true);
     box.innerHTML = html;
     return;
@@ -4711,8 +4787,8 @@ async function renderStudy(){
             'во время отдыха мозг закрепляет выученное. Завтра продолжим.</div></div>';
   } else if(!snap.blocks.length){
     html += '<div class="sp-block"><b>На сегодня занятий нет.</b><div class="sp-note">' +
-            (cfg.active.every(id => courseModel(id, kids).left() <= 0)
-              ? 'Все выбранные курсы пройдены — выбери следующие в настройках ниже.'
+            (!cfg.active.length
+              ? 'Все курсы из очереди пройдены — добавь следующие в настройках ниже.'
               : 'Всё запланированное на сегодня уже сделано.') + '</div></div>';
   } else {
     const pct = total ? Math.min(100, Math.round(done / total * 100)) : 0;
@@ -4749,7 +4825,7 @@ async function renderStudy(){
     html += '<div class="sp-note">Нажми на тему, чтобы открыть теорию.</div>';
   }
 
-  const fc = studyForecast(cfg, snap, kids, 730);
+  const fc = studyForecast(cfg, snap, kids, 1830);
   html += '<h3>Следующие дни</h3>';
   for(const d of fc.preview){
     const mins = d.blocks.reduce((s, b) => s + b.minutes, 0);
@@ -4771,17 +4847,27 @@ async function renderStudy(){
             '<span class="t">' + t + '</span><span class="m">' + (mins ? mins + ' мин' : '') + '</span></div>';
   }
 
-  html += '<h3>Курсы в работе</h3>';
-  for(const id of cfg.active){
+  html += '<h3>Очередь курсов</h3>';
+  for(const id of cfg.order){
     const n = index.byId.get(id);
     const m = courseModel(id, kids);
     const planMin = m.topics.reduce((s, t) => s + (Number(index.byId.get(t.id).plan) || 0) * 60, 0);
     const pct = planMin ? Math.round((1 - m.left() / planMin) * 100) : 0;
-    const f = fc.finish[id];
-    html += '<div class="setrow"><span style="flex:1"><span>' + escHtml(n.name) + '</span>' +
-            '<span class="where">пройдено ' + pct + '% · ' +
-            (f ? (f === today ? 'курс пройден' : 'закончишь ≈ ' + studyMonthLabel(f)) : 'больше двух лет при текущей нагрузке') +
-            '</span><span class="pl-bar"><i style="width:' + pct + '%"></i></span></span></div>';
+    const f = fc.finish[id], st = fc.start[id];
+    let status, tag = '';
+    if(cfg.finished.includes(id)){ status = 'курс пройден'; tag = 'пройден'; }
+    else if(cfg.active.includes(id)){
+      tag = 'в работе';
+      status = 'пройдено ' + pct + '% · ' + (f ? 'закончишь ≈ ' + studyMonthLabel(f) : 'больше пяти лет при текущей нагрузке');
+    } else {
+      tag = 'в очереди';
+      status = (pct ? 'пройдено ' + pct + '% · ' : '') +
+               (st ? 'старт ≈ ' + studyMonthLabel(st) + ' · ' + (f ? 'финиш ≈ ' + studyMonthLabel(f) : 'финиш позже чем через 5 лет') : 'старт позже чем через 5 лет');
+    }
+    html += '<div class="setrow"><span style="flex:1"><span>' + escHtml(n.name) +
+            ' <span class="today">' + tag + '</span></span>' +
+            '<span class="where">' + status + '</span>' +
+            '<span class="pl-bar"><i style="width:' + pct + '%"></i></span></span></div>';
   }
 
   html += studySettingsHTML(cfg, kids, false);
@@ -4790,15 +4876,33 @@ async function renderStudy(){
 
 function studySettingsHTML(cfg, kids, open){
   let h = '<details class="sp-cfg"' + (open ? ' open' : '') + '><summary>Настройки плана</summary>';
-  h += '<label>Курсы в работе — до ' + STUDY_MAX_ACTIVE + ' (порядок нажатия = очерёдность)</label><div class="sp-chips">';
-  const courses = studyCourses();
-  if(!courses.length)
-    h += '<div class="sp-note">Курсов пока нет. Загрузи курс в Сервис → Данные, и он появится здесь.</div>';
-  for(const c of courses){
-    const on = cfg.active.includes(c.id);
-    const pos = on ? cfg.active.indexOf(c.id) + 1 + '. ' : '';
-    h += '<button data-act="course" data-id="' + c.id + '" aria-pressed="' + on + '">' + pos + escHtml(c.name) + '</button>';
-  }
+  h += '<label>Курсов одновременно</label><div class="seg">';
+  for(const n of [1, 2, 3])
+    h += '<button data-act="slots" data-v="' + n + '" aria-pressed="' + (cfg.slots === n) + '">' + n + '</button>';
+  h += '</div><div class="sp-note">Рекомендую 2: оба курса идут каждый учебный день и заканчиваются быстрее, чем три вразнобой.</div>';
+
+  h += '<label>Очередь — сверху те, что в работе; закончился курс — следующий подключится сам</label>';
+  if(!cfg.order.length) h += '<div class="sp-note">Очередь пуста.</div>';
+  cfg.order.forEach((id, k) => {
+    const c = index.byId.get(id);
+    const st = cfg.finished.includes(id) ? 'fin' : cfg.active.includes(id) ? 'on' : 'wait';
+    h += '<div class="sp-q ' + st + '"><span class="n">' + (k + 1) + '.</span>' +
+         '<span class="t">' + escHtml(c.name) + '<small>' +
+         ({fin: 'пройден', on: 'в работе', wait: 'ждёт очереди'})[st] + '</small></span>' +
+         '<button data-act="up" data-id="' + id + '" aria-label="Выше"' + (k === 0 ? ' disabled' : '') + '>↑</button>' +
+         '<button data-act="down" data-id="' + id + '" aria-label="Ниже"' + (k === cfg.order.length - 1 ? ' disabled' : '') + '>↓</button>' +
+         '<button data-act="rm" data-id="' + id + '" aria-label="Убрать">✕</button></div>';
+  });
+  h += '<div class="sp-btns"><button data-act="recommend">Рекомендованная очередь</button></div>';
+
+  const courses = studyCourses().filter(c => !cfg.order.includes(c.id));
+  h += '<label>Добавить в конец очереди</label><div class="sp-chips">';
+  if(!studyCourses().length)
+    h += '<div class="sp-note">Курсов пока нет. Загрузи их в Сервис → Готовые наборы → «Залить всё».</div>';
+  else if(!courses.length)
+    h += '<div class="sp-note">Все курсы уже в очереди.</div>';
+  for(const c of courses)
+    h += '<button data-act="course" data-id="' + c.id + '">+ ' + escHtml(c.name) + '</button>';
   h += '</div><label>Минут учёбы в день (без перерывов)</label><div class="seg wrap">';
   for(const m of [30, 45, 60, 90, 120])
     h += '<button data-act="min" data-v="' + m + '" aria-pressed="' + (cfg.minutes === m) + '">' + m + '</button>';
@@ -4819,7 +4923,8 @@ function studySettingsHTML(cfg, kids, open){
        '• лёгкий день — половина нагрузки, день отдыха — ноль;<br>' +
        '• каждая 4-я неделя разгрузочная — 60% нагрузки;<br>' +
        '• пропуск не копит долгов: план каждый день строится от того, что реально пройдено;<br>' +
-       '• закрытая тема на следующий день сама попадает в интервальное повторение.</div>';
+       '• закрытая тема на следующий день сама попадает в интервальное повторение.</div>' +
+       '<div class="sp-btns" style="margin-top:12px"><button data-act="reset">Сбросить настройки плана…</button></div>';
   return h + '</details>';
 }
 
@@ -4828,7 +4933,8 @@ async function saveStudyCfg(){
     settings.studyStart = todayISO();
     await repo.setSetting('studyStart', settings.studyStart);
   }
-  await repo.setSetting('studyActive', JSON.stringify(settings.studyActive));
+  await repo.setSetting('studyOrder', JSON.stringify(settings.studyOrder));
+  await repo.setSetting('studySlots', String(settings.studySlots));
   await repo.setSetting('studyMinutes', String(settings.studyMinutes));
   await repo.setSetting('studyBlock', String(settings.studyBlock));
   await repo.setSetting('studyWeek', JSON.stringify(settings.studyWeek));
@@ -4855,6 +4961,8 @@ $('studyBody').addEventListener('click', async e => {
     $('studyPartHint').textContent = 'По плану ' + b.minutes + ' мин. Недоделанное само перейдёт на следующие дни.';
     $('studyPartBg').classList.add('open');
     setTimeout(() => $('fStudyPart').focus(), 50);
+  } else if(act === 'reset'){
+    openResetSheet('plan');
   } else if(act === 'undo'){
     await undoStudyBlock(i);
   } else if(act === 'review'){
@@ -4871,11 +4979,32 @@ $('studyBody').addEventListener('click', async e => {
     if(node) openReader(node);
   } else if(act === 'course'){
     const id = Number(el.dataset.id);
-    const a = settings.studyActive = studyCfg().active;
-    if(a.includes(id)) a.splice(a.indexOf(id), 1);
-    else if(a.length >= STUDY_MAX_ACTIVE){ toast('Не больше ' + STUDY_MAX_ACTIVE + ' курсов одновременно — сначала сними один'); return; }
-    else a.push(id);
+    const o = settings.studyOrder = studyCfg().order;
+    if(!o.includes(id)) o.push(id);
     await saveStudyCfg();
+  } else if(act === 'up' || act === 'down' || act === 'rm'){
+    const id = Number(el.dataset.id);
+    const o = settings.studyOrder = studyCfg().order;
+    const k = o.indexOf(id);
+    if(k < 0) return;
+    if(act === 'rm') o.splice(k, 1);
+    else {
+      const j = act === 'up' ? k - 1 : k + 1;
+      if(j < 0 || j >= o.length) return;
+      [o[k], o[j]] = [o[j], o[k]];
+    }
+    await saveStudyCfg();
+  } else if(act === 'slots'){
+    settings.studySlots = Number(el.dataset.v); await saveStudyCfg();
+  } else if(act === 'recommend'){
+    const rec = STUDY_RECOMMENDED.map(t => (studyCourses().find(c => c.name === t) || {}).id).filter(Boolean);
+    if(!rec.length){ toast('Сначала загрузи курсы: Сервис → Готовые наборы → «Залить всё»'); return; }
+    const cur = studyCfg().order;
+    if(cur.length && !confirm('Поставить рекомендованный порядок? Остальные курсы из очереди останутся после него, пройденное не пострадает.')) return;
+    settings.studyOrder = [...rec, ...cur.filter(id => !rec.includes(id))];
+    settings.studySlots = 2;
+    await saveStudyCfg();
+    toast('Очередь: ' + rec.map(id => index.byId.get(id).name).join(' → '));
   } else if(act === 'min'){
     settings.studyMinutes = Number(el.dataset.v); await saveStudyCfg();
   } else if(act === 'blk'){
@@ -4908,7 +5037,8 @@ $('studyClose').onclick = () => { $('studyBg').classList.remove('open'); render(
 
 /* строка на главном экране: что сегодня по плану */
 function studyBannerHTML(){
-  const active = (settings.studyActive || []).filter(id => isStudyCourse(index.byId.get(id)));
+  if(!(settings.studyOrder || []).length) return '';
+  const active = studyCfg().active;
   if(!active.length) return '';
   const today = todayISO();
   const snap = settings.studyToday;
@@ -8565,7 +8695,7 @@ $('seedAll').onclick = async () => {
    (книги, закладки, люди, журнал приложений, история занятий) — их
    сброс не касается никогда.
 ==================================================================*/
-const RESET_PLAN_KEYS = ['studyActive','studyMinutes','studyBlock','studyWeek','studyStart','studyToday'];
+const RESET_PLAN_KEYS = ['studyActive','studyOrder','studySlots','studyMinutes','studyBlock','studyWeek','studyStart','studyToday'];
 const RESET_ALL_KEYS = [...new Set([...RESET_PLAN_KEYS,
   'theme','splashAnim','splashPhoto','splashPhotoDim','splashShowTitle',
   'splashMusic','splashMusicName','splashMusicDuration','readerFont','readerTheme',
@@ -8575,7 +8705,7 @@ let resetScope = 'plan';
 function syncResetScope(){
   [...$('resetScope').children].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.s === resetScope)));
   $('resetWhat').textContent = resetScope === 'plan'
-    ? 'Сбросятся: выбранные курсы, минуты в день, длина блока, дни недели и план на сегодня. Пройденное по темам и статистика останутся.'
+    ? 'Сбросятся: очередь курсов, число курсов одновременно, минуты в день, длина блока, дни недели и план на сегодня. Пройденное по темам и статистика останутся.'
     : 'Сбросятся: цветовая тема, заставка (анимация, фото, музыка), план занятий, параметры повторения, режим расписания, единица плана, бюджет, уведомления, шрифт читалки. ' +
       'Записи, курсы, прогресс, книги, люди, финансы и статистика останутся.';
 }
