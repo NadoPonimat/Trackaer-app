@@ -1920,7 +1920,7 @@
       <button id="openReset">Сбросить настройки…</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 91 — английский переписан: ступень 1 по методике спецкурсов (фонетика первой, дриллинг, диктант, пересказ), ежедневная языковая практика 15 мин; напоминания (утро, тренировка, вечер если не сделано); статистика невыполненной учёбы и пропущенных тренировок; интенсив раз в неделю (+1 подход к каждому упражнению: Сб → Чт → Пн → Вт по кругу), учитывается в статистике; статистика тренировок по каждому атлету: итог в %, пропуски, что недотягивает; тренировки по дням: Пн Крис Хериа, Вт Фрэнк Медрано, Чт Деян Стипич, Сб Майк Вазкез; кнопка «Начать тренировку» с нормой, результатом по подходам и отставанием от нормы; фазы по неделям атлета; уроками стали «Первая помощь», «Выживание», «Ориентирование», «Слежка и контрнаблюдение»</div>
+    <div class="hint sv-version" id="version">Версия 90 — напоминания (утро, тренировка, вечер если не сделано); статистика невыполненной учёбы и пропущенных тренировок; интенсив раз в неделю (+1 подход к каждому упражнению: Сб → Чт → Пн → Вт по кругу), учитывается в статистике; статистика тренировок по каждому атлету: итог в %, пропуски, что недотягивает; тренировки по дням: Пн Крис Хериа, Вт Фрэнк Медрано, Чт Деян Стипич, Сб Майк Вазкез; кнопка «Начать тренировку» с нормой, результатом по подходам и отставанием от нормы; фазы по неделям атлета; уроками стали «Первая помощь», «Выживание», «Ориентирование», «Слежка и контрнаблюдение»</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -4801,7 +4801,7 @@ function studyCfg(kids){
     start: settings.studyStart || todayISO()
   };
 }
-const studyCfgKey = c => JSON.stringify([c.active, c.minutes, c.block, c.week, 'lang1']);
+const studyCfgKey = c => JSON.stringify([c.active, c.minutes, c.block, c.week]);
 
 function studyDayMeta(date, cfg){
   const wd = new Date(date + 'T00:00:00').getDay();
@@ -4865,13 +4865,6 @@ function buildStudyDay(date, models, cfg, reviewCount, dayIdx, budgetOverride){
     const mins = segs.reduce((s, x) => s + x.minutes, 0);
     if(mins > 0) blocks.push({kind: 'new', courseId: c.id, courseName: c.name, minutes: mins, segs});
   });
-  /* язык держится на ежедневности: в каждый учебный день +15 минут практики
-     первого языка «в работе» — даже если сегодня по очереди другие курсы */
-  const lang = models.find(m => /язык$/i.test(m.name) && m.left() > 0);
-  if(lang){
-    const cur = lang.topics.find(t => t.rem > 0) || lang.topics[lang.topics.length - 1];
-    blocks.push({kind: 'lang', courseId: lang.id, courseName: lang.name, minutes: 15, segs: [], nodeId: cur ? cur.id : null});
-  }
   return {meta, blocks};
 }
 
@@ -5595,13 +5588,7 @@ async function renderStudy(){
     const rest = cfg.block >= 45 ? 15 : 5;
     snap.blocks.forEach((b, i) => {
       html += '<div class="sp-block' + (b.done ? ' done' : '') + '">';
-      if(b.kind === 'lang'){
-        const cur = b.nodeId ? index.byId.get(b.nodeId) : null;
-        html += '<div class="sp-bh"><b>Языковая практика · ' + b.minutes + ' мин</b><span class="sp-course">' + escHtml(b.courseName) + '</span></div>' +
-                '<div class="sp-note">Каждый день, вслух: 5 мин — слова и фразы из шпаргалки; 7 мин — shadowing: дрилл текущего урока за озвучкой Google Переводчика; ' +
-                '3 мин — расскажи на диктофон, как прошёл день, и найди 2 ошибки.</div>' +
-                (cur ? '<div class="sp-seg" data-act="read" data-node="' + cur.id + '">' + escHtml(cur.name) + '<span class="where">текущий урок — дрилл для shadowing</span></div>' : '');
-      } else if(b.kind === 'review'){
+      if(b.kind === 'review'){
         html += '<div class="sp-bh"><b>Повторение · ' + b.minutes + ' мин</b>' +
                 '<span class="sp-course">' + b.cards + ' карт.</span></div>' +
                 '<div class="sp-note">Сначала освежаем пройденное — так новое ложится на знакомую основу.</div>';
@@ -9446,6 +9433,7 @@ function theoryButton(id, arr, label){
     btn.textContent = label;
   };
 }
+theoryButton('fillEngTheory', () => theorySet('ENG_THEORY'), 'Английский: залить теорию');
 theoryButton('fillAraTheory', () => theorySet('ARA_THEORY'), 'Арабский: залить теорию');
 theoryButton('fillSpaTheory', () => theorySet('SPA_THEORY'), 'Испанский: залить теорию');
 theoryButton('fillMartialTheory', () => theorySet('MARTIAL_THEORY'), 'Боевая система: залить теорию');
@@ -9463,7 +9451,6 @@ const LESSON_COURSES = [
   ['Выживание', () => SURVIVAL_COURSE, 'SURVIVAL_THEORY', 'fillSurvivalTheory', 'Выживание: залить теорию', 'Курс: выживание'],
   ['Ориентирование на местности', () => NAVIGATION_COURSE, 'NAVIGATION_THEORY', 'fillNavigationTheory', 'Ориентирование на местности: залить теорию', 'Курс: ориентирование на местности'],
   ['Слежка и контрнаблюдение', () => SURVEILLANCE_COURSE, 'SURVEILLANCE_THEORY', 'fillSurveillanceTheory', 'Слежка и контрнаблюдение: залить теорию', 'Курс: слежка и контрнаблюдение'],
-  ['Английский язык', () => ENG_COURSE, 'ENG_THEORY', 'fillEngTheory', 'Английский: залить теорию', 'Курс: английский', true],
 ];
 function lessonSig(course, th){
   let chars = 0, hrs = 0;
@@ -9479,51 +9466,9 @@ async function fillLessonCourse(title, getCourse, theoryVar){
   await reindex();
   const roots = index.all.filter(n => n.kind === 'category' && n.name === title && Number(n.volume) > 0);
   if(!roots.length) return -1;
-  const lc = LESSON_COURSES.find(x => x[0] === title);
   let done = 0;
-  for(const r of roots){
-    if(lc && lc[6]) await restructureCourse(r.id, getCourse());
-    done += await fillTheoryInto(r.id, getCourse(), theorySet(theoryVar));
-  }
+  for(const r of roots) done += await fillTheoryInto(r.id, getCourse(), theorySet(theoryVar));
   return done;
-}
-/* Курс переписан с новой программой (другие модули и темы, как английский по ступеням):
-   добавляем новые модули и темы в тот же курс, а старые темы убираем — но только
-   нетронутые: без пройденного времени и без своих заметок. Тронутые остаются. */
-async function restructureCourse(rootId, course){
-  await reindex();
-  const root = index.byId.get(rootId);
-  const modNames = new Set(course.map(m => m[0]));
-  const titles = new Set(course.flatMap(m => m[2].map(t => t[0])));
-  const kids = studyKids();
-  const isPristine = n => !(Number(n.fact) > 0) && !n.done && (!n.note || n.note.includes('ПРОВЕРЬ СЕБЯ') || n.note.length < 400);
-  const oldMods = (kids.get(rootId) || []).filter(m => m.kind === 'category' && !modNames.has(m.name));
-  let removed = 0;
-  for(const m of oldMods){
-    const ents = [];
-    (function walk(pid){ for(const n of (kids.get(pid) || [])){ if(n.kind === 'entry') ents.push(n); else walk(n.id); } })(m.id);
-    for(const e of ents) if(!titles.has(e.name) && isPristine(e)){ await repo.remove(e.id); removed++; }
-  }
-  /* новые модули и темы — по порядку программы */
-  let pos = 0;
-  const have = new Map((await repo.listChildren(rootId)).filter(n => n.kind === 'category').map(n => [n.name, n]));
-  for(const [name, src, topics] of course){
-    let modId = have.has(name) ? have.get(name).id : await createNode(rootId, {name, kind: 'category', note: 'Источники: ' + src});
-    await repo.update(modId, {sort: pos++});
-    const hv = new Set((await repo.listChildren(modId)).map(n => n.name));
-    let tp = 0;
-    for(const [topic, hrs, what] of topics){
-      if(!hv.has(topic)) await createNode(modId, {name: topic, kind: 'entry', plan: hrs, fact: 0, note: what});
-    }
-  }
-  /* опустевшие старые модули убираем, непустые (с пройденным) — в конец */
-  for(const m of oldMods){
-    const left = await repo.listChildren(m.id);
-    if(!left.length) await repo.remove(m.id);
-    else await repo.update(m.id, {sort: pos++});
-  }
-  await reindex();
-  return removed;
 }
 async function upgradeLessonCourses(){
   let applied = {};
