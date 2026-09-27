@@ -21,18 +21,10 @@ jobs:
       - run: mkdir -p www && cp index.html *.js www/
       - run: mkdir -p assets && cp icon.png assets/icon.png && cp icon-foreground.png assets/icon-foreground.png && cp icon-background.png assets/icon-background.png && cp splash.png assets/splash.png
       - run: npm install
-      - run: npx cap add android
-      - run: npx @capacitor/assets generate --android --iconBackgroundColor '#000000' --iconBackgroundColorDark '#000000' --splashBackgroundColor '#000000' --splashBackgroundColorDark '#000000'
-      - run: npx cap sync android
-      - run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
-      - run: mkdir -p out && cp android/app/build/outputs/apk/debug/app-debug.apk out/tracker.apk
-      - name: Publish APK to Releases
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Plugins (voice, notifications) matching Capacitor version
         run: |
-          gh release delete latest --repo "${{ github.repository }}" --yes --cleanup-tag || true
-          gh release create latest out/tracker.apk \
-            --repo "${{ github.repository }}" \
-            --target "${{ github.sha }}" \
-            --title "Трекер — последняя сборка" \
-            --notes "Собрано из коммита ${{ github.sha }}"
+          CAP=$(node -p "require('@capacitor/core/package.json').version.split('.')[0]")
+          echo "Capacitor major: $CAP"
+          case "$CAP" in 5) TTS=3;; 6) TTS=5;; 7) TTS=6;; *) TTS=8;; esac
+          npm install "@capacitor-community/text-to-speech@^$TTS"
+          npm ls @capacitor/local-notifications >/dev/
