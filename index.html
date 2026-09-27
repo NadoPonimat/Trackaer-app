@@ -344,7 +344,10 @@
   .st-colday{font-size:9px;color:var(--muted);text-align:center;min-height:11px}
 
   /* план занятий на день */
-  #studyPartBg,#resetBg{z-index:30}
+  #studyPartBg,#resetBg,#goalBg,#woPickBg{z-index:30}
+  #vocabBg,#examBg,#diaryBg,#workoutBg{z-index:26}
+  #readerBg{z-index:27}
+  #focusBg{z-index:28}
   .sp-day{font-size:14px;margin-bottom:6px}
   .sp-day b{font-weight:650}
   .sp-note{font-size:12px;color:var(--muted);margin:4px 0 10px}
@@ -420,6 +423,50 @@
   .wo-pick.done .sp-btns{margin-top:6px}
   .sp-banner.wo.off{border-style:dashed;color:var(--muted)}
   .sp-note.ok{color:var(--income)}
+  .rd-lang{white-space:normal}
+  .rd-line{white-space:pre-wrap;min-height:1em}
+  .rd-say{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;margin:0 6px 0 0;padding:0;border-radius:50%;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:11px;vertical-align:middle;cursor:pointer;flex:none}
+  .rd-chips{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 6px}
+  .rd-chips button{font-size:12px;padding:3px 8px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--text)}
+  .rd-langbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px;position:sticky;top:-18px;z-index:2;background:var(--bg);padding:8px 0;border-bottom:1px solid var(--line)}
+  .rd-langbar button{font:inherit;font-size:13px;padding:6px 10px;border-radius:var(--radius);border:1px solid var(--accent);background:var(--surface);color:var(--text)}
+  .rd-rec{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+  .rd-rec audio{height:32px;max-width:220px}
+  .rd-hint{font-size:12px;color:var(--muted);margin-bottom:6px}
+  .vc-search{width:100%;box-sizing:border-box;margin:12px 0 6px;padding:8px 10px;font:inherit;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:var(--radius)}
+  .vc-row{display:flex;gap:8px;align-items:center;padding:7px 0;border-top:1px dashed var(--line);font-size:14px}
+  .vc-row > span:nth-child(2){flex:1;min-width:0}
+  .vc-row small{display:block;color:var(--muted);font-size:12px}
+  .vc-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px 16px;text-align:center;margin:10px 0}
+  .vc-q{font-size:22px;font-weight:600;margin-bottom:8px}
+  .vc-a{font-size:20px;margin-top:14px}
+  .focus-box{margin:auto;padding:24px;text-align:center;width:100%;max-width:420px;box-sizing:border-box}
+  .focus-name{font-size:15px;color:var(--muted);margin-bottom:10px}
+  .focus-time{font-size:72px;font-weight:700;letter-spacing:2px;font-variant-numeric:tabular-nums}
+  .focus-bar{margin:14px 0}
+  .focus-note{font-size:12px;color:var(--muted);margin-bottom:16px}
+  .focus-btns{justify-content:center}
+  .streak{margin-top:8px;font-size:13px;color:var(--text)}
+  .wk-row{display:grid;grid-template-columns:1fr auto 70px;gap:8px;padding:5px 0;border-top:1px dashed var(--line);font-size:13px;align-items:center}
+  .wk-row.hd{border-top:none;font-size:11px;color:var(--muted)}
+  .wk-row .ok{color:var(--income)} .wk-row .far{color:var(--accent)}
+  .wk-row .where{text-align:right}
+  button.mini{font:inherit;font-size:11px;padding:1px 7px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--text)}
+  .dy-lock{text-align:center;padding:30px 10px}
+  .dy-lock-i{font-size:42px;margin-bottom:10px}
+  .dy-lock input,#dySleep{display:block;width:100%;box-sizing:border-box;margin:8px 0;padding:9px 10px;font:inherit;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:var(--radius)}
+  #dySleep{width:90px;display:inline-block;margin:0}
+  .dy-date{font-size:16px;font-weight:600;margin-bottom:10px}
+  .dy-scale{display:flex;align-items:center;gap:6px;margin:6px 0;font-size:13px}
+  .dy-scale span{width:90px;color:var(--muted)}
+  .dy-scale button{min-width:36px;padding:5px 6px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--text);font-size:16px}
+  .dy-scale button[aria-pressed="true"]{border-color:var(--accent);background:var(--surface-2)}
+  #dyText{width:100%;box-sizing:border-box;min-height:180px;margin-top:10px;padding:10px;font:inherit;font-size:15px;line-height:1.5;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:var(--radius);resize:vertical}
+  .dy-saved{font-size:11px;color:var(--muted);text-align:right;margin:2px 0 8px}
+  .dy-item{display:grid;grid-template-columns:auto auto 1fr;gap:8px;padding:8px 0;border-top:1px dashed var(--line);font-size:13px;cursor:pointer;align-items:baseline}
+  .dy-item.on{color:var(--accent)}
+  .dy-item .d{color:var(--muted);white-space:nowrap}
+  .dy-item .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .st-ath{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px}
   .st-ath-h{display:flex;align-items:baseline;gap:8px}
   .st-ath-h b{font-size:15px}
@@ -1365,6 +1412,42 @@
   <div class="st-body" id="woBody"></div>
 </div>
 
+<div class="graph-bg" id="vocabBg">
+  <div class="graph-top"><div><div class="graph-title">Словарь</div><div class="graph-sub" id="vocabSub"></div></div>
+    <button class="more" id="vocabClose" aria-label="Закрыть">✕</button></div>
+  <div class="st-body" id="vocabBody"></div>
+</div>
+<div class="graph-bg" id="focusBg">
+  <div class="focus-box">
+    <div class="focus-name" id="focusName"></div>
+    <div class="focus-time" id="focusTime">25:00</div>
+    <div class="pl-bar focus-bar"><i id="focusBar" style="width:0%"></i></div>
+    <div class="focus-note">Телефон экраном вниз, уведомления подождут. Когда время выйдет — блок отметится сам.</div>
+    <div class="sp-btns focus-btns"><button id="focusPause">Пауза</button><button class="go" id="focusDone">Закончил раньше</button><button id="focusCancel">Отмена</button></div>
+  </div>
+</div>
+<div class="graph-bg" id="examBg">
+  <div class="graph-top"><div><div class="graph-title" id="examTitle">Экзамен</div><div class="graph-sub" id="examSub"></div></div>
+    <button class="more" id="examClose" aria-label="Закрыть">✕</button></div>
+  <div class="st-body" id="examBody"></div>
+</div>
+<div class="graph-bg" id="diaryBg">
+  <div class="graph-top"><div><div class="graph-title">Дневник</div><div class="graph-sub" id="diarySub"></div></div>
+    <button class="more" id="diaryClose" aria-label="Закрыть">✕</button></div>
+  <div class="st-body" id="diaryBody"></div>
+</div>
+<div class="sheet-bg" id="goalBg">
+  <div class="sheet">
+    <h2>Цель на месяц</h2>
+    <div class="field"><label for="goalKind">Что считаем</label>
+      <select id="goalKind"><option value="train">Тренировки (любые)</option><option value="study">Часы учёбы</option><option value="words">Слова в словаре (повторения)</option>
+        <option value="diary">Дни с записью в дневнике</option><option value="exam">Экзамены на 80%+</option><option value="custom">Своя цель (отмечаю вручную +1)</option></select></div>
+    <div class="field"><label for="goalTitle">Название</label><input id="goalTitle" placeholder="Например: 16 тренировок"></div>
+    <div class="field"><label for="goalTarget">Сколько за месяц</label><input id="goalTarget" type="number" inputmode="decimal" min="1"></div>
+    <div class="actions"><button id="goalCancel">Отмена</button><button id="goalSave" class="primary">Поставить</button></div>
+  </div>
+</div>
+
 <div class="sheet-bg" id="woPickBg">
   <div class="sheet">
     <h2>Тренировка вне плана</h2>
@@ -1730,6 +1813,8 @@
       <button id="openPlan">План и сроки</button>
       <button id="openReview">Повторение</button>
       <button id="openStats">Статистика учёбы</button>
+      <button id="openDiary">Дневник 🔒</button>
+      <button id="openVocab">Словарь</button>
       <button id="openGraph">Карта связей</button>
       <button id="openPeople">Люди</button>
       <button id="openBooks">Книги</button>
@@ -1935,7 +2020,7 @@
       <button id="openReset">Сбросить настройки…</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 92 — тренировки вне плана: сделать заранее, отработать пропуск, дополнительная (всё в статистике); английский по методике спецкурсов; напоминания; интенсив</div>
+    <div class="hint sv-version" id="version">Версия 93 — дневник с паролем и шифрованием; озвучка фраз и диктофон в уроках языков; словарь с повторением; фокус-таймер; экзамен по модулю; серия дней, итог недели, цели месяца</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -2300,6 +2385,12 @@ async function openDatabase(){
   settings.workoutDraft = parseJSON(s.workoutDraft, null);
   settings.workoutLog = parseJSON(s.workoutLog, []);
   settings.physOff = parseJSON(s.physOff, null);
+  settings.vocab = parseJSON(s.vocab, []);
+  settings.vocabHist = parseJSON(s.vocabHist, {});
+  settings.goals = parseJSON(s.goals, []);
+  settings.examLog = parseJSON(s.examLog, []);
+  settings.diaryEnc = parseJSON(s.diaryEnc, null);
+  settings.diaryDays = parseJSON(s.diaryDays, []);
   settings.studyDays = parseJSON(s.studyDays, []);
   settings.remind = Object.assign({on: true, morning: '09:00', train: '18:00', evening: '21:00'}, parseJSON(s.remind, {}));
   settings.physStart = s.physStart || '';
@@ -2715,7 +2806,7 @@ async function render(){
         (a.plan ? ' · <b>' + fmt(a.fact) + '</b> из <b>' + fmt(a.plan) + '</b>' +
                   (unit ? ' ' + unit : '') : '');
   } else {
-    totalEl.innerHTML = studyBannerHTML() + await workoutBannerHTML().catch(() => '');
+    totalEl.innerHTML = studyBannerHTML() + await workoutBannerHTML().catch(() => '') + streakHTML();
     const sb = $('spBanner');
     if(sb) sb.onclick = openStudy;
     const wb = $('woBanner');
@@ -3738,14 +3829,15 @@ $('menuDelete').onclick = async () => {
   render();
 };
 
-['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg','bookTocBg','lockBg','tmplBg','tmplEditBg','studyPartBg','resetBg'].forEach(id => {
+['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg','bookTocBg','lockBg','tmplBg','tmplEditBg','studyPartBg','resetBg','goalBg','woPickBg'].forEach(id => {
   const bg = $(id);
   bg.onclick = e => { if(e.target === bg) bg.classList.remove('open'); };
 });
 
 if(window.Capacitor && window.Capacitor.Plugins.App){
   window.Capacitor.Plugins.App.addListener('backButton', () => {
-    for(const id of ['resetBg','studyPartBg','tmplEditBg','tmplBg','pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg','newsBg','lockBg','studyBg']){
+    if($('diaryBg').classList.contains('open')){ flushDiary().finally(diaryLock); return; }
+    for(const id of ['goalBg','woPickBg','examBg','vocabBg','workoutBg','resetBg','studyPartBg','tmplEditBg','tmplBg','pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg','newsBg','lockBg','studyBg']){
       if($(id).classList.contains('open')){ $(id).classList.remove('open'); return; }
     }
     if(path.length){ path.pop(); render(); return; }
@@ -4616,7 +4708,7 @@ function stTile(label, value){
 function renderStats(){
   const s = studyStats();
   const box = $('statsBody');
-  const progress = studyProgressHTML() + studyMissHTML() + trainStatsHTML();
+  const progress = streakHTML() + weekSummaryHTML() + goalsHTML() + studyProgressHTML() + studyMissHTML() + trainStatsHTML();
 
   if(s.total === 0){
     box.innerHTML = progress ||
@@ -4960,6 +5052,7 @@ async function markStudyBlock(i, minutes){
   if(!minutes) return;
   const before = studyCfg();
   b.applied = b.kind === 'new' ? await applyStudyBlock(b, minutes) : [];
+  const newWords = b.kind === 'new' && minutes >= b.minutes * 0.8 ? await addVocabFromBlock(b).catch(() => 0) : 0;
   b.done = minutes;
   await addStudyMinutes(minutes);
   await saveStudyToday();
@@ -4971,7 +5064,7 @@ async function markStudyBlock(i, minutes){
     toast('Курс «' + index.byId.get(finished[0]).name + '» пройден!' +
           (joined.length ? ' Дальше по очереди: «' + index.byId.get(joined[0]).name + '»' : ''));
   else
-    toast('Записано ' + minutes + ' мин' + (closed ? ' · тем закрыто: ' + closed : ''));
+    toast('Записано ' + minutes + ' мин' + (closed ? ' · тем закрыто: ' + closed : '') + (newWords ? ' · в словарь +' + newWords : ''));
   await renderStudy();
   updateStatusNotification();
   scheduleReminders().catch(() => {});
@@ -5738,7 +5831,8 @@ async function renderStudy(){
         html += '<div class="sp-bh"><b>Языковая практика · ' + b.minutes + ' мин</b><span class="sp-course">' + escHtml(b.courseName) + '</span></div>' +
                 '<div class="sp-note">Каждый день, вслух: 5 мин — слова и фразы из шпаргалки; 7 мин — shadowing: дрилл текущего урока за озвучкой Google Переводчика; ' +
                 '3 мин — расскажи на диктофон, как прошёл день, и найди 2 ошибки.</div>' +
-                (cur ? '<div class="sp-seg" data-act="read" data-node="' + cur.id + '">' + escHtml(cur.name) + '<span class="where">текущий урок — дрилл для shadowing</span></div>' : '');
+                (cur ? '<div class="sp-seg" data-act="read" data-node="' + cur.id + '">' + escHtml(cur.name) + '<span class="where">текущий урок — дрилл для shadowing</span></div>' : '') +
+                '<div class="sp-btns"><button data-act="vocab" data-c="' + escHtml(b.courseName) + '">Слова к повторению: ' + vocabDue(b.courseName).length + '</button></div>';
       } else if(b.kind === 'review'){
         html += '<div class="sp-bh"><b>Повторение · ' + b.minutes + ' мин</b>' +
                 '<span class="sp-course">' + b.cards + ' карт.</span></div>' +
@@ -5764,7 +5858,8 @@ async function renderStudy(){
         html += '<button data-act="undo" data-i="' + i + '">Отменить (' + b.done + ' мин)</button>';
       } else {
         if(b.kind === 'review') html += '<button data-act="review" data-i="' + i + '">Начать</button>';
-        html += '<button class="go" data-act="done" data-i="' + i + '">Сделал</button>' +
+        html += '<button class="go" data-act="focus" data-i="' + i + '">▶ Таймер</button>' +
+                '<button data-act="done" data-i="' + i + '">Сделал</button>' +
                 '<button data-act="part" data-i="' + i + '">Частично</button>';
       }
       html += '</div></div>';
@@ -5820,7 +5915,8 @@ async function renderStudy(){
     html += '<div class="setrow"><span style="flex:1"><span>' + escHtml(n.name) +
             ' <span class="today">' + tag + '</span></span>' +
             '<span class="where">' + status + '</span>' +
-            '<span class="pl-bar"><i style="width:' + pct + '%"></i></span></span></div>';
+            '<span class="pl-bar"><i style="width:' + pct + '%"></i></span></span>' +
+            (pct > 0 ? '<button class="mini" data-act="exam" data-id="' + id + '">Экзамен</button>' : '') + '</div>';
   }
 
   html += studySettingsHTML(cfg, kids, false);
@@ -5994,6 +6090,12 @@ $('studyBody').addEventListener('click', async e => {
     await openWorkout();
   } else if(act === 'phoff'){
     openOffPick();
+  } else if(act === 'focus'){
+    openFocus(i);
+  } else if(act === 'vocab'){
+    openVocab(el.dataset.c || null);
+  } else if(act === 'exam'){
+    openExamPick(Number(el.dataset.id));
   } else if(act === 'wd'){
     const wd = Number(el.dataset.v);
     const order = ['full', 'light', 'rest'];
@@ -8895,7 +8997,7 @@ async function scheduleReminders(){
   const plugin = statusNotifPlugin();
   if(!plugin) return 0;
   try{
-    await plugin.cancel({notifications: Array.from({length: 21}, (_, i) => ({id: REMIND_BASE + i}))});
+    await plugin.cancel({notifications: Array.from({length: 22}, (_, i) => ({id: REMIND_BASE + i}))});
   }catch(e){}
   if(!settings.remind || !settings.remind.on) return 0;
   await reindex();
@@ -8913,6 +9015,16 @@ async function scheduleReminders(){
     const eveTrain = i === 0 ? (trainLeft && tr) : tr, eveStudy = i === 0 ? (studyLeft && plan) : plan;
     if(eveTrain || eveStudy) push(2, remindAt(d, settings.remind.evening), 'Ещё не сделано',
       [eveStudy ? 'учёба' : '', eveTrain ? (tr.startsWith('физ') ? 'физкурс' : 'тренировка') : ''].filter(Boolean).join(' и ') + ' на сегодня. Не пропускай два дня подряд.');
+  }
+  for(let i = 0; i < 7; i++){
+    const d = addDays(today, i);
+    if(new Date(d + 'T00:00:00').getDay() !== 0) continue;
+    const at = remindAt(d, '20:00');
+    if(at > now){
+      const w = weekStats(weekStart(d));
+      list.push({id: REMIND_BASE + 21, title: 'Итог недели', body: 'Учёба ' + (w.studyMin / 60).toFixed(1).replace('.', ',') + ' ч · тренировки ' + w.covered + (w.planned ? ' из ' + w.planned : '') + '. Открой статистику — там сравнение с прошлой неделей.',
+                 schedule: {at, allowWhileIdle: true}});
+    }
   }
   if(!list.length) return 0;
   try{ await plugin.schedule({notifications: list}); }catch(e){ return 0; }
@@ -9888,7 +10000,7 @@ $('seedAll').onclick = async () => {
 ==================================================================*/
 const RESET_PLAN_KEYS = ['studyActive','studyOrder','studySlots','studyMinutes','studyBlock','studyWeek','studyStart','studyToday','physSchedule','physStart','physToday','workoutDraft','physOff'];
 const RESET_ALL_KEYS = [...new Set([...RESET_PLAN_KEYS,
-  'workoutLog','studyDays','remind','theme','splashAnim','splashPhoto','splashPhotoDim','splashShowTitle',
+  'workoutLog','studyDays','remind','vocab','vocabHist','goals','examLog','theme','splashAnim','splashPhoto','splashPhotoDim','splashShowTitle',
   'splashMusic','splashMusicName','splashMusicDuration','readerFont','readerTheme',
   'schedule','planUnit','budget','statusNotify','srsOrder', ...Object.keys(SRS_DEFAULTS)])];
 let resetScope = 'plan';
@@ -10051,6 +10163,11 @@ function openReader(node, part){
         '————————————\n\n'
       : '') + (node.note || '');
   }
+  const lroot = courseRootOf(node);
+  if(lroot && isLangCourseName(lroot.name)){
+    const txt = body.firstChild && body.firstChild.nodeType === 3 ? body.firstChild.textContent : '';
+    if(txt) enhanceLangReader(body, txt, node, langOfCourse(lroot.name));
+  }
   body.scrollTop = 0;
   applyReaderFont();
   $('readerBg').classList.add('open');
@@ -10065,6 +10182,683 @@ $('readerClose').onclick = closeReader;
     applyReaderFont();
   };
 });
+
+/* =====================================================================
+   ЯЗЫКИ: озвучка фраз, диктофон, словарь с интервальным повторением
+   ===================================================================== */
+const isLangCourseName = n => /язык$/i.test(String(n || ''));
+function langOfCourse(name){
+  if(/английск/i.test(name)) return 'en-US';
+  if(/испанск/i.test(name)) return 'es-ES';
+  if(/арабск/i.test(name)) return 'ar-SA';
+  return 'en-US';
+}
+let speakLast = {text: '', at: 0};
+/* озвучка: плагин TTS в сборке → голос WebView → Google Переводчик в браузере */
+async function speakText(text, lang){
+  text = String(text || '').replace(/\s+/g, ' ').trim();
+  if(!text) return;
+  const slow = speakLast.text === text && Date.now() - speakLast.at < 6000;   // второе нажатие — медленно
+  speakLast = {text, at: Date.now()};
+  const rate = slow ? 0.6 : 0.95;
+  const tts = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.TextToSpeech;
+  if(tts){
+    try{ await tts.stop().catch(() => {}); await tts.speak({text, lang, rate, pitch: 1, volume: 1, category: 'playback'}); return; }catch(e){}
+  }
+  if(window.speechSynthesis && window.SpeechSynthesisUtterance){
+    const voices = window.speechSynthesis.getVoices() || [];
+    const v = voices.find(x => x.lang && x.lang.replace('_', '-').toLowerCase().startsWith(lang.slice(0, 2)));
+    if(v || voices.length === 0){
+      try{
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = lang; u.rate = rate; if(v) u.voice = v;
+        window.speechSynthesis.speak(u);
+        if(v) return;
+      }catch(e){}
+    }
+  }
+  const sl = lang.slice(0, 2);
+  window.open('https://translate.google.com/?sl=' + sl + '&tl=ru&op=translate&text=' + encodeURIComponent(text), '_blank');
+}
+/* что в строке урока можно озвучить */
+const hasCyr = s => /[А-Яа-яЁё]/.test(s);
+function speakableOf(line, lang){
+  const latin = lang === 'ar-SA' ? /[؀-ۿ]/ : /[A-Za-zÁÉÍÓÚÑÜáéíóúñü¿¡]/;
+  if(line.includes('→')){
+    const right = line.split('→').pop().trim().replace(/^[•\-\s]+/, '');
+    if(latin.test(right) && !hasCyr(right)) return right;
+    const left = line.split('→')[0].replace(/^[\s•\-\d.]+/, '').trim();
+    if(latin.test(left) && !hasCyr(left)) return left.replace(/\[[^\]]*\]/g, '').trim();
+    return null;
+  }
+  const plain = line.replace(/\[[^\]]*\]/g, '').replace(/\([^)]*\)/g, '').trim();
+  if(!plain || hasCyr(plain) || !latin.test(plain)) return null;
+  return plain.replace(/^[\s•\-\d.]+/, '');
+}
+/* слова вида «word [IPA] — перевод» */
+function parseVocab(text){
+  const out = [], seen = new Set();
+  const re = /(?:^|[;:\n•]\s*)([A-Za-zÁÉÍÓÚÑÜáéíóúñü¿¡][A-Za-zÁÉÍÓÚÑÜáéíóúñü' \-]{0,40}?)\s*\[([^\]\n]{1,40})\]\s*[—–-]\s*([^;\n]{1,70})/g;
+  let m;
+  while((m = re.exec(String(text || '')))){
+    const en = m[1].trim(), ipa = m[2].trim();
+    let ru = m[3].trim().replace(/[.。]+$/, '');
+    if(!hasCyr(ru) || ru.includes('[') || ru.includes('→') || en.length < 2) continue;
+    const k = en.toLowerCase();
+    if(seen.has(k)) continue;
+    seen.add(k); out.push({en, ipa, ru});
+  }
+  return out;
+}
+function enhanceLangReader(body, text, node, lang){
+  const first = body.firstChild;
+  if(!first || first.nodeType !== 3) return;
+  const box = document.createElement('div');
+  box.className = 'rd-lang';
+  for(const line of text.split('\n')){
+    const row = document.createElement('div');
+    row.className = 'rd-line';
+    row.textContent = line || ' ';
+    const sp = line.length < 400 ? speakableOf(line, lang) : null;
+    if(sp){
+      const b = document.createElement('button');
+      b.className = 'rd-say'; b.textContent = '▶'; b.title = 'Прослушать (ещё раз — медленно)';
+      b.onclick = e => { e.stopPropagation(); speakText(sp, lang); };
+      row.prepend(b);
+    }
+    const words = parseVocab(line);
+    if(words.length >= 2){
+      const chips = document.createElement('div');
+      chips.className = 'rd-chips';
+      for(const w of words){
+        const c = document.createElement('button');
+        c.textContent = '▶ ' + w.en;
+        c.onclick = e => { e.stopPropagation(); speakText(w.en, lang); };
+        chips.appendChild(c);
+      }
+      row.appendChild(chips);
+    }
+    box.appendChild(row);
+  }
+  first.replaceWith(box);
+  /* панель: словарь + диктофон */
+  const words = parseVocab(text);
+  const bar = document.createElement('div');
+  bar.className = 'rd-langbar';
+  bar.innerHTML = (words.length ? '<button data-lb="vocab">В словарь: ' + words.length + ' сл.</button>' : '') +
+                  '<button data-lb="rec">● Запись</button><span class="rd-rec" id="rdRec"></span>';
+  bar.addEventListener('click', async e => {
+    const b = e.target.closest('[data-lb]');
+    if(!b) return;
+    if(b.dataset.lb === 'vocab'){
+      const n = await addVocab(words, (courseRootOf(node) || {}).name || '', node.id);
+      b.textContent = n ? 'Добавлено: ' + n : 'Уже в словаре';
+    } else if(b.dataset.lb === 'rec') toggleRecording(b);
+  });
+  box.prepend(bar);
+  const hint = document.createElement('div');
+  hint.className = 'rd-hint';
+  hint.textContent = '▶ — прослушать фразу, второе нажатие подряд — медленно. «● Запись» — запиши себя и сравни с эталоном.';
+  box.prepend(hint);
+}
+
+/* диктофон: запись в памяти до закрытия приложения */
+let recState = null;
+const recClips = [];
+async function toggleRecording(btn){
+  const out = $('rdRec');
+  if(recState){
+    recState.rec.stop();
+    btn.textContent = '● Запись';
+    return;
+  }
+  if(!navigator.mediaDevices || !window.MediaRecorder){ toast('Запись звука недоступна в этой сборке'); return; }
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+    const rec = new MediaRecorder(stream);
+    const chunks = [];
+    rec.ondataavailable = e => { if(e.data && e.data.size) chunks.push(e.data); };
+    rec.onstop = () => {
+      stream.getTracks().forEach(t => t.stop());
+      const url = URL.createObjectURL(new Blob(chunks, {type: rec.mimeType || 'audio/webm'}));
+      recClips.unshift(url); if(recClips.length > 5) URL.revokeObjectURL(recClips.pop());
+      recState = null;
+      if(out){
+        out.innerHTML = '';
+        recClips.forEach((u, i) => { const a = document.createElement('audio'); a.controls = true; a.src = u; a.title = 'Запись ' + (i + 1); out.appendChild(a); });
+      }
+    };
+    rec.start();
+    recState = {rec};
+    btn.textContent = '■ Стоп';
+    if(out) out.textContent = 'Идёт запись…';
+  }catch(e){
+    toast('Нет доступа к микрофону. Разреши микрофон для приложения в настройках Android.');
+  }
+}
+
+/* словарь */
+function vocabList(){ return (settings.vocab = settings.vocab || []); }
+async function saveVocab(){ await repo.setSetting('vocab', JSON.stringify(vocabList())); }
+async function addVocab(words, course, topicId){
+  const list = vocabList(), have = new Set(list.map(w => (w.course + '|' + w.en).toLowerCase()));
+  let n = 0;
+  for(const w of words){
+    const k = (course + '|' + w.en).toLowerCase();
+    if(have.has(k)) continue;
+    have.add(k);
+    list.push({id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), en: w.en, ipa: w.ipa, ru: w.ru, course, topicId,
+               due: todayISO(), ivl: 0, ease: 2.3, reps: 0, lapses: 0, added: todayISO()});
+    n++;
+  }
+  if(n) await saveVocab();
+  return n;
+}
+/* слова из частей урока, которые закрыл блок плана */
+async function addVocabFromBlock(b){
+  if(!b || b.kind !== 'new' || !isLangCourseName(b.courseName)) return 0;
+  let n = 0;
+  for(const s of b.segs){
+    const node = index.byId.get(s.nodeId);
+    if(!node || !node.note) continue;
+    const lp = segLessonParts(node, s.offset, s.minutes), parts = lessonParts(node.note);
+    const text = lp && parts.length ? parts.slice(lp.from, lp.to + 1).map(p => p.text).join('\n') : node.note;
+    n += await addVocab(parseVocab(text), b.courseName, node.id);
+  }
+  return n;
+}
+const vocabDue = course => vocabList().filter(w => (!course || w.course === course) && w.due <= todayISO());
+let vocabRv = null;
+function openVocab(course){
+  const list = vocabList().filter(w => !course || w.course === course);
+  const due = list.filter(w => w.due <= todayISO());
+  const learned = list.filter(w => w.ivl >= 21).length;
+  const courses = [...new Set(vocabList().map(w => w.course))];
+  $('vocabSub').textContent = (course || 'Все языки') + ' · слов ' + list.length;
+  let h = '<div class="st-grid">' + stTile('слов всего', list.length) + stTile('к повторению', due.length) + stTile('выучено (21+ дн.)', learned) + '</div>';
+  if(courses.length > 1) h += '<div class="sp-chips">' + ['', ...courses].map(c => '<button data-vc="' + escHtml(c) + '" aria-pressed="' + ((course || '') === c) + '">' + escHtml(c || 'Все') + '</button>').join('') + '</div>';
+  h += '<div class="sp-btns"><button class="go" data-vact="start"' + (due.length ? '' : ' disabled') + '>Повторить слова (' + due.length + ')</button></div>';
+  if(!list.length) h += '<div class="sp-note">Словарь пуст. Слова попадают сюда сами, когда отмечаешь пройденный блок урока, или кнопкой «В словарь» в уроке.</div>';
+  h += '<input class="vc-search" id="vcSearch" placeholder="Поиск слова">';
+  h += '<div id="vcList">' + vocabRowsHTML(list) + '</div>';
+  $('vocabBody').innerHTML = h;
+  $('vocabBody').dataset.course = course || '';
+  $('vocabBg').classList.add('open');
+}
+function vocabRowsHTML(list){
+  return list.slice().sort((a, b) => a.en.localeCompare(b.en)).map(w =>
+    '<div class="vc-row"><button class="rd-say" data-say="' + escHtml(w.en) + '" data-lang="' + langOfCourse(w.course) + '">▶</button>' +
+    '<span><b>' + escHtml(w.en) + '</b> <span class="where">[' + escHtml(w.ipa) + ']</span><small>' + escHtml(w.ru) + '</small></span>' +
+    '<span class="where">' + (w.due <= todayISO() ? 'сегодня' : 'через ' + dayDiff(todayISO(), w.due) + ' дн.') + '</span></div>').join('');
+}
+function vocabNext(){
+  const r = vocabRv;
+  if(!r.queue.length){
+    $('vocabBody').innerHTML = '<div class="sp-block"><b>Готово: ' + r.done + ' слов.</b><div class="sp-note">Вспомнил сразу: ' + r.good + '. Трудные вернутся завтра.</div>' +
+      '<div class="sp-btns"><button data-vact="back">К словарю</button></div></div>';
+    return;
+  }
+  const w = r.queue[0];
+  r.shown = false;
+  $('vocabSub').textContent = 'Повторение · осталось ' + r.queue.length;
+  $('vocabBody').innerHTML = '<div class="vc-card"><div class="vc-q">' + escHtml(w.ru) + '</div><div class="sp-note">Скажи вслух по-' + (/испан/i.test(w.course) ? 'испански' : /араб/i.test(w.course) ? 'арабски' : 'английски') + ', потом открой</div>' +
+    '<div class="vc-a" id="vcA" hidden><b>' + escHtml(w.en) + '</b> <span class="where">[' + escHtml(w.ipa) + ']</span> <button class="rd-say" data-say="' + escHtml(w.en) + '" data-lang="' + langOfCourse(w.course) + '">▶</button></div></div>' +
+    '<div class="sp-btns"><button class="go" data-vact="show">Показать</button></div>' +
+    '<div class="rv-grades" id="vcGrades" style="display:none"><button data-vg="0">Не вспомнил</button><button data-vg="1">Трудно</button><button data-vg="2">Вспомнил</button><button data-vg="3">Легко</button></div>';
+}
+async function vocabGrade(g){
+  const r = vocabRv, w = r.queue.shift();
+  const it = vocabList().find(x => x.id === w.id);
+  if(g === 0){ it.lapses++; it.reps = 0; it.ivl = 0; it.ease = Math.max(1.3, it.ease - 0.2); r.queue.push(w); }
+  else {
+    if(g === 1){ it.ivl = Math.max(1, Math.round((it.ivl || 1) * 1.2)); it.ease = Math.max(1.3, it.ease - 0.15); }
+    else if(g === 2) it.ivl = it.reps === 0 ? 1 : it.reps === 1 ? 3 : Math.round(it.ivl * it.ease);
+    else { it.ivl = it.reps === 0 ? 3 : Math.round(Math.max(it.ivl, 1) * it.ease * 1.3); it.ease = Math.min(2.8, it.ease + 0.1); }
+    it.reps++; it.due = addDays(todayISO(), it.ivl); r.done++; if(g >= 2) r.good++;
+  }
+  it.last = todayISO();
+  settings.vocabHist = settings.vocabHist || {};
+  settings.vocabHist[todayISO()] = (settings.vocabHist[todayISO()] || 0) + 1;
+  await saveVocab();
+  await repo.setSetting('vocabHist', JSON.stringify(settings.vocabHist));
+  vocabNext();
+}
+$('vocabBody').addEventListener('click', async e => {
+  const say = e.target.closest('[data-say]');
+  if(say){ speakText(say.dataset.say, say.dataset.lang); return; }
+  const vc = e.target.closest('[data-vc]');
+  if(vc){ openVocab(vc.dataset.vc || null); return; }
+  const g = e.target.closest('[data-vg]');
+  if(g){ await vocabGrade(Number(g.dataset.vg)); return; }
+  const a = e.target.closest('[data-vact]');
+  if(!a) return;
+  const course = $('vocabBody').dataset.course || null;
+  if(a.dataset.vact === 'start'){
+    const due = vocabDue(course).sort(() => Math.random() - 0.5).slice(0, 40);
+    vocabRv = {queue: due, done: 0, good: 0, course};
+    vocabNext();
+  } else if(a.dataset.vact === 'show'){
+    $('vcA').hidden = false; a.style.display = 'none'; $('vcGrades').style.display = 'flex';
+    const w = vocabRv.queue[0]; speakText(w.en, langOfCourse(w.course));
+  } else if(a.dataset.vact === 'back') openVocab(course);
+});
+$('vocabBody').addEventListener('input', e => {
+  if(e.target.id !== 'vcSearch') return;
+  const q = e.target.value.trim().toLowerCase(), course = $('vocabBody').dataset.course || null;
+  $('vcList').innerHTML = vocabRowsHTML(vocabList().filter(w => (!course || w.course === course) && (!q || w.en.toLowerCase().includes(q) || w.ru.toLowerCase().includes(q))));
+});
+$('vocabClose').onclick = () => { $('vocabBg').classList.remove('open'); if($('studyBg').classList.contains('open')) renderStudy(); };
+$('openVocab').onclick = () => { $('serviceBg').classList.remove('open'); openVocab(null); };
+
+/* =====================================================================
+   ФОКУС-ТАЙМЕР для блока плана: отсчёт, пауза, по окончании блок отмечается сам
+   ===================================================================== */
+let focus = null, focusTick = null;
+const FOCUS_NOTIF_ID = 7300099;
+function fmtClock(sec){ sec = Math.max(0, Math.round(sec)); return String(Math.floor(sec / 60)).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0'); }
+async function focusNotify(at){
+  const p = statusNotifPlugin(); if(!p) return;
+  try{ await p.cancel({notifications: [{id: FOCUS_NOTIF_ID}]}); }catch(e){}
+  if(at) try{ await p.schedule({notifications: [{id: FOCUS_NOTIF_ID, title: 'Блок закончен ✓', body: 'Время вышло — сделай перерыв.', schedule: {at: new Date(at), allowWhileIdle: true}}]}); }catch(e){}
+}
+function openFocus(i){
+  const b = settings.studyToday.blocks[i];
+  if(!b || b.done) return;
+  focus = {i, total: b.minutes * 60, endAt: Date.now() + b.minutes * 60000, paused: null,
+           name: b.kind === 'review' ? 'Повторение' : b.kind === 'lang' ? 'Языковая практика · ' + b.courseName : b.courseName};
+  $('focusName').textContent = focus.name;
+  $('focusBg').classList.add('open');
+  focusNotify(focus.endAt);
+  renderFocus();
+  clearInterval(focusTick); focusTick = setInterval(renderFocus, 500);
+}
+const focusLeft = () => focus.paused != null ? focus.paused : (focus.endAt - Date.now()) / 1000;
+function renderFocus(){
+  if(!focus) return;
+  const left = focusLeft();
+  $('focusTime').textContent = fmtClock(left);
+  $('focusBar').style.width = Math.min(100, (1 - left / focus.total) * 100) + '%';
+  $('focusPause').textContent = focus.paused != null ? 'Продолжить' : 'Пауза';
+  if(left <= 0 && focus.paused == null) finishFocus(true);
+}
+async function finishFocus(auto){
+  if(!focus) return;
+  clearInterval(focusTick);
+  const f = focus; focus = null;
+  const spent = Math.round((f.total - Math.max(0, f.paused != null ? f.paused : (f.endAt - Date.now()) / 1000)) / 60);
+  $('focusBg').classList.remove('open');
+  focusNotify(null);
+  if(auto && navigator.vibrate) navigator.vibrate([300, 150, 300]);
+  const b = settings.studyToday.blocks[f.i];
+  const mins = auto ? b.minutes : spent;
+  if(mins > 0) await markStudyBlock(f.i, mins);
+  else toast('Меньше минуты — не записано');
+}
+$('focusPause').onclick = () => {
+  if(!focus) return;
+  if(focus.paused != null){ focus.endAt = Date.now() + focus.paused * 1000; focus.paused = null; focusNotify(focus.endAt); }
+  else { focus.paused = focusLeft(); focusNotify(null); }
+  renderFocus();
+};
+$('focusDone').onclick = () => finishFocus(false);
+$('focusCancel').onclick = () => { clearInterval(focusTick); focus = null; focusNotify(null); $('focusBg').classList.remove('open'); };
+
+/* =====================================================================
+   ЭКЗАМЕН ПО МОДУЛЮ: 10 случайных вопросов из «Проверь себя», самооценка
+   ===================================================================== */
+let exam = null;
+function openExamPick(courseId){
+  const kids = studyKids(), root = index.byId.get(courseId);
+  const mods = (kids.get(courseId) || []).filter(m => m.kind === 'category');
+  let h = '<div class="sp-note">Выбери модуль. Будет до 10 случайных вопросов из пройденных тем (если пройденных нет — из всех тем модуля). Отвечай вслух или письменно, потом честно оцени себя.</div>';
+  for(const m of mods){
+    const ents = []; (function walk(pid){ for(const n of (kids.get(pid) || [])){ if(n.kind === 'entry') ents.push(n); else walk(n.id); } })(m.id);
+    const q = ents.reduce((x, n) => x + questionsOf(n).length, 0);
+    if(!q) continue;
+    const done = ents.filter(n => n.done || Number(n.fact) > 0).length;
+    const last = (settings.examLog || []).filter(r => r.moduleId === m.id).pop();
+    h += '<button class="wo-pick" data-act="exmod" data-id="' + m.id + '">' + escHtml(m.name) + '<small>тем пройдено ' + done + ' из ' + ents.length +
+         (last ? ' · прошлый экзамен ' + last.pct + '% (' + studyDateLabel(last.date) + ')' : '') + '</small></button>';
+  }
+  $('examTitle').textContent = 'Экзамен · ' + root.name;
+  $('examSub').textContent = 'Выбор модуля';
+  $('examBody').innerHTML = h;
+  $('examBg').classList.add('open');
+}
+function startExam(moduleId){
+  const kids = studyKids(), m = index.byId.get(moduleId);
+  const ents = []; (function walk(pid){ for(const n of (kids.get(pid) || [])){ if(n.kind === 'entry') ents.push(n); else walk(n.id); } })(moduleId);
+  const started = ents.filter(n => n.done || Number(n.fact) > 0);
+  const pool = (started.length ? started : ents).flatMap(n => questionsOf(n).map(q => ({q, nodeId: n.id, topic: n.name})));
+  pool.sort(() => Math.random() - 0.5);
+  exam = {moduleId, module: m.name, qs: pool.slice(0, 10), i: 0, ok: 0, miss: []};
+  examNext();
+}
+function examNext(){
+  const e = exam;
+  if(e.i >= e.qs.length){
+    const pct = Math.round(e.ok / e.qs.length * 100);
+    settings.examLog = (settings.examLog || []).concat([{date: todayISO(), moduleId: e.moduleId, module: e.module, pct, n: e.qs.length}]).slice(-200);
+    repo.setSetting('examLog', JSON.stringify(settings.examLog));
+    const weak = [...new Map(e.miss.map(x => [x.nodeId, x])).values()];
+    $('examSub').textContent = 'Результат';
+    $('examBody').innerHTML = '<div class="st-ath"><div class="st-ath-h"><b>' + escHtml(e.module) + '</b><span class="st-ath-p ' + (pct >= 80 ? 'ok' : pct >= 60 ? 'near' : 'far') + '">' + pct + '%</span></div>' +
+      '<div class="st-ath-l">Ответил ' + e.ok + ' из ' + e.qs.length + '. ' + (pct >= 80 ? 'Модуль усвоен.' : pct >= 60 ? 'Неплохо, но есть пробелы.' : 'Стоит повторить модуль.') + '</div>' +
+      (weak.length ? '<div class="st-ath-l">Повтори эти темы (они стоят в повторении на сегодня):</div>' + weak.map(x => '<div class="sp-seg" data-act="exread" data-node="' + x.nodeId + '">' + escHtml(x.topic) + '</div>').join('') : '') +
+      '</div><div class="sp-btns"><button data-act="exclose">Закрыть</button></div>';
+    for(const x of weak){ const n = index.byId.get(x.nodeId); if(n && isStudyCard(n) && n.done){ repo.update(n.id, {due: todayISO()}); n.due = todayISO(); } }
+    return;
+  }
+  const q = e.qs[e.i];
+  $('examSub').textContent = 'Вопрос ' + (e.i + 1) + ' из ' + e.qs.length + ' · ' + e.module;
+  $('examBody').innerHTML = '<div class="vc-card"><div class="vc-q">' + escHtml(q.q) + '</div><div class="sp-note">Тема: ' + escHtml(q.topic) + '</div></div>' +
+    '<div class="sp-btns"><button data-act="exread" data-node="' + q.nodeId + '">Подсмотреть в уроке</button></div>' +
+    '<div class="rv-grades" style="display:flex"><button data-act="exno">Не ответил</button><button data-act="exyes">Ответил</button></div>';
+}
+$('examBody').addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if(!el) return;
+  const a = el.dataset.act;
+  if(a === 'exmod') startExam(Number(el.dataset.id));
+  else if(a === 'exyes' || a === 'exno'){ if(a === 'exyes') exam.ok++; else exam.miss.push(exam.qs[exam.i]); exam.i++; examNext(); }
+  else if(a === 'exread'){ const n = index.byId.get(Number(el.dataset.node)); if(n) openReader(n); }
+  else if(a === 'exclose') $('examBg').classList.remove('open');
+});
+$('examClose').onclick = () => $('examBg').classList.remove('open');
+
+/* =====================================================================
+   МОТИВАЦИЯ: серия дней, итог недели, цели месяца
+   ===================================================================== */
+function activeDays(){
+  const set = new Set();
+  for(const [d, m] of Object.entries(settings.studyHist || {})) if(Number(m) > 0) set.add(d);
+  for(const r of (settings.workoutLog || [])) set.add(r.date);
+  for(const d of Object.keys(settings.vocabHist || {})) set.add(d);
+  return set;
+}
+/* день «по плану без занятий» (отдых в учёбе и нет тренировки) серию не рвёт */
+function restDay(d){
+  const cfg = (settings.studyOrder || []).length ? studyCfg() : null;
+  const studyRest = !cfg || studyDayMeta(d, cfg).mode === 'rest';
+  const s = physSlot(d);
+  return studyRest && (!s || s === 'course');
+}
+function streakInfo(){
+  const act = activeDays(), today = todayISO();
+  let cur = 0, d = act.has(today) ? today : addDays(today, -1);
+  for(let i = 0; i < 1000; i++, d = addDays(d, -1)){
+    if(act.has(d)) cur++;
+    else if(restDay(d) && i < 999) continue;
+    else break;
+  }
+  const days = [...act].sort();
+  let best = 0, run = 0, prev = null;
+  for(const x of days){
+    if(prev){
+      let gapOk = true;
+      for(let y = addDays(prev, 1); y < x; y = addDays(y, 1)) if(!restDay(y)){ gapOk = false; break; }
+      run = gapOk ? run + 1 : 1;
+    } else run = 1;
+    best = Math.max(best, run); prev = x;
+  }
+  return {cur, best: Math.max(best, cur), today: act.has(today)};
+}
+function streakHTML(){
+  const s = streakInfo();
+  if(!s.cur && !s.best) return '';
+  return '<div class="streak">' + (s.cur ? '🔥 <b>' + s.cur + '</b> ' + plural(s.cur, 'день', 'дня', 'дней') + ' подряд' : 'Серия прервалась') +
+         (s.today ? '' : s.cur ? ' · <span class="where">сегодня ещё не занимался</span>' : '') + (s.best > s.cur ? ' · рекорд ' + s.best : '') + '</div>';
+}
+function plural(n, a, b, c){ n = Math.abs(n) % 100; const k = n % 10; return n > 10 && n < 20 ? c : k === 1 ? a : k >= 2 && k <= 4 ? b : c; }
+function weekStart(d){ const wd = new Date(d + 'T00:00:00').getDay(); return addDays(d, -((wd + 6) % 7)); }
+function weekStats(start){
+  const end = addDays(start, 6), today = todayISO(), last = end < today ? end : today;
+  const hist = settings.studyHist || {};
+  let studyMin = 0;
+  for(let d = start; d <= last; d = addDays(d, 1)) studyMin += Number(hist[d]) || 0;
+  const m = studyMissed();
+  const days = m ? m.days.filter(r => r.date >= start && r.date <= end) : [];
+  const log = (settings.workoutLog || []).filter(r => r.date >= start && r.date <= end);
+  let planned = 0, covered = 0, ints = 0, intsDone = 0;
+  if(settings.physStart) for(let d = start; d <= last; d = addDays(d, 1)){
+    if(d < settings.physStart) continue;
+    const s = physSlot(d);
+    if(!s || s === 'course') continue;
+    if(d === today && !trainCovered(d, s)) continue;
+    planned++; if(trainCovered(d, s)) covered++;
+    if(isIntensive(d)){ ints++; const r = trainCovered(d, s); if(r && r.intensive) intsDone++; }
+  }
+  const vh = settings.vocabHist || {};
+  let words = 0; for(let d = start; d <= last; d = addDays(d, 1)) words += Number(vh[d]) || 0;
+  const pct = log.filter(r => r.kind !== 'extra');
+  return {start, end, studyMin: Math.round(studyMin), full: days.filter(r => r.done >= r.planned - 1).length, sdays: days.length,
+          planned, covered, extra: log.filter(r => r.kind === 'extra').length, ints, intsDone, words,
+          norm: pct.length ? Math.round(pct.reduce((x, r) => x + r.pct, 0) / pct.length) : null,
+          exams: (settings.examLog || []).filter(r => r.date >= start && r.date <= end).length};
+}
+function weekSummaryHTML(){
+  const cur = weekStats(weekStart(todayISO())), prev = weekStats(addDays(weekStart(todayISO()), -7));
+  const arrow = (a, b) => b == null || a === b ? '' : a > b ? ' <span class="ok">▲</span>' : ' <span class="far">▼</span>';
+  const row = (label, a, b, fmtv) => '<div class="wk-row"><span>' + label + '</span><b>' + fmtv(a) + arrow(a, b) + '</b><span class="where">' + fmtv(b) + '</span></div>';
+  const h = v => (v / 60).toFixed(1).replace('.', ',') + ' ч';
+  let s = '<h3>Итог недели</h3><div class="st-ath"><div class="wk-row hd"><span>' + studyDateLabel(cur.start) + ' — ' + studyDateLabel(cur.end) + '</span><b>эта</b><span class="where">прошлая</span></div>';
+  s += row('Учёба', cur.studyMin, prev.studyMin, h);
+  s += row('Учебных дней без недоделок', cur.full, prev.full, v => String(v));
+  s += row('Тренировки по плану', cur.covered, prev.covered, v => String(v));
+  if(cur.planned) s += '<div class="st-ath-l">Тренировок по плану на этой неделе: ' + cur.covered + ' из ' + cur.planned + (cur.ints ? ' · интенсив ' + (cur.intsDone ? '✓' : '—') : '') + (cur.extra ? ' · дополнительных ' + cur.extra : '') + '</div>';
+  if(cur.norm != null || prev.norm != null) s += row('Норма в тренировках', cur.norm || 0, prev.norm, v => v + '%');
+  if(cur.words || prev.words) s += row('Слов повторено', cur.words, prev.words, v => String(v));
+  if(cur.exams) s += '<div class="st-ath-l">Экзаменов сдано: ' + cur.exams + '</div>';
+  return s + '</div>';
+}
+/* цели месяца */
+const GOAL_KINDS = {train: 'тренировок', study: 'часов учёбы', words: 'слов повторить', diary: 'дней в дневнике', exam: 'экзаменов сдать', custom: 'своя цель'};
+function goalProgress(g){
+  const ym = g.month, inM = d => d && d.slice(0, 7) === ym;
+  if(g.kind === 'train') return (settings.workoutLog || []).filter(r => inM(r.date)).length;
+  if(g.kind === 'study') return Math.round(Object.entries(settings.studyHist || {}).filter(([d]) => inM(d)).reduce((x, [, m]) => x + Number(m), 0) / 6) / 10;
+  if(g.kind === 'words') return Object.entries(settings.vocabHist || {}).filter(([d]) => inM(d)).reduce((x, [, m]) => x + Number(m), 0);
+  if(g.kind === 'diary') return (settings.diaryDays || []).filter(inM).length;
+  if(g.kind === 'exam') return (settings.examLog || []).filter(r => inM(r.date) && r.pct >= 80).length;
+  return Number(g.manual) || 0;
+}
+function goalsHTML(){
+  const ym = todayISO().slice(0, 7);
+  const goals = (settings.goals || []).filter(g => g.month === ym);
+  let h = '<h3>Цели месяца · ' + MONTHS[Number(ym.slice(5)) - 1] + '</h3>';
+  if(!goals.length) h += '<div class="sp-note">Целей пока нет. Поставь 2–3 на месяц: например, 16 тренировок, 20 часов учёбы, 300 слов.</div>';
+  const dayOfMonth = Number(todayISO().slice(8)), daysIn = new Date(Number(ym.slice(0, 4)), Number(ym.slice(5)), 0).getDate();
+  for(const g of goals){
+    const p = goalProgress(g), pct = Math.min(100, Math.round(p / g.target * 100)), pace = Math.round(dayOfMonth / daysIn * 100);
+    h += '<div class="st-ath"><div class="st-ath-h"><b>' + escHtml(g.title) + '</b><span class="st-ath-p ' + (pct >= 100 ? 'ok' : pct >= pace ? 'near' : 'far') + '">' + fmt(p) + ' / ' + fmt(g.target) + '</span></div>' +
+         '<span class="pl-bar"><i style="width:' + pct + '%"></i></span><div class="st-ath-l">' + (pct >= 100 ? 'Цель выполнена ✓' : pct >= pace ? 'Идёшь по графику' : 'Отстаёшь от графика: к сегодня нужно ~' + Math.ceil(g.target * dayOfMonth / daysIn)) +
+         (g.kind === 'custom' ? ' · <button class="mini" data-goal="inc" data-id="' + g.id + '">+1</button>' : '') + ' · <button class="mini" data-goal="rm" data-id="' + g.id + '">убрать</button></div></div>';
+  }
+  h += '<div class="sp-btns"><button data-goal="add">+ Цель на месяц</button></div>';
+  return h;
+}
+async function saveGoals(){ await repo.setSetting('goals', JSON.stringify(settings.goals || [])); }
+$('statsBody').addEventListener('click', async e => {
+  const el = e.target.closest('[data-goal]');
+  if(!el) return;
+  const act = el.dataset.goal;
+  if(act === 'add'){ $('goalTitle').value = ''; $('goalTarget').value = ''; $('goalKind').value = 'train'; $('goalBg').classList.add('open'); return; }
+  const g = (settings.goals || []).find(x => x.id === el.dataset.id);
+  if(!g) return;
+  if(act === 'inc') g.manual = (Number(g.manual) || 0) + 1;
+  if(act === 'rm'){ if(!confirm('Убрать цель «' + g.title + '»?')) return; settings.goals = settings.goals.filter(x => x !== g); }
+  await saveGoals(); renderStats();
+});
+$('goalKind').onchange = () => { if(!$('goalTitle').value || $('goalTitle').dataset.auto === '1'){ $('goalTitle').value = $('goalKind').value === 'custom' ? '' : GOAL_KINDS[$('goalKind').value][0].toUpperCase() + GOAL_KINDS[$('goalKind').value].slice(1); $('goalTitle').dataset.auto = '1'; } };
+$('goalTitle').oninput = () => { $('goalTitle').dataset.auto = '0'; };
+$('goalCancel').onclick = () => $('goalBg').classList.remove('open');
+$('goalSave').onclick = async () => {
+  const kind = $('goalKind').value, target = num($('goalTarget').value);
+  const title = $('goalTitle').value.trim() || GOAL_KINDS[kind];
+  if(!target || target <= 0){ toast('Укажи число'); return; }
+  settings.goals = (settings.goals || []).concat([{id: Date.now().toString(36), month: todayISO().slice(0, 7), kind, title, target, manual: 0}]);
+  await saveGoals();
+  $('goalBg').classList.remove('open');
+  renderStats();
+};
+
+/* =====================================================================
+   ДНЕВНИК: запись за день с автоматической датой, пароль, шифрование
+   Записи зашифрованы (AES-GCM, ключ из пароля через PBKDF2) — без пароля их
+   не прочитать даже из файла базы. Забыл пароль — записи не восстановить.
+   ===================================================================== */
+let diaryKey = null, diaryData = null, diarySaveTimer = null, diaryOpenDate = null;
+const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+async function diaryDeriveKey(pass, salt){
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({name: 'PBKDF2', salt, iterations: 150000, hash: 'SHA-256'}, base, {name: 'AES-GCM', length: 256}, false, ['encrypt', 'decrypt']);
+}
+async function diaryEncrypt(obj){
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({name: 'AES-GCM', iv}, diaryKey, new TextEncoder().encode(JSON.stringify(obj)));
+  return {iv: b64(iv), ct: b64(ct)};
+}
+async function diaryDecrypt(enc){
+  const pt = await crypto.subtle.decrypt({name: 'AES-GCM', iv: unb64(enc.iv)}, diaryKey, unb64(enc.ct));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+async function diaryPersist(){
+  const enc = await diaryEncrypt(diaryData);
+  settings.diaryEnc = Object.assign({}, settings.diaryEnc, enc);
+  await repo.setSetting('diaryEnc', JSON.stringify(settings.diaryEnc));
+  /* даты записей (без текста) — для серии, целей и статистики */
+  settings.diaryDays = Object.keys(diaryData.entries).filter(d => { const x = diaryData.entries[d]; return x && (x.text || x.mood); }).sort();
+  await repo.setSetting('diaryDays', JSON.stringify(settings.diaryDays));
+}
+function openDiary(){
+  $('serviceBg').classList.remove('open');
+  $('diaryBg').classList.add('open');
+  if(diaryKey && diaryData){ renderDiary(); return; }
+  const fresh = !settings.diaryEnc || !settings.diaryEnc.salt;
+  $('diarySub').textContent = fresh ? 'Придумай пароль' : 'Закрыт паролем';
+  $('diaryBody').innerHTML = '<div class="dy-lock"><div class="dy-lock-i">🔒</div>' +
+    (fresh ? '<div class="sp-note">Дневник будет зашифрован твоим паролем. <b>Забудешь пароль — записи не восстановить</b>, даже мне. Запиши его где-нибудь надёжно.</div>' +
+             '<input type="password" id="dyP1" placeholder="Пароль (от 4 символов)" autocomplete="new-password"><input type="password" id="dyP2" placeholder="Повтори пароль" autocomplete="new-password">' +
+             '<div class="sp-btns"><button class="go" data-dy="create">Создать дневник</button></div>'
+           : '<input type="password" id="dyP1" placeholder="Пароль" autocomplete="current-password"><div class="sp-btns"><button class="go" data-dy="unlock">Открыть</button></div>') + '</div>';
+  setTimeout(() => { const i = $('dyP1'); if(i) i.focus(); }, 50);
+}
+async function diaryCreate(){
+  const p1 = $('dyP1').value, p2 = $('dyP2').value;
+  if(p1.length < 4){ toast('Пароль — минимум 4 символа'); return; }
+  if(p1 !== p2){ toast('Пароли не совпадают'); return; }
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  diaryKey = await diaryDeriveKey(p1, salt);
+  diaryData = {v: 1, entries: {}};
+  settings.diaryEnc = {salt: b64(salt)};
+  await diaryPersist();
+  toast('Дневник создан');
+  renderDiary();
+}
+async function diaryUnlock(){
+  const p = $('dyP1').value;
+  try{
+    diaryKey = await diaryDeriveKey(p, unb64(settings.diaryEnc.salt));
+    diaryData = await diaryDecrypt(settings.diaryEnc);
+    renderDiary();
+  }catch(e){ diaryKey = null; toast('Неверный пароль'); $('dyP1').value = ''; }
+}
+function diaryLock(){ clearTimeout(diarySaveTimer); diaryKey = null; diaryData = null; $('diaryBg').classList.remove('open'); }
+const MOODS = ['😣', '😕', '😐', '🙂', '😄'];
+function diaryEntry(d){ return diaryData.entries[d] || (diaryData.entries[d] = {text: '', mood: 0, energy: 0, sleep: '', t: 0}); }
+function renderDiary(date){
+  const today = todayISO();
+  date = date || diaryOpenDate || today;
+  diaryOpenDate = date;
+  const e = diaryEntry(date);
+  $('diarySub').textContent = 'Записей: ' + Object.values(diaryData.entries).filter(x => x.text || x.mood).length;
+  const d = new Date(date + 'T00:00:00');
+  const dateLbl = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'][d.getDay()] + ', ' + d.getDate() + ' ' +
+    ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'][d.getMonth()] + ' ' + d.getFullYear();
+  let h = '<div class="dy-date">' + (date === today ? 'Сегодня · ' : '') + dateLbl + (date !== today ? ' <button class="mini" data-dy="today">к сегодня</button>' : '') + '</div>';
+  const scale = (key, label, arr) => '<div class="dy-scale"><span>' + label + '</span>' + arr.map((x, i) => '<button data-dy="set" data-k="' + key + '" data-v="' + (i + 1) + '" aria-pressed="' + (e[key] === i + 1) + '">' + x + '</button>').join('') + '</div>';
+  h += scale('mood', 'Настроение', MOODS) + scale('energy', 'Энергия', ['1', '2', '3', '4', '5']);
+  h += '<div class="dy-scale"><span>Сон, ч</span><input id="dySleep" type="number" inputmode="decimal" step="0.5" min="0" max="24" value="' + (e.sleep || '') + '"></div>';
+  h += '<textarea id="dyText" placeholder="Что было за день: события, мысли, что получилось, что нет, за что благодарен…">' + escHtml(e.text || '') + '</textarea>';
+  h += '<div class="dy-saved" id="dySaved">' + (e.t ? 'Сохранено ' + new Date(e.t).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'}) : 'Сохраняется само') + '</div>';
+  /* что сделано за этот день — подтягивается само */
+  const facts = [];
+  const sm = Number((settings.studyHist || {})[date]) || 0; if(sm) facts.push('учёба ' + Math.round(sm) + ' мин');
+  for(const r of (settings.workoutLog || []).filter(x => x.date === date)) facts.push('тренировка ' + r.athlete + ' ' + r.pct + '%' + (WO_MARK[r.kind] || ''));
+  const vw = Number((settings.vocabHist || {})[date]) || 0; if(vw) facts.push('слов ' + vw);
+  if(facts.length) h += '<div class="sp-note">За день: ' + escHtml(facts.join(' · ')) + '</div>';
+  /* выводы: настроение в дни с тренировкой и без */
+  const ents = Object.entries(diaryData.entries).filter(([, x]) => x.mood);
+  if(ents.length >= 7){
+    const tr = new Set((settings.workoutLog || []).map(r => r.date));
+    const avg = a => a.length ? (a.reduce((x, y) => x + y, 0) / a.length).toFixed(1).replace('.', ',') : '—';
+    const withT = ents.filter(([k]) => tr.has(k)).map(([, x]) => x.mood), noT = ents.filter(([k]) => !tr.has(k)).map(([, x]) => x.mood);
+    const sl = ents.filter(([, x]) => Number(x.sleep) > 0);
+    const goodSleep = sl.filter(([, x]) => Number(x.sleep) >= 7).map(([, x]) => x.mood), badSleep = sl.filter(([, x]) => Number(x.sleep) < 7).map(([, x]) => x.mood);
+    h += '<div class="st-ath"><b>Что видно по записям</b><div class="st-ath-l">Настроение в дни с тренировкой: ' + avg(withT) + ' · без: ' + avg(noT) + '</div>' +
+         (goodSleep.length && badSleep.length ? '<div class="st-ath-l">После сна 7+ ч: ' + avg(goodSleep) + ' · меньше 7 ч: ' + avg(badSleep) + '</div>' : '') + '</div>';
+  }
+  h += '<input class="vc-search" id="dySearch" placeholder="Поиск по записям"><div id="dyList">' + diaryListHTML('') + '</div>';
+  h += '<div class="sp-btns" style="margin-top:14px"><button data-dy="lock">🔒 Закрыть дневник</button><button data-dy="pass">Сменить пароль</button></div>';
+  $('diaryBody').innerHTML = h;
+}
+function diaryListHTML(q){
+  q = q.trim().toLowerCase();
+  return Object.entries(diaryData.entries).filter(([, x]) => x.text || x.mood).sort((a, b) => a[0] < b[0] ? 1 : -1)
+    .filter(([d, x]) => !q || (x.text || '').toLowerCase().includes(q) || d.includes(q))
+    .slice(0, 120).map(([d, x]) => '<div class="dy-item' + (d === diaryOpenDate ? ' on' : '') + '" data-dy="open" data-d="' + d + '"><span class="d">' + studyDateLabel(d) + ' ' + d.slice(0, 4) + '</span>' +
+      '<span class="m">' + (x.mood ? MOODS[x.mood - 1] : '') + '</span><span class="t">' + escHtml((x.text || '').slice(0, 90)) + '</span></div>').join('') ||
+    '<div class="sp-note">' + (q ? 'Ничего не найдено.' : 'Записей пока нет — начни с сегодняшнего дня.') + '</div>';
+}
+function diaryScheduleSave(){
+  clearTimeout(diarySaveTimer);
+  diarySaveTimer = setTimeout(async () => {
+    if(!diaryData) return;
+    diaryEntry(diaryOpenDate).t = Date.now();
+    await diaryPersist();
+    const s = $('dySaved'); if(s) s.textContent = 'Сохранено ' + new Date().toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'});
+  }, 600);
+}
+$('diaryBody').addEventListener('input', e => {
+  if(!diaryData) return;
+  if(e.target.id === 'dyText'){ diaryEntry(diaryOpenDate).text = e.target.value; diaryScheduleSave(); }
+  else if(e.target.id === 'dySleep'){ diaryEntry(diaryOpenDate).sleep = e.target.value; diaryScheduleSave(); }
+  else if(e.target.id === 'dySearch') $('dyList').innerHTML = diaryListHTML(e.target.value);
+});
+$('diaryBody').addEventListener('click', async e => {
+  const el = e.target.closest('[data-dy]');
+  if(!el) return;
+  const a = el.dataset.dy;
+  if(a === 'create') await diaryCreate();
+  else if(a === 'unlock') await diaryUnlock();
+  else if(a === 'lock') diaryLock();
+  else if(a === 'today') renderDiary(todayISO());
+  else if(a === 'open'){ await flushDiary(); renderDiary(el.dataset.d); $('diaryBody').scrollTop = 0; }
+  else if(a === 'set'){ const x = diaryEntry(diaryOpenDate); const v = Number(el.dataset.v); x[el.dataset.k] = x[el.dataset.k] === v ? 0 : v; diaryScheduleSave(); renderDiary(); }
+  else if(a === 'pass'){
+    const old = prompt('Текущий пароль'); if(old == null) return;
+    try{ const k = await diaryDeriveKey(old, unb64(settings.diaryEnc.salt)); diaryKey = k; await diaryDecrypt(settings.diaryEnc); }catch(err){ toast('Неверный пароль'); return; }
+    const p1 = prompt('Новый пароль (от 4 символов)'); if(!p1 || p1.length < 4){ toast('Пароль не изменён'); return; }
+    if(prompt('Повтори новый пароль') !== p1){ toast('Пароли не совпадают'); return; }
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    diaryKey = await diaryDeriveKey(p1, salt);
+    settings.diaryEnc = {salt: b64(salt)};
+    await diaryPersist();
+    toast('Пароль изменён');
+  }
+});
+$('diaryBody').addEventListener('keydown', e => {
+  if(e.key !== 'Enter' || e.target.tagName !== 'INPUT' || e.target.type !== 'password') return;
+  if($('dyP2') && e.target.id === 'dyP1'){ $('dyP2').focus(); return; }
+  if($('dyP2')) diaryCreate(); else diaryUnlock();
+});
+async function flushDiary(){ if(diarySaveTimer && diaryData){ clearTimeout(diarySaveTimer); diarySaveTimer = null; diaryEntry(diaryOpenDate).t = Date.now(); await diaryPersist(); } }
+$('diaryClose').onclick = async () => { await flushDiary(); diaryLock(); };
+$('openDiary').onclick = openDiary;
+if(window.Capacitor && window.Capacitor.Plugins.App)
+  window.Capacitor.Plugins.App.addListener('pause', () => { if(diaryData){ flushDiary().finally(diaryLock); } });
 
 /* ------------------------------ старт --------------------------- */
 
