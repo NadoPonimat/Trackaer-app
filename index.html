@@ -413,6 +413,13 @@
   .wo-ex .tot{font-size:12px;margin-top:6px;color:var(--muted)}
   .wo-int{border:1px solid #d9a441;color:#d9a441;border-radius:var(--radius);padding:8px 10px;margin-bottom:10px;font-size:12px;line-height:1.45}
   .wo-row.extra span:first-child{color:#d9a441;font-weight:600}
+  #woPickBody{max-height:62vh;overflow-y:auto}
+  .wo-pick{display:block;width:100%;text-align:left;margin:6px 0;padding:9px 12px;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:var(--radius);font:inherit;font-size:14px;cursor:pointer}
+  .wo-pick small{display:block;font-size:11px;color:var(--muted);margin-top:3px}
+  .wo-pick.done{cursor:default;font-size:13px}
+  .wo-pick.done .sp-btns{margin-top:6px}
+  .sp-banner.wo.off{border-style:dashed;color:var(--muted)}
+  .sp-note.ok{color:var(--income)}
   .st-ath{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px}
   .st-ath-h{display:flex;align-items:baseline;gap:8px}
   .st-ath-h b{font-size:15px}
@@ -1358,6 +1365,14 @@
   <div class="st-body" id="woBody"></div>
 </div>
 
+<div class="sheet-bg" id="woPickBg">
+  <div class="sheet">
+    <h2>Тренировка вне плана</h2>
+    <div id="woPickBody"></div>
+    <div class="actions"><button id="woPickClose">Закрыть</button></div>
+  </div>
+</div>
+
 <div class="sheet-bg" id="resetBg">
   <div class="sheet">
     <h2>Сброс настроек</h2>
@@ -1920,7 +1935,7 @@
       <button id="openReset">Сбросить настройки…</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 90 — напоминания (утро, тренировка, вечер если не сделано); статистика невыполненной учёбы и пропущенных тренировок; интенсив раз в неделю (+1 подход к каждому упражнению: Сб → Чт → Пн → Вт по кругу), учитывается в статистике; статистика тренировок по каждому атлету: итог в %, пропуски, что недотягивает; тренировки по дням: Пн Крис Хериа, Вт Фрэнк Медрано, Чт Деян Стипич, Сб Майк Вазкез; кнопка «Начать тренировку» с нормой, результатом по подходам и отставанием от нормы; фазы по неделям атлета; уроками стали «Первая помощь», «Выживание», «Ориентирование», «Слежка и контрнаблюдение»</div>
+    <div class="hint sv-version" id="version">Версия 92 — тренировки вне плана: сделать заранее, отработать пропуск, дополнительная (всё в статистике); английский по методике спецкурсов; напоминания; интенсив</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -2284,6 +2299,7 @@ async function openDatabase(){
   settings.physSchedule = (() => { const d = parseJSON(s.physSchedule, null); return d && typeof d === 'object' && !Array.isArray(d) ? d : Object.assign({}, PHYS_DEFAULT_SCHEDULE); })();
   settings.workoutDraft = parseJSON(s.workoutDraft, null);
   settings.workoutLog = parseJSON(s.workoutLog, []);
+  settings.physOff = parseJSON(s.physOff, null);
   settings.studyDays = parseJSON(s.studyDays, []);
   settings.remind = Object.assign({on: true, morning: '09:00', train: '18:00', evening: '21:00'}, parseJSON(s.remind, {}));
   settings.physStart = s.physStart || '';
@@ -2703,7 +2719,9 @@ async function render(){
     const sb = $('spBanner');
     if(sb) sb.onclick = openStudy;
     const wb = $('woBanner');
-    if(wb) wb.onclick = openWorkout;
+    if(wb) wb.onclick = () => openWorkout();
+    const wo = $('woOffBanner');
+    if(wo) wo.onclick = openOffPick;
   }
 
   const list = $('list');
@@ -4502,13 +4520,18 @@ function studyMissHTML(){
   return h + '</div>';
 }
 /* пропущенные тренировки по всем атлетам */
-function trainMissedList(){
+/* какую плановую дату закрывает запись журнала: своя дата, отработанный пропуск
+   или тренировка, сделанная заранее; дополнительная — никакую */
+const logCover = r => r.kind === 'extra' ? null : (r.planDate || r.date);
+function trainCovered(date, athlete){
+  return (settings.workoutLog || []).find(r => r.athlete === athlete && logCover(r) === date) || null;
+}
+function trainMissedList(from){
   const today = todayISO(), out = [];
   if(!settings.physStart) return out;
-  const done = new Set((settings.workoutLog || []).map(r => r.date + '|' + r.athlete));
-  for(let d = settings.physStart; d < today; d = addDays(d, 1)){
+  for(let d = from && from > settings.physStart ? from : settings.physStart; d < today; d = addDays(d, 1)){
     const s = physSlot(d);
-    if(s && s !== 'course' && !done.has(d + '|' + s)) out.push({date: d, athlete: s, intensive: isIntensive(d)});
+    if(s && s !== 'course' && !trainCovered(d, s)) out.push({date: d, athlete: s, intensive: isIntensive(d)});
   }
   return out.reverse();
 }
@@ -4801,7 +4824,7 @@ function studyCfg(kids){
     start: settings.studyStart || todayISO()
   };
 }
-const studyCfgKey = c => JSON.stringify([c.active, c.minutes, c.block, c.week]);
+const studyCfgKey = c => JSON.stringify([c.active, c.minutes, c.block, c.week, 'lang1']);
 
 function studyDayMeta(date, cfg){
   const wd = new Date(date + 'T00:00:00').getDay();
@@ -4865,6 +4888,13 @@ function buildStudyDay(date, models, cfg, reviewCount, dayIdx, budgetOverride){
     const mins = segs.reduce((s, x) => s + x.minutes, 0);
     if(mins > 0) blocks.push({kind: 'new', courseId: c.id, courseName: c.name, minutes: mins, segs});
   });
+  /* язык держится на ежедневности: в каждый учебный день +15 минут практики
+     первого языка «в работе» — даже если сегодня по очереди другие курсы */
+  const lang = models.find(m => /язык$/i.test(m.name) && m.left() > 0);
+  if(lang){
+    const cur = lang.topics.find(t => t.rem > 0) || lang.topics[lang.topics.length - 1];
+    blocks.push({kind: 'lang', courseId: lang.id, courseName: lang.name, minutes: 15, segs: [], nodeId: cur ? cur.id : null});
+  }
   return {meta, blocks};
 }
 
@@ -5054,12 +5084,16 @@ function physPlanFor(date, kids){
     const c = courses[k % courses.length];
     return {sub: 'course', courseId: c.id, courseName: c.name, minutes: PHYS_COURSE_MIN};
   }
-  const ath = physAthletes(kids).find(a => a.name === slot);
+  return physTrainPlan(slot, date, kids, isIntensive(date));
+}
+/* тренировка атлета на дату: фаза и неделя этой даты, интенсив — по флагу */
+function physTrainPlan(name, date, kids, intensive){
+  kids = kids || studyKids();
+  const ath = physAthletes(kids).find(a => a.name === name);
   if(!ath) return null;
   const p = physPhase(ath, date, kids);
   if(!p) return null;
   const m = p.ph.name.match(/недели (\d+)\s*[-–]\s*(\d+)/);
-  const intensive = isIntensive(date);
   const items = (kids.get(p.ph.id) || []).filter(n => n.kind === 'entry')
     .map(n => { const base = Number(n.plan) || 0; return {id: n.id, name: n.name, base, sets: base + (intensive && base ? 1 : 0), note: n.note || '', target: physTarget(n.note)}; });
   const sets = items.reduce((x, i) => x + i.sets, 0);
@@ -5085,6 +5119,10 @@ async function ensurePhysToday(){
     const mins = segs.reduce((x, g) => x + g.minutes, 0);
     if(mins) block = Object.assign(plan, {segs, minutes: mins});
   } else block = plan;
+  if(block && block.sub === 'train'){
+    const r = trainCovered(today, block.athlete);
+    if(r && r.date < today){ block.done = block.minutes; block.aheadOn = r.date; block.result = {pct: r.pct, filled: r.filled, total: r.total}; }
+  }
   t = {date: today, key: physKey(), block};
   settings.physToday = t;
   await repo.setSetting('physToday', JSON.stringify(t));
@@ -5142,7 +5180,8 @@ function physSectionHTML(){
     const kids = studyKids();
     const any = physAthletes(kids).length || physCourses().length;
     return h + '<div class="sp-note">' + (any ? 'Сегодня без физической нагрузки — восстановление. Физические дни: ' + wds + '.'
-      : 'Нет ни программы тренировок, ни физических курсов. Загрузи их: Сервис → Готовые наборы → «Залить всё».') + '</div>';
+      : 'Нет ни программы тренировок, ни физических курсов. Загрузи их: Сервис → Готовые наборы → «Залить всё».') + '</div>' +
+      (physAthletes(kids).length ? offTodayHTML() + '<div class="sp-btns"><button data-act="phoff">Тренировка вне плана</button><button data-act="phstats">Статистика по атлетам</button></div>' : '');
   }
   h += '<div class="sp-block phys' + (b.done ? ' done' : '') + '">';
   if(b.sub === 'train'){
@@ -5161,13 +5200,15 @@ function physSectionHTML(){
     }
     h += '<div class="sp-note">Сначала разминка 5–10 минут. Приёмы с партнёром и акробатику — только с партнёром или страховкой.</div>';
   }
-  if(b.sub === 'train')
+  if(b.sub === 'train' && b.aheadOn)
+    h += '<div class="sp-note ok">✓ Сделано заранее — ' + studyDateLabel(b.aheadOn) + '. Сегодня отдых.</div></div>';
+  else if(b.sub === 'train')
     h += '<div class="sp-btns"><button class="go" data-act="phstart">' + (b.done ? 'Открыть результаты' : 'Начать тренировку') + '</button>' +
          (b.done ? '<button data-act="phundo">Отменить</button>' : '') + '</div></div>';
   else
     h += '<div class="sp-btns">' + (b.done ? '<button data-act="phundo">Отменить</button>'
           : '<button class="go" data-act="phdone">Сделал</button><button data-act="phpart">Частично</button>') + '</div></div>';
-  h += '<div class="sp-note">Физические дни: ' + wds + '.</div><div class="sp-btns"><button data-act="phstats">Статистика по атлетам</button></div>';
+  h += '<div class="sp-note">Физические дни: ' + wds + '.</div><div class="sp-btns"><button data-act="phoff">Тренировка вне плана</button><button data-act="phstats">Статистика по атлетам</button></div>';
   return h;
 }
 const physSlot0 = wd => (settings.physSchedule || {})[wd] || null;
@@ -5191,13 +5232,23 @@ function physSettingsHTML(){
    упражнения — норма (подходы × повторы/секунды), поле результата на каждый
    подход и насколько он близок к норме. Черновик сохраняется на ходу. */
 const WORKOUT_NOTE = 'тренировка';
-let woBlock = null, woPrev = {}, woSaveTimer = null;
+let woBlock = null, woSess = null, woPrev = {}, woSaveTimer = null;
+const WO_KIND = {plan: 'по плану', makeup: 'отработка пропуска', ahead: 'заранее', extra: 'дополнительная'};
+const WO_MARK = {makeup: ' ↻', ahead: ' ⏩', extra: ' +'};
+const woKey = sess => sess.kind + '|' + sess.block.athlete + '|' + (sess.planDate || todayISO());
 
 function woVals(){
-  const d = settings.workoutDraft;
-  if(!d || d.date !== todayISO() || d.phaseId !== woBlock.phaseId) settings.workoutDraft = {date: todayISO(), phaseId: woBlock.phaseId, vals: {}};
+  const d = settings.workoutDraft, key = woKey(woSess);
+  if(!d || d.date !== todayISO() || d.key !== key) settings.workoutDraft = {date: todayISO(), key, vals: {}};
   return settings.workoutDraft.vals;
 }
+/* тренировки вне плана за сегодня: отработка, заранее, дополнительная */
+function physOffList(){
+  const o = settings.physOff;
+  if(!o || o.date !== todayISO()) settings.physOff = {date: todayISO(), list: []};
+  return settings.physOff.list;
+}
+async function savePhysOff(){ await repo.setSetting('physOff', JSON.stringify(settings.physOff)); }
 function woStatus(v, t){
   if(v === '' || v == null || isNaN(v)) return {cls: '', txt: t ? 'норма ' + t.value : ''};
   if(!t) return {cls: 'ok', txt: 'записано'};
@@ -5226,10 +5277,16 @@ function woSumHTML(){
   return 'Подходов записано <b>' + t.filled + '</b> из <b>' + t.total + '</b> · выполнено <b>' + t.pct + '%</b> нормы' +
          '<span class="pl-bar"><i style="width:' + t.pct + '%"></i></span>';
 }
-async function openWorkout(){
-  const t = await ensurePhysToday();
-  const b = t && t.block;
-  if(!b || b.sub !== 'train'){ toast('Сегодня по плану тренировки нет'); return; }
+async function openWorkout(sess){
+  if(!sess){
+    const t = await ensurePhysToday();
+    const b = t && t.block;
+    if(!b || b.sub !== 'train'){ openOffPick(); return; }
+    if(b.aheadOn){ toast('Эта тренировка уже сделана заранее — ' + studyDateLabel(b.aheadOn)); return; }
+    sess = {kind: 'plan', planDate: todayISO(), block: b};
+  }
+  woSess = sess;
+  const b = sess.block;
   woBlock = b;
   woPrev = {};
   for(const it of b.items){
@@ -5245,7 +5302,9 @@ async function openWorkout(){
 function renderWorkout(){
   const b = woBlock, vals = woVals();
   $('woTitle').textContent = b.athlete + (b.intensive ? ' · интенсив' : '');
-  $('woSub').textContent = b.phase + ' · неделя ' + b.week + (b.phaseWeek ? ' (' + b.phaseWeek + '-я из ' + b.phaseLen + ' в фазе)' : '');
+  const sk = woSess.kind;
+  $('woSub').textContent = (sk !== 'plan' ? WO_KIND[sk][0].toUpperCase() + WO_KIND[sk].slice(1) + (sk !== 'extra' ? ' за ' + studyDateLabel(woSess.planDate) : '') + ' · ' : '') +
+    b.phase + ' · неделя ' + b.week + (b.phaseWeek ? ' (' + b.phaseWeek + '-я из ' + b.phaseLen + ' в фазе)' : '');
   let h = '<div class="wo-sum" id="woSum">' + woSumHTML() + '</div>' +
           (b.intensive ? '<div class="wo-int">ИНТЕНСИВ НЕДЕЛИ — к каждому упражнению +1 подход. Норма повторов та же. Засчитывается, если сделаны все подходы, включая дополнительный.</div>' : '') +
           '<div class="sp-note" style="margin-bottom:10px">Разминка 5–10 минут. Между подходами 60–90 секунд отдыха. ' +
@@ -5333,11 +5392,11 @@ async function finishWorkout(){
     }
   }
   b.applied = applied; b.done = b.minutes; b.result = tot;
-  await saveWorkoutLog(b, vals);
-  await savePhysToday();
+  await saveWorkoutLog(b, vals, woSess);
+  if(woSess.kind === 'plan') await savePhysToday(); else await savePhysOff();
   await repo.setSetting('workoutDraft', JSON.stringify(settings.workoutDraft));
   $('workoutBg').classList.remove('open');
-  toast('Тренировка записана: ' + tot.pct + '% нормы, подходов ' + tot.filled + ' из ' + tot.total);
+  toast((woSess.kind === 'plan' ? 'Тренировка записана' : 'Записано (' + WO_KIND[woSess.kind] + ')') + ': ' + tot.pct + '% нормы, подходов ' + tot.filled + ' из ' + tot.total);
   if($('studyBg').classList.contains('open')) await renderStudy();
   await render();
   scheduleReminders().catch(() => {});
@@ -5358,7 +5417,10 @@ $('woClose').onclick = closeWorkout;
    На каждую тренировку — запись: дата, атлет, фаза, неделя, % нормы и
    % по каждому упражнению. Итог атлета = средний % нормы по всем его дням
    с начала программы; пропущенный день считается как 0%. */
-async function saveWorkoutLog(b, vals){
+const sameSess = (r, athlete, kind, cover, date) => r.date === date && r.athlete === athlete && (r.kind || 'plan') === kind &&
+  (kind === 'extra' ? true : (r.planDate || r.date) === cover);
+async function saveWorkoutLog(b, vals, sess){
+  sess = sess || {kind: 'plan', planDate: todayISO()};
   const ex = b.items.map(it => {
     const arr = (vals[it.id] || []).slice(0, it.sets).filter(v => v !== '' && v != null && !isNaN(v)).map(Number);
     const need = it.target ? it.target.value * it.sets : it.sets;
@@ -5367,29 +5429,33 @@ async function saveWorkoutLog(b, vals){
             avg: arr.length ? Math.round(arr.reduce((x, y) => x + y, 0) / arr.length * 10) / 10 : 0,
             target: it.target ? it.target.value : null, unit: it.target ? it.target.unit : ''};
   });
-  const log = (settings.workoutLog || []).filter(r => !(r.date === todayISO() && r.athlete === b.athlete));
+  const log = (settings.workoutLog || []).filter(r => !sameSess(r, b.athlete, sess.kind, sess.planDate, todayISO()));
   const extraOk = !!b.intensive && ex.every(e => !e.sets || e.filled >= e.sets);
   log.push({date: todayISO(), athlete: b.athlete, phase: b.phase, week: b.week, pct: b.result.pct,
-            filled: b.result.filled, total: b.result.total, intensive: !!b.intensive, extraOk, ex});
+            filled: b.result.filled, total: b.result.total, intensive: !!b.intensive, extraOk, ex,
+            kind: sess.kind, planDate: sess.kind === 'extra' ? null : sess.planDate});
   log.sort((x, y) => (x.date < y.date ? -1 : x.date > y.date ? 1 : 0));
   settings.workoutLog = log.slice(-800);
   await repo.setSetting('workoutLog', JSON.stringify(settings.workoutLog));
 }
-async function dropWorkoutLog(b){
-  settings.workoutLog = (settings.workoutLog || []).filter(r => !(r.date === todayISO() && r.athlete === b.athlete));
+async function dropWorkoutLog(b, sess){
+  sess = sess || {kind: 'plan', planDate: todayISO()};
+  settings.workoutLog = (settings.workoutLog || []).filter(r => !sameSess(r, b.athlete, sess.kind, sess.planDate, todayISO()));
   await repo.setSetting('workoutLog', JSON.stringify(settings.workoutLog));
 }
 const WD_PLURAL = ['воскресенья', 'понедельники', 'вторники', 'среды', 'четверги', 'пятницы', 'субботы'];
 function athleteStats(name){
   const today = todayISO();
   const log = (settings.workoutLog || []).filter(r => r.athlete === name);
-  const byDate = new Map(log.map(r => [r.date, r]));
+  const byDate = new Map(log.filter(r => logCover(r)).map(r => [logCover(r), r]));   // плановая дата → чем закрыта
   const days = [];
   if(settings.physStart)
     for(let d = settings.physStart; d <= today; d = addDays(d, 1))
       if(physSlot(d) === name && (d < today || byDate.has(d))) days.push(d);
-  for(const r of log) if(!days.includes(r.date)) days.push(r.date);   // тренировка в другой день тоже считается
+  for(const d of byDate.keys()) if(!days.includes(d)) days.push(d);   // сделанное заранее и в дни вне расписания
   days.sort();
+  const late = log.filter(r => r.kind === 'makeup').length, ahead = log.filter(r => r.kind === 'ahead').length,
+        extra = log.filter(r => r.kind === 'extra').length;
   const done = days.filter(d => byDate.has(d));
   const score = days.length ? Math.round(days.reduce((x, d) => x + (byDate.has(d) ? byDate.get(d).pct : 0), 0) / days.length) : null;
   const avgNorm = done.length ? Math.round(done.reduce((x, d) => x + byDate.get(d).pct, 0) / done.length) : null;
@@ -5404,12 +5470,12 @@ function athleteStats(name){
   const weak = [...ex.values()].map(o => Object.assign(o, {pct: Math.round(o.pct / o.n), avg: Math.round(o.avg / Math.max(1, o.n - o.skipped) * 10) / 10}))
     .filter(o => o.pct < 100).sort((x, y) => x.pct - y.pct);
   const wds = [1, 2, 3, 4, 5, 6, 0].filter(wd => physSlot0(wd) === name);
-  const next = (() => { for(let d = addDays(today, byDate.has(today) ? 1 : 0), i = 0; i < 14; i++, d = addDays(d, 1)) if(physSlot(d) === name) return d; return null; })();
+  const next = (() => { for(let d = today, i = 0; i < 21; i++, d = addDays(d, 1)) if(physSlot(d) === name && !byDate.has(d)) return d; return null; })();
   const intDays = days.filter(d => isIntensive(d) || (byDate.get(d) || {}).intensive);
   const intDone = intDays.filter(d => byDate.has(d) && byDate.get(d).intensive);
   const intOk = intDone.filter(d => byDate.get(d).extraOk);
   return {name, days: days.length, done: done.length, missed: days.length - done.length, score, avgNorm, weak, recent: log.slice(-6), last: log[log.length - 1], wds, next, hasRecent: recent.length > 0,
-          intDays: intDays.length, intDone: intDone.length, intOk: intOk.length};
+          intDays: intDays.length, intDone: intDone.length, intOk: intOk.length, late, ahead, extra};
 }
 function trainStatsHTML(){
   const names = [...new Set([...physAthletes().map(a => a.name), ...(settings.workoutLog || []).map(r => r.athlete)])];
@@ -5445,17 +5511,20 @@ function trainStatsHTML(){
          '<span class="st-ath-p' + (a.score == null ? '' : a.score >= 95 ? ' ok' : a.score >= 75 ? ' near' : ' far') + '">' + pctTxt + '</span></div>';
     if(a.score != null) h += '<span class="pl-bar"><i style="width:' + a.score + '%"></i></span>';
     if(!a.days){
-      h += '<div class="sp-note">Тренировок ещё не было' + (a.next ? ' · первая — ' + studyDateLabel(a.next) : '') + '.</div></div>';
+      h += '<div class="sp-note">Тренировок по плану ещё не было' + (a.next ? ' · первая — ' + studyDateLabel(a.next) : '') + '.</div>' +
+           (a.extra ? '<div class="st-ath-l">дополнительных + ' + a.extra + '</div>' : '') + '</div>';
       continue;
     }
     h += '<div class="st-ath-l">' + dayWord[0].toUpperCase() + dayWord.slice(1) + ': выполнено <b>' + a.done + '</b> из <b>' + a.days + '</b>' +
          (a.missed ? ' · пропущено ' + a.missed : '') + (a.avgNorm != null ? ' · норма в среднем ' + a.avgNorm + '%' : '') + '</div>';
     if(a.intDays) h += '<div class="st-ath-l">Интенсивы: сделано <b>' + a.intDone + '</b> из <b>' + a.intDays + '</b>' +
                        (a.intDone ? ', с дополнительным подходом во всех упражнениях — ' + a.intOk : '') + '</div>';
+    if(a.late || a.ahead || a.extra) h += '<div class="st-ath-l">' + [a.late ? 'отработано пропусков ↻ ' + a.late : '', a.ahead ? 'сделано заранее ⏩ ' + a.ahead : '',
+                                         a.extra ? 'дополнительных + ' + a.extra : ''].filter(Boolean).join(' · ') + '</div>';
     if(a.last) h += '<div class="st-ath-l">Сейчас: ' + escHtml(a.last.phase) + ', неделя ' + a.last.week + '</div>';
     if(a.recent.length)
       h += '<div class="st-ath-l">Последние: ' + a.recent.map(r => '<span class="st-chip' + (r.pct >= 95 ? ' ok' : r.pct >= 75 ? ' near' : ' far') + '">' +
-           r.date.slice(8) + '.' + r.date.slice(5, 7) + ' · ' + r.pct + '%' + (r.intensive ? ' ⚡' : '') + '</span>').join(' ') + '</div>';
+           r.date.slice(8) + '.' + r.date.slice(5, 7) + ' · ' + r.pct + '%' + (r.intensive ? ' ⚡' : '') + (WO_MARK[r.kind] || '') + '</span>').join(' ') + '</div>';
     if(a.score === 100) h += '<div class="st-ath-l ok">Все дни сделаны, норма выполнена полностью ✓</div>';
     else if(a.hasRecent && !a.weak.length) h += '<div class="st-ath-l ok">Все упражнения последних тренировок — в норме ✓' + (a.missed ? ' Итог снижают пропуски.' : '') + '</div>';
     else if(a.weak.length){
@@ -5470,18 +5539,94 @@ function trainStatsHTML(){
     }
     h += '</div>';
   }
-  return h + '<div class="sp-note">Итог атлета — средний % нормы по всем его дням с начала программы, пропуск = 0%. 100% — все дни сделаны и норма выполнена полностью.</div>';
+  return h + '<div class="sp-note">Итог атлета — средний % нормы по всем его дням с начала программы, пропуск = 0%. 100% — все дни сделаны и норма выполнена полностью. ' +
+             'Отработка пропуска (↻) и тренировка заранее (⏩) закрывают свой день полностью; дополнительные (+) идут отдельной строкой и на итог не влияют.</div>';
 }
 
 /* кнопка на главном экране в день тренировки */
 async function workoutBannerHTML(){
-  if(!physDays().length || !physSlot(todayISO()) || physSlot(todayISO()) === 'course') return '';
+  if(!physDays().length || !physAthletes().length) return '';
   const t = await ensurePhysToday();
   const b = t && t.block;
-  if(!b || b.sub !== 'train') return '';
+  const off = '<button class="sp-banner wo off" id="woOffBanner">+ Тренировка вне плана' +
+              (physOffList().some(x => x.block.done) ? ' · сегодня: ' + physOffList().filter(x => x.block.done).length : '') + '</button>';
+  if(!b || b.sub !== 'train' || b.aheadOn) return (b && b.aheadOn ? '<div class="sp-banner wo">✓ Сегодняшняя тренировка (' + escHtml(b.athlete) + ') сделана заранее — отдыхай</div>' : '') + off;
   return '<button class="sp-banner wo" id="woBanner">' + (b.done ? 'Тренировка сделана · ' + b.athlete + (b.result ? ' · ' + b.result.pct + '% нормы' : '')
-          : 'Начать тренировку · ' + escHtml(b.athlete) + ' · неделя ' + b.week + (b.intensive ? ' · ⚡ интенсив +1 подход' : '')) + '</button>';
+          : 'Начать тренировку · ' + escHtml(b.athlete) + ' · неделя ' + b.week + (b.intensive ? ' · ⚡ интенсив +1 подход' : '')) + '</button>' + (b.done ? off : '');
 }
+
+/* ------------------ тренировка вне плана ------------------ */
+function offTodayHTML(){
+  const done = physOffList().filter(x => x.block.done);
+  if(!done.length) return '';
+  return '<div class="sp-note" style="margin-top:6px">Сегодня вне плана: ' + done.map(x => escHtml(x.block.athlete) + ' — ' + WO_KIND[x.kind] +
+         (x.kind !== 'extra' ? ' за ' + studyDateLabel(x.planDate) : '') + ' (' + x.block.result.pct + '%)').join('; ') + '</div>';
+}
+function openOffPick(){
+  const today = todayISO(), kids = studyKids();
+  const ahead = [];
+  for(let d = addDays(today, 1), i = 0; i < 7; i++, d = addDays(d, 1)){
+    const s = physSlot(d);
+    if(s && s !== 'course' && !trainCovered(d, s)) ahead.push({date: d, athlete: s, intensive: isIntensive(d)});
+  }
+  const missed = trainMissedList(addDays(today, -7));
+  let h = '';
+  const y = (settings.workoutLog || []).some(r => r.date === addDays(today, -1));
+  const tom = ahead.find(a => a.date === addDays(today, 1));
+  if(y) h += '<div class="wo-int">Вчера уже была тренировка. Мышцам нужно около 48 часов на восстановление — если всё болит, лучше отдохни.</div>';
+  else if(tom) h += '<div class="sp-note">Завтра по плану ' + escHtml(tom.athlete) + '. Хочешь потренироваться сегодня, а завтра отдохнуть — сделай её заранее.</div>';
+  h += '<h3>Сделать заранее</h3>';
+  h += ahead.length ? ahead.map(a => '<button class="wo-pick" data-act="wopick" data-kind="ahead" data-date="' + a.date + '" data-ath="' + escHtml(a.athlete) + '">' +
+        studyDateLabel(a.date) + ' · ' + escHtml(a.athlete) + (a.intensive ? ' · ⚡ интенсив' : '') + '<small>в тот день тренировка будет засчитана, напоминания не будет</small></button>').join('')
+        : '<div class="sp-note">На неделю вперёд всё уже сделано.</div>';
+  h += '<h3>Отработать пропуск</h3>';
+  h += missed.length ? missed.map(a => '<button class="wo-pick" data-act="wopick" data-kind="makeup" data-date="' + a.date + '" data-ath="' + escHtml(a.athlete) + '">' +
+        studyDateLabel(a.date) + ' · ' + escHtml(a.athlete) + (a.intensive ? ' · ⚡ интенсив' : '') + '<small>пропуск закроется, в статистике — «с опозданием ↻»</small></button>').join('')
+        : '<div class="sp-note">За последние 7 дней пропусков нет.</div>';
+  h += '<h3>Дополнительная</h3><div class="sp-note">Сверх плана, текущая фаза атлета. Идёт отдельной строкой и на итог не влияет.</div>';
+  h += physAthletes(kids).map(a => '<button class="wo-pick" data-act="wopick" data-kind="extra" data-ath="' + escHtml(a.name) + '">' + escHtml(a.name) + '</button>').join('');
+  const done = physOffList();
+  if(done.length){
+    h += '<h3>Сегодня вне плана</h3>';
+    done.forEach((x, i) => {
+      h += '<div class="wo-pick done">' + escHtml(x.block.athlete) + ' — ' + WO_KIND[x.kind] + (x.kind !== 'extra' ? ' за ' + studyDateLabel(x.planDate) : '') +
+           (x.block.done ? ' · ' + x.block.result.pct + '%' : ' · не завершена') +
+           '<span class="sp-btns"><button data-act="woopen" data-i="' + i + '">Открыть</button>' + (x.block.done ? '<button data-act="woundo" data-i="' + i + '">Отменить</button>' : '') + '</span></div>';
+    });
+  }
+  $('woPickBody').innerHTML = h;
+  $('woPickBg').classList.add('open');
+}
+async function startOffWorkout(kind, athlete, planDate){
+  const today = todayISO(), kids = studyKids();
+  const list = physOffList();
+  let sess = list.find(x => x.kind === kind && x.block.athlete === athlete && (kind === 'extra' || x.planDate === planDate));
+  if(!sess){
+    const block = kind === 'extra' ? physTrainPlan(athlete, today, kids, false) : physTrainPlan(athlete, planDate, kids, isIntensive(planDate));
+    if(!block){ toast('Не нашёл программу этого атлета'); return; }
+    sess = {kind, planDate: kind === 'extra' ? null : planDate, block};
+    list.push(sess);
+    await savePhysOff();
+  }
+  $('woPickBg').classList.remove('open');
+  await openWorkout(sess);
+}
+$('woPickBody').addEventListener('click', async e => {
+  const el = e.target.closest('[data-act]');
+  if(!el) return;
+  const act = el.dataset.act;
+  if(act === 'wopick') await startOffWorkout(el.dataset.kind, el.dataset.ath, el.dataset.date || null);
+  else if(act === 'woopen'){ const x = physOffList()[Number(el.dataset.i)]; $('woPickBg').classList.remove('open'); await openWorkout(x); }
+  else if(act === 'woundo'){
+    const list = physOffList(), i = Number(el.dataset.i), x = list[i];
+    await removeWorkoutSets(x.block); await dropWorkoutLog(x.block, x);
+    list.splice(i, 1); await savePhysOff();
+    toast('Отметка снята'); openOffPick();
+    if($('studyBg').classList.contains('open')) await renderStudy();
+    await render(); scheduleReminders().catch(() => {});
+  }
+});
+$('woPickClose').onclick = () => $('woPickBg').classList.remove('open');
 
 async function savePhysCfg(){
   await repo.setSetting('physSchedule', JSON.stringify(settings.physSchedule));
@@ -5588,7 +5733,13 @@ async function renderStudy(){
     const rest = cfg.block >= 45 ? 15 : 5;
     snap.blocks.forEach((b, i) => {
       html += '<div class="sp-block' + (b.done ? ' done' : '') + '">';
-      if(b.kind === 'review'){
+      if(b.kind === 'lang'){
+        const cur = b.nodeId ? index.byId.get(b.nodeId) : null;
+        html += '<div class="sp-bh"><b>Языковая практика · ' + b.minutes + ' мин</b><span class="sp-course">' + escHtml(b.courseName) + '</span></div>' +
+                '<div class="sp-note">Каждый день, вслух: 5 мин — слова и фразы из шпаргалки; 7 мин — shadowing: дрилл текущего урока за озвучкой Google Переводчика; ' +
+                '3 мин — расскажи на диктофон, как прошёл день, и найди 2 ошибки.</div>' +
+                (cur ? '<div class="sp-seg" data-act="read" data-node="' + cur.id + '">' + escHtml(cur.name) + '<span class="where">текущий урок — дрилл для shadowing</span></div>' : '');
+      } else if(b.kind === 'review'){
         html += '<div class="sp-bh"><b>Повторение · ' + b.minutes + ' мин</b>' +
                 '<span class="sp-course">' + b.cards + ' карт.</span></div>' +
                 '<div class="sp-note">Сначала освежаем пройденное — так новое ложится на знакомую основу.</div>';
@@ -5644,7 +5795,7 @@ async function renderStudy(){
           (d.meta.mode === 'light' ? ' · лёгкий день' : '') + (d.meta.deload ? ' · разгрузка' : '') + '</span>';
     }
     const pp = physPlanFor(d.date, kids);
-    if(pp) t += '<span class="where">+ ' + escHtml(physLabel(pp)) + '</span>';
+    if(pp) t += '<span class="where">+ ' + escHtml(physLabel(pp)) + (pp.sub === 'train' && trainCovered(d.date, pp.athlete) ? ' · ✓ сделано заранее' : '') + '</span>';
     html += '<div class="sp-prev"><span class="d">' + studyDateLabel(d.date) + '</span>' +
             '<span class="t">' + t + '</span><span class="m">' + (mins ? mins + ' мин' : '') + '</span></div>';
   }
@@ -5841,6 +5992,8 @@ $('studyBody').addEventListener('click', async e => {
     if(h) h.scrollIntoView();
   } else if(act === 'phstart'){
     await openWorkout();
+  } else if(act === 'phoff'){
+    openOffPick();
   } else if(act === 'wd'){
     const wd = Number(el.dataset.v);
     const order = ['full', 'light', 'rest'];
@@ -8735,6 +8888,7 @@ function remindPlanLine(date, kids){
 function remindTrainLine(date, kids){
   const p = physPlanFor(date, kids);
   if(!p) return '';
+  if(p.sub === 'train' && trainCovered(date, p.athlete)) return '';
   return p.sub === 'train' ? (p.intensive ? '⚡ интенсив ' : 'тренировка ') + p.athlete + ' · неделя ' + p.week : 'физкурс · ' + p.courseName;
 }
 async function scheduleReminders(){
@@ -9433,7 +9587,6 @@ function theoryButton(id, arr, label){
     btn.textContent = label;
   };
 }
-theoryButton('fillEngTheory', () => theorySet('ENG_THEORY'), 'Английский: залить теорию');
 theoryButton('fillAraTheory', () => theorySet('ARA_THEORY'), 'Арабский: залить теорию');
 theoryButton('fillSpaTheory', () => theorySet('SPA_THEORY'), 'Испанский: залить теорию');
 theoryButton('fillMartialTheory', () => theorySet('MARTIAL_THEORY'), 'Боевая система: залить теорию');
@@ -9451,6 +9604,7 @@ const LESSON_COURSES = [
   ['Выживание', () => SURVIVAL_COURSE, 'SURVIVAL_THEORY', 'fillSurvivalTheory', 'Выживание: залить теорию', 'Курс: выживание'],
   ['Ориентирование на местности', () => NAVIGATION_COURSE, 'NAVIGATION_THEORY', 'fillNavigationTheory', 'Ориентирование на местности: залить теорию', 'Курс: ориентирование на местности'],
   ['Слежка и контрнаблюдение', () => SURVEILLANCE_COURSE, 'SURVEILLANCE_THEORY', 'fillSurveillanceTheory', 'Слежка и контрнаблюдение: залить теорию', 'Курс: слежка и контрнаблюдение'],
+  ['Английский язык', () => ENG_COURSE, 'ENG_THEORY', 'fillEngTheory', 'Английский: залить теорию', 'Курс: английский', true],
 ];
 function lessonSig(course, th){
   let chars = 0, hrs = 0;
@@ -9466,9 +9620,51 @@ async function fillLessonCourse(title, getCourse, theoryVar){
   await reindex();
   const roots = index.all.filter(n => n.kind === 'category' && n.name === title && Number(n.volume) > 0);
   if(!roots.length) return -1;
+  const lc = LESSON_COURSES.find(x => x[0] === title);
   let done = 0;
-  for(const r of roots) done += await fillTheoryInto(r.id, getCourse(), theorySet(theoryVar));
+  for(const r of roots){
+    if(lc && lc[6]) await restructureCourse(r.id, getCourse());
+    done += await fillTheoryInto(r.id, getCourse(), theorySet(theoryVar));
+  }
   return done;
+}
+/* Курс переписан с новой программой (другие модули и темы, как английский по ступеням):
+   добавляем новые модули и темы в тот же курс, а старые темы убираем — но только
+   нетронутые: без пройденного времени и без своих заметок. Тронутые остаются. */
+async function restructureCourse(rootId, course){
+  await reindex();
+  const root = index.byId.get(rootId);
+  const modNames = new Set(course.map(m => m[0]));
+  const titles = new Set(course.flatMap(m => m[2].map(t => t[0])));
+  const kids = studyKids();
+  const isPristine = n => !(Number(n.fact) > 0) && !n.done && (!n.note || n.note.includes('ПРОВЕРЬ СЕБЯ') || n.note.length < 400);
+  const oldMods = (kids.get(rootId) || []).filter(m => m.kind === 'category' && !modNames.has(m.name));
+  let removed = 0;
+  for(const m of oldMods){
+    const ents = [];
+    (function walk(pid){ for(const n of (kids.get(pid) || [])){ if(n.kind === 'entry') ents.push(n); else walk(n.id); } })(m.id);
+    for(const e of ents) if(!titles.has(e.name) && isPristine(e)){ await repo.remove(e.id); removed++; }
+  }
+  /* новые модули и темы — по порядку программы */
+  let pos = 0;
+  const have = new Map((await repo.listChildren(rootId)).filter(n => n.kind === 'category').map(n => [n.name, n]));
+  for(const [name, src, topics] of course){
+    let modId = have.has(name) ? have.get(name).id : await createNode(rootId, {name, kind: 'category', note: 'Источники: ' + src});
+    await repo.update(modId, {sort: pos++});
+    const hv = new Set((await repo.listChildren(modId)).map(n => n.name));
+    let tp = 0;
+    for(const [topic, hrs, what] of topics){
+      if(!hv.has(topic)) await createNode(modId, {name: topic, kind: 'entry', plan: hrs, fact: 0, note: what});
+    }
+  }
+  /* опустевшие старые модули убираем, непустые (с пройденным) — в конец */
+  for(const m of oldMods){
+    const left = await repo.listChildren(m.id);
+    if(!left.length) await repo.remove(m.id);
+    else await repo.update(m.id, {sort: pos++});
+  }
+  await reindex();
+  return removed;
 }
 async function upgradeLessonCourses(){
   let applied = {};
@@ -9690,7 +9886,7 @@ $('seedAll').onclick = async () => {
    (книги, закладки, люди, журнал приложений, история занятий) — их
    сброс не касается никогда.
 ==================================================================*/
-const RESET_PLAN_KEYS = ['studyActive','studyOrder','studySlots','studyMinutes','studyBlock','studyWeek','studyStart','studyToday','physSchedule','physStart','physToday','workoutDraft'];
+const RESET_PLAN_KEYS = ['studyActive','studyOrder','studySlots','studyMinutes','studyBlock','studyWeek','studyStart','studyToday','physSchedule','physStart','physToday','workoutDraft','physOff'];
 const RESET_ALL_KEYS = [...new Set([...RESET_PLAN_KEYS,
   'workoutLog','studyDays','remind','theme','splashAnim','splashPhoto','splashPhotoDim','splashShowTitle',
   'splashMusic','splashMusicName','splashMusicDuration','readerFont','readerTheme',
