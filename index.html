@@ -394,6 +394,9 @@
   }
   .sp-banner .pl-bar{margin-top:6px}
   .sp-banner.wo{border-color:var(--income)}
+  .rm-times{display:grid;grid-template-columns:1fr;gap:6px;margin:8px 0 4px}
+  .rm-times label{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;margin:0}
+  .rm-times input{padding:6px 8px;font:inherit;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px}
   .wo-sum{position:sticky;top:-16px;z-index:2;background:var(--bg);padding:8px 0 10px;border-bottom:1px solid var(--line);margin:-4px 0 10px;font-size:13px}
   .wo-ex{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px}
   .wo-ex h4{margin:0;font-size:14px;font-weight:600}
@@ -1851,6 +1854,17 @@
 
     <button class="sv-head" data-sec="secNotify">Уведомления</button>
     <div class="sv-sec" id="secNotify">
+      <label>Напоминания</label>
+      <div class="seg" id="remindToggle">
+        <button data-v="on">Включены</button>
+        <button data-v="off">Выключены</button>
+      </div>
+      <div class="rm-times">
+        <label>Утро — план на день<input id="remindMorning" type="time" value="09:00"></label>
+        <label>Тренировка<input id="remindTrain" type="time" value="18:00"></label>
+        <label>Вечер — если не сделано<input id="remindEvening" type="time" value="21:00"></label>
+      </div>
+      <div class="hint">Утром — что по плану (учёба, тренировка, интенсив). В день тренировки — отдельное напоминание. Вечером — только если что-то не сделано: отметил — вечернее напоминание снимается.</div>
       <label>Сводка дня в шторке</label>
       <div class="seg" id="statusNotifToggle">
         <button data-v="on">Показывать</button>
@@ -1906,7 +1920,7 @@
       <button id="openReset">Сбросить настройки…</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 89 — интенсив раз в неделю (+1 подход к каждому упражнению: Сб → Чт → Пн → Вт по кругу), учитывается в статистике; статистика тренировок по каждому атлету: итог в %, пропуски, что недотягивает; тренировки по дням: Пн Крис Хериа, Вт Фрэнк Медрано, Чт Деян Стипич, Сб Майк Вазкез; кнопка «Начать тренировку» с нормой, результатом по подходам и отставанием от нормы; фазы по неделям атлета; уроками стали «Первая помощь», «Выживание», «Ориентирование», «Слежка и контрнаблюдение»</div>
+    <div class="hint sv-version" id="version">Версия 91 — английский переписан: ступень 1 по методике спецкурсов (фонетика первой, дриллинг, диктант, пересказ), ежедневная языковая практика 15 мин; напоминания (утро, тренировка, вечер если не сделано); статистика невыполненной учёбы и пропущенных тренировок; интенсив раз в неделю (+1 подход к каждому упражнению: Сб → Чт → Пн → Вт по кругу), учитывается в статистике; статистика тренировок по каждому атлету: итог в %, пропуски, что недотягивает; тренировки по дням: Пн Крис Хериа, Вт Фрэнк Медрано, Чт Деян Стипич, Сб Майк Вазкез; кнопка «Начать тренировку» с нормой, результатом по подходам и отставанием от нормы; фазы по неделям атлета; уроками стали «Первая помощь», «Выживание», «Ориентирование», «Слежка и контрнаблюдение»</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -2270,6 +2284,8 @@ async function openDatabase(){
   settings.physSchedule = (() => { const d = parseJSON(s.physSchedule, null); return d && typeof d === 'object' && !Array.isArray(d) ? d : Object.assign({}, PHYS_DEFAULT_SCHEDULE); })();
   settings.workoutDraft = parseJSON(s.workoutDraft, null);
   settings.workoutLog = parseJSON(s.workoutLog, []);
+  settings.studyDays = parseJSON(s.studyDays, []);
+  settings.remind = Object.assign({on: true, morning: '09:00', train: '18:00', evening: '21:00'}, parseJSON(s.remind, {}));
   settings.physStart = s.physStart || '';
   settings.physToday = parseJSON(s.physToday, null);
   settings.resetPassHash = s.resetPassHash || '';
@@ -4431,6 +4447,72 @@ function studyStats(){
           young, mature, reps, lapses, ease, avgIvl, forecast, hard};
 }
 
+/* ---------------- невыполненная учёба ----------------
+   Каждый учебный день после его окончания попадает в журнал: сколько было
+   по плану и сколько сделано. День, когда приложение даже не открывалось,
+   тоже считается — по плану дня недели. Выходной (отдых) не считается. */
+async function archiveStudyDay(snap){
+  const planned = snap.blocks.reduce((x, b) => x + b.minutes, 0);
+  if(!planned) return;
+  const done = snap.blocks.reduce((x, b) => x + (b.done || 0), 0);
+  const left = [...new Set(snap.blocks.filter(b => !b.done).map(b => b.kind === 'review' ? 'повторение' : b.courseName))];
+  const log = (settings.studyDays || []).filter(r => r.date !== snap.date);
+  log.push({date: snap.date, planned, done: Math.min(done, planned), left});
+  log.sort((x, y) => (x.date < y.date ? -1 : 1));
+  settings.studyDays = log.slice(-400);
+  await repo.setSetting('studyDays', JSON.stringify(settings.studyDays));
+}
+function studyMissed(){
+  const today = todayISO();
+  if(!settings.studyStart || !(settings.studyOrder || []).length) return null;
+  const cfg = studyCfg();
+  const logged = new Map((settings.studyDays || []).map(r => [r.date, r]));
+  const hist = settings.studyHist || {};
+  const days = [];
+  for(let d = settings.studyStart; d < today; d = addDays(d, 1)){
+    let r = logged.get(d);
+    if(!r){
+      const meta = studyDayMeta(d, cfg);
+      if(meta.mode === 'rest' || !meta.minutes) continue;
+      r = {date: d, planned: meta.minutes, done: Math.min(meta.minutes, Number(hist[d]) || 0), left: [], notOpened: !(Number(hist[d]) > 0)};
+    }
+    days.push(r);
+  }
+  const full = days.filter(r => r.done >= r.planned - 1), none = days.filter(r => r.done <= 0), part = days.filter(r => r.done > 0 && r.done < r.planned - 1);
+  return {days, full: full.length, part: part.length, none: none.length,
+          plannedMin: days.reduce((x, r) => x + r.planned, 0), doneMin: days.reduce((x, r) => x + r.done, 0),
+          misses: days.filter(r => r.done < r.planned - 1).reverse()};
+}
+function studyMissHTML(){
+  const m = studyMissed();
+  if(!m || !m.days.length) return '';
+  const pct = m.plannedMin ? Math.round(m.doneMin / m.plannedMin * 100) : 0;
+  let h = '<h3>Невыполненная учёба</h3><div class="st-ath"><div class="st-ath-h"><b>Учебных дней: ' + m.days.length + '</b>' +
+          '<span class="st-ath-p' + (pct >= 95 ? ' ok' : pct >= 75 ? ' near' : ' far') + '">' + pct + '%</span></div>' +
+          '<span class="pl-bar"><i style="width:' + pct + '%"></i></span>' +
+          '<div class="st-ath-l">Полностью <b>' + m.full + '</b> · частично <b>' + m.part + '</b> · пропущено <b>' + m.none + '</b> · ' +
+          'минут ' + Math.round(m.doneMin) + ' из ' + m.plannedMin + '</div>';
+  if(!m.misses.length) h += '<div class="st-ath-l ok">Ни одного недоделанного дня ✓</div>';
+  for(const r of m.misses.slice(0, 10))
+    h += '<div class="st-weak"><span>' + studyDateLabel(r.date) + '<small>' +
+         (r.done > 0 ? 'сделано ' + Math.round(r.done) + ' из ' + r.planned + ' мин' : (r.notOpened ? 'приложение не открывалось · ' : '') + 'не сделано ' + r.planned + ' мин') +
+         (r.left && r.left.length ? ' · ' + escHtml(r.left.join(', ')) : '') + '</small></span><b class="' + (r.done > 0 ? 'near' : 'far') + '">' +
+         (r.done > 0 ? Math.round(r.done / r.planned * 100) + '%' : '0%') + '</b></div>';
+  if(m.misses.length > 10) h += '<div class="st-ath-l">…и ещё ' + (m.misses.length - 10) + '</div>';
+  return h + '</div>';
+}
+/* пропущенные тренировки по всем атлетам */
+function trainMissedList(){
+  const today = todayISO(), out = [];
+  if(!settings.physStart) return out;
+  const done = new Set((settings.workoutLog || []).map(r => r.date + '|' + r.athlete));
+  for(let d = settings.physStart; d < today; d = addDays(d, 1)){
+    const s = physSlot(d);
+    if(s && s !== 'course' && !done.has(d + '|' + s)) out.push({date: d, athlete: s, intensive: isIntensive(d)});
+  }
+  return out.reverse();
+}
+
 /* занятия по дням (из истории минут) и прогресс по курсам в текущем разделе */
 function studyProgressHTML(){
   const today = todayISO();
@@ -4511,7 +4593,7 @@ function stTile(label, value){
 function renderStats(){
   const s = studyStats();
   const box = $('statsBody');
-  const progress = studyProgressHTML() + trainStatsHTML();
+  const progress = studyProgressHTML() + studyMissHTML() + trainStatsHTML();
 
   if(s.total === 0){
     box.innerHTML = progress ||
@@ -4719,7 +4801,7 @@ function studyCfg(kids){
     start: settings.studyStart || todayISO()
   };
 }
-const studyCfgKey = c => JSON.stringify([c.active, c.minutes, c.block, c.week]);
+const studyCfgKey = c => JSON.stringify([c.active, c.minutes, c.block, c.week, 'lang1']);
 
 function studyDayMeta(date, cfg){
   const wd = new Date(date + 'T00:00:00').getDay();
@@ -4783,6 +4865,13 @@ function buildStudyDay(date, models, cfg, reviewCount, dayIdx, budgetOverride){
     const mins = segs.reduce((s, x) => s + x.minutes, 0);
     if(mins > 0) blocks.push({kind: 'new', courseId: c.id, courseName: c.name, minutes: mins, segs});
   });
+  /* язык держится на ежедневности: в каждый учебный день +15 минут практики
+     первого языка «в работе» — даже если сегодня по очереди другие курсы */
+  const lang = models.find(m => /язык$/i.test(m.name) && m.left() > 0);
+  if(lang){
+    const cur = lang.topics.find(t => t.rem > 0) || lang.topics[lang.topics.length - 1];
+    blocks.push({kind: 'lang', courseId: lang.id, courseName: lang.name, minutes: 15, segs: [], nodeId: cur ? cur.id : null});
+  }
   return {meta, blocks};
 }
 
@@ -4794,6 +4883,7 @@ async function ensureStudyToday(){
   let snap = settings.studyToday;
   if(snap && snap.date === today && snap.key === studyCfgKey(cfg)) return snap;
 
+  if(snap && snap.date && snap.date < today) await archiveStudyDay(snap);
   const keep = snap && snap.date === today ? snap.blocks.filter(b => b.done) : [];
   const doneMin = keep.reduce((s, b) => s + (b.done || 0), 0);
   const kids = studyKids();
@@ -4861,6 +4951,7 @@ async function markStudyBlock(i, minutes){
     toast('Записано ' + minutes + ' мин' + (closed ? ' · тем закрыто: ' + closed : ''));
   await renderStudy();
   updateStatusNotification();
+  scheduleReminders().catch(() => {});
 }
 
 async function undoStudyBlock(i){
@@ -5256,6 +5347,7 @@ async function finishWorkout(){
   toast('Тренировка записана: ' + tot.pct + '% нормы, подходов ' + tot.filled + ' из ' + tot.total);
   if($('studyBg').classList.contains('open')) await renderStudy();
   await render();
+  scheduleReminders().catch(() => {});
 }
 $('woBody').addEventListener('click', async e => {
   const el = e.target.closest('[data-act]');
@@ -5338,6 +5430,18 @@ function trainStatsHTML(){
          '<div class="st-ath-l">Раз в неделю одна тренировка с +1 подходом к каждому упражнению: суббота → четверг → понедельник → вторник → по кругу.</div>' +
          (d ? '<div class="st-ath-l">Было <b>' + d + '</b> · сделано <b>' + dn + '</b> · полностью, с доп. подходом везде — <b>' + ok + '</b></div>' : '') +
          (nx ? '<div class="st-ath-l">Следующий: ' + studyDateLabel(nx) + ' · ' + escHtml(physSlot(nx)) + '</div>' : '') + '</div>';
+    const miss = trainMissedList();
+    const total = all.reduce((x, a) => x + a.days, 0);
+    h += '<div class="st-ath"><div class="st-ath-h"><b>Невыполненные тренировки</b><span class="st-ath-p' + (miss.length ? ' far' : total ? ' ok' : '') + '">' + miss.length + '</span></div>';
+    if(!total) h += '<div class="st-ath-l">Тренировок по плану ещё не было.</div>';
+    else if(!miss.length) h += '<div class="st-ath-l ok">Все тренировки по плану сделаны ✓</div>';
+    else {
+      h += '<div class="st-ath-l">По плану было ' + total + ', пропущено ' + miss.length + ' (' + Math.round(miss.length / total * 100) + '%).</div>';
+      for(const r of miss.slice(0, 10))
+        h += '<div class="st-weak"><span>' + studyDateLabel(r.date) + '<small>' + escHtml(r.athlete) + (r.intensive ? ' · ⚡ интенсив' : '') + '</small></span><b class="far">✕</b></div>';
+      if(miss.length > 10) h += '<div class="st-ath-l">…и ещё ' + (miss.length - 10) + '</div>';
+    }
+    h += '</div>';
   }
   for(const n of names){
     const a = athleteStats(n);
@@ -5491,7 +5595,13 @@ async function renderStudy(){
     const rest = cfg.block >= 45 ? 15 : 5;
     snap.blocks.forEach((b, i) => {
       html += '<div class="sp-block' + (b.done ? ' done' : '') + '">';
-      if(b.kind === 'review'){
+      if(b.kind === 'lang'){
+        const cur = b.nodeId ? index.byId.get(b.nodeId) : null;
+        html += '<div class="sp-bh"><b>Языковая практика · ' + b.minutes + ' мин</b><span class="sp-course">' + escHtml(b.courseName) + '</span></div>' +
+                '<div class="sp-note">Каждый день, вслух: 5 мин — слова и фразы из шпаргалки; 7 мин — shadowing: дрилл текущего урока за озвучкой Google Переводчика; ' +
+                '3 мин — расскажи на диктофон, как прошёл день, и найди 2 ошибки.</div>' +
+                (cur ? '<div class="sp-seg" data-act="read" data-node="' + cur.id + '">' + escHtml(cur.name) + '<span class="where">текущий урок — дрилл для shadowing</span></div>' : '');
+      } else if(b.kind === 'review'){
         html += '<div class="sp-bh"><b>Повторение · ' + b.minutes + ' мин</b>' +
                 '<span class="sp-course">' + b.cards + ' карт.</span></div>' +
                 '<div class="sp-note">Сначала освежаем пройденное — так новое ложится на знакомую основу.</div>';
@@ -8613,8 +8723,74 @@ function syncStatusNotify(){
 });
 
 if(window.Capacitor && window.Capacitor.Plugins.App){
-  window.Capacitor.Plugins.App.addListener('resume', () => { updateStatusNotification(); });
+  window.Capacitor.Plugins.App.addListener('resume', () => { updateStatusNotification(); scheduleReminders(); });
 }
+
+/* ===================== напоминания =====================
+   Утром — план на день, в день тренировки — «сегодня тренировка», вечером —
+   если что-то не сделано. Ставятся на 7 дней вперёд и пересобираются при
+   каждом открытии приложения и каждой отметке: сделал — вечернее напоминание
+   на сегодня снимается. Нужен тот же плагин уведомлений, что и для сводки. */
+const REMIND_BASE = 7300000;
+function remindAt(date, hhmm){
+  const [h, m] = String(hhmm || '09:00').split(':').map(Number);
+  const d = new Date(date + 'T00:00:00'); d.setHours(h || 0, m || 0, 0, 0);
+  return d;
+}
+function remindPlanLine(date, kids){
+  const cfg = studyCfg(kids);
+  if(!cfg.active.length) return '';
+  const meta = studyDayMeta(date, cfg);
+  if(meta.mode === 'rest' || !meta.minutes) return '';
+  const names = cfg.active.map(id => (index.byId.get(id) || {}).name).filter(Boolean).slice(0, meta.mode === 'light' ? 1 : 2);
+  return 'учёба ' + meta.minutes + ' мин' + (names.length ? ' (' + names.join(' + ') + ')' : '');
+}
+function remindTrainLine(date, kids){
+  const p = physPlanFor(date, kids);
+  if(!p) return '';
+  return p.sub === 'train' ? (p.intensive ? '⚡ интенсив ' : 'тренировка ') + p.athlete + ' · неделя ' + p.week : 'физкурс · ' + p.courseName;
+}
+async function scheduleReminders(){
+  const plugin = statusNotifPlugin();
+  if(!plugin) return 0;
+  try{
+    await plugin.cancel({notifications: Array.from({length: 21}, (_, i) => ({id: REMIND_BASE + i}))});
+  }catch(e){}
+  if(!settings.remind || !settings.remind.on) return 0;
+  await reindex();
+  const kids = studyKids(), now = new Date(), today = todayISO(), list = [];
+  const snap = settings.studyToday && settings.studyToday.date === today ? settings.studyToday : null;
+  const studyLeft = snap ? snap.blocks.some(b => !b.done && b.minutes) : !!remindPlanLine(today, kids);
+  const pt = settings.physToday && settings.physToday.date === today ? settings.physToday : null;
+  const trainLeft = pt ? !!(pt.block && !pt.block.done) : !!physPlanFor(today, kids);
+  for(let i = 0; i < 7; i++){
+    const d = addDays(today, i);
+    const plan = remindPlanLine(d, kids), tr = remindTrainLine(d, kids);
+    const push = (k, at, title, body) => { if(at > now) list.push({id: REMIND_BASE + i * 3 + k, title, body, schedule: {at, allowWhileIdle: true}}); };
+    if(plan || tr) push(0, remindAt(d, settings.remind.morning), 'План на сегодня', [plan, tr].filter(Boolean).join(' · '));
+    if(tr) push(1, remindAt(d, settings.remind.train), tr.startsWith('⚡') ? 'Сегодня интенсив ⚡' : 'Сегодня тренировка', tr + '. Нажми «Начать тренировку».');
+    const eveTrain = i === 0 ? (trainLeft && tr) : tr, eveStudy = i === 0 ? (studyLeft && plan) : plan;
+    if(eveTrain || eveStudy) push(2, remindAt(d, settings.remind.evening), 'Ещё не сделано',
+      [eveStudy ? 'учёба' : '', eveTrain ? (tr.startsWith('физ') ? 'физкурс' : 'тренировка') : ''].filter(Boolean).join(' и ') + ' на сегодня. Не пропускай два дня подряд.');
+  }
+  if(!list.length) return 0;
+  try{ await plugin.schedule({notifications: list}); }catch(e){ return 0; }
+  return list.length;
+}
+async function saveRemind(){
+  await repo.setSetting('remind', JSON.stringify(settings.remind));
+  if(settings.remind.on){ await requestStatusNotifPermission(); }
+  await scheduleReminders();
+  syncRemindUI();
+}
+function syncRemindUI(){
+  const r = settings.remind;
+  [...$('remindToggle').children].forEach(b => b.setAttribute('aria-pressed', String((b.dataset.v === 'on') === !!r.on)));
+  $('remindMorning').value = r.morning; $('remindTrain').value = r.train; $('remindEvening').value = r.evening;
+}
+[...$('remindToggle').children].forEach(b => { b.onclick = async () => { settings.remind.on = b.dataset.v === 'on'; await saveRemind(); toast(settings.remind.on ? 'Напоминания включены' : 'Напоминания выключены'); }; });
+for(const [id, key] of [['remindMorning', 'morning'], ['remindTrain', 'train'], ['remindEvening', 'evening']])
+  $(id).onchange = async () => { if(/^\d{1,2}:\d{2}$/.test($(id).value)){ settings.remind[key] = $(id).value; await saveRemind(); } };
 
 $('openGraph').onclick = openGraphScreen;
 $('graphClose').onclick = closeGraphScreen;
@@ -9270,7 +9446,6 @@ function theoryButton(id, arr, label){
     btn.textContent = label;
   };
 }
-theoryButton('fillEngTheory', () => theorySet('ENG_THEORY'), 'Английский: залить теорию');
 theoryButton('fillAraTheory', () => theorySet('ARA_THEORY'), 'Арабский: залить теорию');
 theoryButton('fillSpaTheory', () => theorySet('SPA_THEORY'), 'Испанский: залить теорию');
 theoryButton('fillMartialTheory', () => theorySet('MARTIAL_THEORY'), 'Боевая система: залить теорию');
@@ -9288,6 +9463,7 @@ const LESSON_COURSES = [
   ['Выживание', () => SURVIVAL_COURSE, 'SURVIVAL_THEORY', 'fillSurvivalTheory', 'Выживание: залить теорию', 'Курс: выживание'],
   ['Ориентирование на местности', () => NAVIGATION_COURSE, 'NAVIGATION_THEORY', 'fillNavigationTheory', 'Ориентирование на местности: залить теорию', 'Курс: ориентирование на местности'],
   ['Слежка и контрнаблюдение', () => SURVEILLANCE_COURSE, 'SURVEILLANCE_THEORY', 'fillSurveillanceTheory', 'Слежка и контрнаблюдение: залить теорию', 'Курс: слежка и контрнаблюдение'],
+  ['Английский язык', () => ENG_COURSE, 'ENG_THEORY', 'fillEngTheory', 'Английский: залить теорию', 'Курс: английский', true],
 ];
 function lessonSig(course, th){
   let chars = 0, hrs = 0;
@@ -9303,9 +9479,51 @@ async function fillLessonCourse(title, getCourse, theoryVar){
   await reindex();
   const roots = index.all.filter(n => n.kind === 'category' && n.name === title && Number(n.volume) > 0);
   if(!roots.length) return -1;
+  const lc = LESSON_COURSES.find(x => x[0] === title);
   let done = 0;
-  for(const r of roots) done += await fillTheoryInto(r.id, getCourse(), theorySet(theoryVar));
+  for(const r of roots){
+    if(lc && lc[6]) await restructureCourse(r.id, getCourse());
+    done += await fillTheoryInto(r.id, getCourse(), theorySet(theoryVar));
+  }
   return done;
+}
+/* Курс переписан с новой программой (другие модули и темы, как английский по ступеням):
+   добавляем новые модули и темы в тот же курс, а старые темы убираем — но только
+   нетронутые: без пройденного времени и без своих заметок. Тронутые остаются. */
+async function restructureCourse(rootId, course){
+  await reindex();
+  const root = index.byId.get(rootId);
+  const modNames = new Set(course.map(m => m[0]));
+  const titles = new Set(course.flatMap(m => m[2].map(t => t[0])));
+  const kids = studyKids();
+  const isPristine = n => !(Number(n.fact) > 0) && !n.done && (!n.note || n.note.includes('ПРОВЕРЬ СЕБЯ') || n.note.length < 400);
+  const oldMods = (kids.get(rootId) || []).filter(m => m.kind === 'category' && !modNames.has(m.name));
+  let removed = 0;
+  for(const m of oldMods){
+    const ents = [];
+    (function walk(pid){ for(const n of (kids.get(pid) || [])){ if(n.kind === 'entry') ents.push(n); else walk(n.id); } })(m.id);
+    for(const e of ents) if(!titles.has(e.name) && isPristine(e)){ await repo.remove(e.id); removed++; }
+  }
+  /* новые модули и темы — по порядку программы */
+  let pos = 0;
+  const have = new Map((await repo.listChildren(rootId)).filter(n => n.kind === 'category').map(n => [n.name, n]));
+  for(const [name, src, topics] of course){
+    let modId = have.has(name) ? have.get(name).id : await createNode(rootId, {name, kind: 'category', note: 'Источники: ' + src});
+    await repo.update(modId, {sort: pos++});
+    const hv = new Set((await repo.listChildren(modId)).map(n => n.name));
+    let tp = 0;
+    for(const [topic, hrs, what] of topics){
+      if(!hv.has(topic)) await createNode(modId, {name: topic, kind: 'entry', plan: hrs, fact: 0, note: what});
+    }
+  }
+  /* опустевшие старые модули убираем, непустые (с пройденным) — в конец */
+  for(const m of oldMods){
+    const left = await repo.listChildren(m.id);
+    if(!left.length) await repo.remove(m.id);
+    else await repo.update(m.id, {sort: pos++});
+  }
+  await reindex();
+  return removed;
 }
 async function upgradeLessonCourses(){
   let applied = {};
@@ -9529,7 +9747,7 @@ $('seedAll').onclick = async () => {
 ==================================================================*/
 const RESET_PLAN_KEYS = ['studyActive','studyOrder','studySlots','studyMinutes','studyBlock','studyWeek','studyStart','studyToday','physSchedule','physStart','physToday','workoutDraft'];
 const RESET_ALL_KEYS = [...new Set([...RESET_PLAN_KEYS,
-  'workoutLog','theme','splashAnim','splashPhoto','splashPhotoDim','splashShowTitle',
+  'workoutLog','studyDays','remind','theme','splashAnim','splashPhoto','splashPhotoDim','splashShowTitle',
   'splashMusic','splashMusicName','splashMusicDuration','readerFont','readerTheme',
   'schedule','planUnit','budget','statusNotify','srsOrder', ...Object.keys(SRS_DEFAULTS)])];
 let resetScope = 'plan';
@@ -9725,6 +9943,8 @@ $('readerClose').onclick = closeReader;
     }
     if(settings.splashMusic) playSplashMusic(settings.splashMusic, settings.splashMusicDuration);
     await render();
+    syncRemindUI();
+    setTimeout(() => scheduleReminders().catch(() => {}), 1500);
     upgradeLessonCourses().catch(() => 0).then(a => migrateHonestHours().then(b => { if(a || b) render(); })).catch(() => {});
     if(settings.statusNotify !== 'off'){
       requestStatusNotifPermission().then(updateStatusNotification);
