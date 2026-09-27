@@ -32,4 +32,24 @@ jobs:
       - name: Android permissions (microphone) and TTS query
         run: |
           M=android/app/src/main/AndroidManifest.xml
-          grep -q RECORD_AUDIO $M || sed -i 's#</manifest>#    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />\n    <queries>\n        <intent>\n            <action android:name="android.intent.action.TTS_SERVICE" />\n        </intent>\n    </queries>\n
+          grep -v '</manifest>' $M > m.tmp
+          echo '<uses-permission android:name="android.permission.RECORD_AUDIO" />' >> m.tmp
+          echo '<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />' >> m.tmp
+          echo '<queries><intent><action android:name="android.intent.action.TTS_SERVICE" /></intent></queries>' >> m.tmp
+          echo '</manifest>' >> m.tmp
+          mv m.tmp $M
+          cat $M
+      - run: npx @capacitor/assets generate --android --iconBackgroundColor '#000000' --iconBackgroundColorDark '#000000' --splashBackgroundColor '#000000' --splashBackgroundColorDark '#000000'
+      - run: npx cap sync android
+      - run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+      - run: mkdir -p out && cp android/app/build/outputs/apk/debug/app-debug.apk out/tracker.apk
+      - name: Publish APK to Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --repo "${{ github.repository }}" --yes --cleanup-tag || true
+          gh release create latest out/tracker.apk \
+            --repo "${{ github.repository }}" \
+            --target "${{ github.sha }}" \
+            --title "Трекер — последняя сборка" \
+            --notes "Собрано из коммита ${{ github.sha }}"
