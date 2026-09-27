@@ -28,3 +28,8 @@ jobs:
           case "$CAP" in 5) TTS=3;; 6) TTS=5;; 7) TTS=6;; *) TTS=8;; esac
           npm install "@capacitor-community/text-to-speech@^$TTS"
           if ! npm ls @capacitor/local-notifications; then npm install "@capacitor/local-notifications@^$CAP"; fi
+      - run: npx cap add android
+      - name: Android permissions (microphone) and TTS query
+        run: |
+          M=android/app/src/main/AndroidManifest.xml
+          grep -q RECORD_AUDIO $M || sed -i 's#</manifest>#    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />\n    <queries>\n        <intent>\n            <action android:name="android.intent.action.TTS_SERVICE" />\n        </intent>\n    </queries>\n
