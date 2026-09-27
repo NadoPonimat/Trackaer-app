@@ -2020,7 +2020,7 @@
       <button id="openReset">Сбросить настройки…</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 93 — дневник с паролем и шифрованием; озвучка фраз и диктофон в уроках языков; словарь с повторением; фокус-таймер; экзамен по модулю; серия дней, итог недели, цели месяца</div>
+    <div class="hint sv-version" id="version">Версия 94 — озвучка без перехода в браузер (подсказка, если голоса нет); дневник с паролем; словарь; фокус-таймер; экзамен по модулю; серия дней, итог недели, цели месяца</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -10194,7 +10194,8 @@ function langOfCourse(name){
   return 'en-US';
 }
 let speakLast = {text: '', at: 0};
-/* озвучка: плагин TTS в сборке → голос WebView → Google Переводчик в браузере */
+/* озвучка: плагин TTS в сборке → голос WebView. В браузер больше не перекидываем:
+   если голоса нет — подсказка, что сделать */
 async function speakText(text, lang){
   text = String(text || '').replace(/\s+/g, ' ').trim();
   if(!text) return;
@@ -10203,23 +10204,26 @@ async function speakText(text, lang){
   const rate = slow ? 0.6 : 0.95;
   const tts = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.TextToSpeech;
   if(tts){
-    try{ await tts.stop().catch(() => {}); await tts.speak({text, lang, rate, pitch: 1, volume: 1, category: 'playback'}); return; }catch(e){}
+    try{ await tts.stop().catch(() => {}); await tts.speak({text, lang, rate, pitch: 1, volume: 1, category: 'playback'}); return; }
+    catch(e){
+      toast('Телефон не смог озвучить (' + lang + '). Настройки Android → Специальные возможности → Синтез речи → Google → установи голос этого языка.');
+      return;
+    }
   }
   if(window.speechSynthesis && window.SpeechSynthesisUtterance){
     const voices = window.speechSynthesis.getVoices() || [];
     const v = voices.find(x => x.lang && x.lang.replace('_', '-').toLowerCase().startsWith(lang.slice(0, 2)));
-    if(v || voices.length === 0){
+    if(v){
       try{
         window.speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance(text);
-        u.lang = lang; u.rate = rate; if(v) u.voice = v;
+        u.lang = lang; u.rate = rate; u.voice = v;
         window.speechSynthesis.speak(u);
-        if(v) return;
+        return;
       }catch(e){}
     }
   }
-  const sl = lang.slice(0, 2);
-  window.open('https://translate.google.com/?sl=' + sl + '&tl=ru&op=translate&text=' + encodeURIComponent(text), '_blank');
+  toast('Озвучка ещё не подключена в этой сборке приложения. Поставь APK из последней успешной сборки (с плагином голоса).');
 }
 /* что в строке урока можно озвучить */
 const hasCyr = s => /[А-Яа-яЁё]/.test(s);
