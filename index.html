@@ -11572,18 +11572,28 @@ function periodInfo(ym){
 }
 function isUnder(n, rootId){ while(n){ if(n.parent_id === rootId) return true; n = n.parent_id != null ? index.byId.get(n.parent_id) : null; } return false; }
 /* откуда платить по умолчанию: полученная зарплата с остатком (последняя), иначе аванс с остатком */
+/* все источники денег: полученные зарплаты и авансы. Старые с остатком не пропадают:
+   смотрим все месяцы, где что-то было, плюс последние 3 месяца */
+function finMonths(){
+  const cur = todayISO().slice(0, 7), set = new Set([0, -1, -2, -3].map(k => ymShift(cur, k)));
+  for(const ym of Object.keys(fin().periods)) if(ym <= cur) set.add(ym);
+  const cat = shiftCat();
+  if(cat) for(const n of index.all) if(n.entry_kind === 'advance' && n.op_date && isUnder(n, cat.id)) set.add(n.op_date.slice(0, 7));
+  return [...set].filter(ym => ym <= ymShift(cur, 1)).sort().reverse();
+}
 function finSources(){
-  const out = [], cur = todayISO().slice(0, 7);
-  for(let k = 0; k >= -3; k--){
-    const ym = ymShift(cur, k), pi = periodInfo(ym);
+  const out = [];
+  for(const ym of finMonths()){
+    const pi = periodInfo(ym);
     if(pi.salary) out.push({ym, kind: 'salary', left: pi.salLeft, label: 'Зарплата · ' + ymLabel(ym)});
     if(pi.advSum) out.push({ym, kind: 'advance', left: pi.advLeft, label: 'Аванс · ' + ymLabel(ym)});
   }
   return out;
 }
+/* платим сначала самыми старыми деньгами: остаток сентября уходит раньше октябрьских */
 function defaultSource(){
-  const s = finSources();
-  return s.find(x => x.kind === 'salary' && x.left > 0) || s.find(x => x.kind === 'advance' && x.left > 0) || s[0] || null;
+  const s = finSources().filter(x => x.left > 0).reverse();
+  return s[0] || finSources()[0] || null;
 }
 let walletYm = null;
 function openWallet(ym){
@@ -11618,13 +11628,16 @@ function renderWallet(){
   }
   /* деньги на руках: все аванс/зарплаты последних месяцев, где что-то осталось или это текущий месяц */
   const cards = [];
-  for(let k = 1; k >= -3; k--){
-    const ym = ymShift(todayISO().slice(0, 7), k), pp = periodInfo(ym);
+  let onHand = 0;
+  for(const ym of finMonths()){
+    const pp = periodInfo(ym);
+    if(pp.salary) onHand += pp.salLeft;
+    if(pp.advSum) onHand += pp.advLeft;
     const mon = MONTHS[Number(ym.slice(5)) - 1];
     if(pp.salary && (pp.salLeft !== 0 || ym === walletYm)) cards.push(wallet('Зарплата за ' + mon, pp.salary.amount, pp.spentSal, pp.salLeft, 'salary'));
     if(pp.advSum && (pp.advLeft !== 0 || ym === walletYm)) cards.push(wallet('Аванс за ' + mon, pp.advSum, pp.spentAdv, pp.advLeft, 'advance'));
   }
-  if(cards.length) h += '<h3>Деньги на руках</h3>' + cards.join('');
+  if(cards.length) h += '<h3>Деньги на руках: ' + money(onHand) + ' ₸</h3>' + (cards.length > 1 ? '<div class="sp-note">Всего на руках — сумма остатков всех зарплат и авансов. Расходы по умолчанию списываются с самых старых денег.</div>' : '') + cards.join('');
   h += '<div class="sp-btns"><button class="go" data-w="exp">+ Расход</button><button data-w="cats">Категории и продукты</button></div>';
   /* расходы месяца (по дате операции) */
   const ops = f.ops.filter(o => o.date.slice(0, 7) === walletYm).sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id);
