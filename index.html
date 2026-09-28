@@ -433,6 +433,7 @@
   .ex-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
   .ex-grid label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:4px}
   .ex-grid input{padding:7px 8px;font:inherit;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px}
+  .wl-pend{border-color:var(--accent)}
   .wl-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
   .wl-nav button{font:inherit;padding:6px 14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--surface);color:var(--text)}
   .wl-cat{display:grid;grid-template-columns:minmax(0,1.2fr) 1fr 72px;gap:8px;align-items:center;font-size:13px;padding:4px 0}
@@ -11607,8 +11608,23 @@ function renderWallet(){
   const wallet = (title, total, spent, left, kind) => '<div class="st-ath wl-src"><div class="st-ath-h"><b>' + title + '</b><span class="st-ath-p ' + (left < 0 ? 'far' : 'ok') + '">' + money(left) + ' ₸</span></div>' +
     '<span class="pl-bar"><i style="width:' + (total ? Math.max(0, Math.min(100, left / total * 100)) : 0) + '%"></i></span>' +
     '<div class="st-ath-l">' + money(total) + ' − расходы ' + money(spent) + ' = остаток <b>' + money(left) + '</b></div></div>';
-  if(pi.advSum) h += wallet('Аванс', pi.advSum, pi.spentAdv, pi.advLeft, 'advance');
-  if(pi.salary) h += wallet('Зарплата', pi.salary.amount, pi.spentSal, pi.salLeft, 'salary');
+  /* неполученная зарплата за прошлые месяцы — напоминание с кнопкой */
+  for(let k = -1; k >= -2; k--){
+    const ym = ymShift(todayISO().slice(0, 7), k), pp = periodInfo(ym);
+    if(ym !== walletYm && pp.accrued > 0 && !pp.salary)
+      h += '<div class="st-ath wl-pend"><div class="st-ath-h"><b>Зарплата за ' + MONTHS[Number(ym.slice(5)) - 1] + ' ещё не получена</b><span class="st-ath-p">' + money(pp.toReceive) + ' ₸</span></div>' +
+           '<div class="st-ath-l">Начислено ' + money(pp.accrued) + (pp.advSum ? ' − авансы ' + money(pp.advSum) : '') + '</div>' +
+           '<div class="sp-btns"><button class="go" data-w="salp" data-ym="' + ym + '">Получил зарплату за ' + MONTHS[Number(ym.slice(5)) - 1] + '</button></div></div>';
+  }
+  /* деньги на руках: все аванс/зарплаты последних месяцев, где что-то осталось или это текущий месяц */
+  const cards = [];
+  for(let k = 1; k >= -3; k--){
+    const ym = ymShift(todayISO().slice(0, 7), k), pp = periodInfo(ym);
+    const mon = MONTHS[Number(ym.slice(5)) - 1];
+    if(pp.salary && (pp.salLeft !== 0 || ym === walletYm)) cards.push(wallet('Зарплата за ' + mon, pp.salary.amount, pp.spentSal, pp.salLeft, 'salary'));
+    if(pp.advSum && (pp.advLeft !== 0 || ym === walletYm)) cards.push(wallet('Аванс за ' + mon, pp.advSum, pp.spentAdv, pp.advLeft, 'advance'));
+  }
+  if(cards.length) h += '<h3>Деньги на руках</h3>' + cards.join('');
   h += '<div class="sp-btns"><button class="go" data-w="exp">+ Расход</button><button data-w="cats">Категории и продукты</button></div>';
   /* расходы месяца (по дате операции) */
   const ops = f.ops.filter(o => o.date.slice(0, 7) === walletYm).sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id);
@@ -11630,7 +11646,7 @@ function renderWallet(){
       if(o.date !== lastD){ h += '<div class="wl-day">' + studyDateLabel(o.date) + '</div>'; lastD = o.date; }
       const prod = o.productId ? (f.products.find(p => p.id === o.productId) || {}).name : null;
       h += '<div class="wl-op" data-w="edit" data-id="' + o.id + '"><span>' + escHtml(o.name || prod || (finCat(o.catId) || {}).name || 'Расход') +
-           '<small>' + escHtml(finCatPath(o.catId)) + (o.src ? ' · ' + (o.src.kind === 'advance' ? 'из аванса' : o.src.kind === 'salary' ? 'из зарплаты' : '') : '') +
+           '<small>' + escHtml(finCatPath(o.catId)) + (o.src ? ' · ' + (o.src.kind === 'advance' ? 'из аванса' : o.src.kind === 'salary' ? 'из зарплаты' : '') + (o.src.ym !== o.date.slice(0, 7) ? ' за ' + MONTHS[Number(o.src.ym.slice(5)) - 1] : '') : '') +
            (o.mass ? ' · ' + o.mass + ' г' : '') + (o.kcal ? ' · ' + money(o.kcal) + ' ккал' : '') + '</small></span><b>−' + money(o.amount) + '</b></div>';
     }
   } else h += '<div class="sp-note">Расходов в этом месяце пока нет. Нажми «+ Расход».</div>';
@@ -11644,6 +11660,7 @@ $('walletBody').addEventListener('click', async e => {
   else if(a === 'next'){ walletYm = ymShift(walletYm, 1); renderWallet(); }
   else if(a === 'adv') openMoneySheet('adv');
   else if(a === 'sal') openMoneySheet('sal');
+  else if(a === 'salp') openMoneySheet('sal', el.dataset.ym);
   else if(a === 'exp') openExpense(null);
   else if(a === 'edit') openExpense(Number(el.dataset.id));
   else if(a === 'cats') openFinCats();
@@ -11653,14 +11670,16 @@ $('openWallet').onclick = () => openWallet();
 
 /* --- аванс / получение зарплаты --- */
 let moneyMode = null;
-function openMoneySheet(mode){
+let moneyYm = null;
+function openMoneySheet(mode, ym){
   moneyMode = mode;
-  const pi = periodInfo(walletYm);
-  $('mnTitle').textContent = mode === 'adv' ? 'Взять аванс · ' + ymLabel(walletYm) : 'Получить зарплату · ' + ymLabel(walletYm);
+  moneyYm = ym || walletYm;
+  const pi = periodInfo(moneyYm);
+  $('mnTitle').textContent = mode === 'adv' ? 'Взять аванс · ' + ymLabel(moneyYm) : 'Получить зарплату за ' + MONTHS[Number(moneyYm.slice(5)) - 1] + ' ' + moneyYm.slice(0, 4);
   $('mnAmount').value = mode === 'sal' ? (pi.salary ? pi.salary.amount : Math.max(0, pi.toReceive)) : '';
   $('mnDate').value = mode === 'sal' && pi.salary ? pi.salary.date : todayISO();
   $('mnHint').textContent = mode === 'adv'
-    ? 'Аванс вычтется из зарплаты за ' + MONTHS[Number(walletYm.slice(5)) - 1] + ': сейчас к получению ' + money(pi.toReceive) + ' ₸. Расходы после этого спишутся с аванса.'
+    ? 'Аванс вычтется из зарплаты за ' + MONTHS[Number(moneyYm.slice(5)) - 1] + ': сейчас к получению ' + money(pi.toReceive) + ' ₸. Расходы после этого спишутся с аванса.'
     : 'По графику: ' + money(pi.accrued) + ' ₸' + (pi.advSum ? ' − авансы ' + money(pi.advSum) : '') + ' = ' + money(pi.toReceive) + ' ₸. Впиши, сколько получил на руки на самом деле.';
   $('mnDel').style.display = mode === 'sal' && pi.salary ? '' : 'none';
   $('moneyBg').classList.add('open');
@@ -11668,10 +11687,10 @@ function openMoneySheet(mode){
 $('mnSave').onclick = async () => {
   const amount = num($('mnAmount').value), date = $('mnDate').value || todayISO();
   if(!amount || amount <= 0){ toast('Введи сумму'); return; }
-  const f = fin(), p = f.periods[walletYm] = f.periods[walletYm] || {};
+  const f = fin(), p = f.periods[moneyYm] = f.periods[moneyYm] || {};
   if(moneyMode === 'adv'){
     const cat = shiftCat();
-    if(cat && date.slice(0, 7) === walletYm){
+    if(cat && date.slice(0, 7) === moneyYm){
       await createNode(cat.id, {name: 'Аванс', kind: 'entry', op_date: date, entry_kind: 'advance', amount, direction: 1});
       await reindex();
     } else (p.advances = p.advances || []).push({id: finId(), date, amount});
@@ -11684,7 +11703,7 @@ $('mnSave').onclick = async () => {
   $('moneyBg').classList.remove('open');
   renderWallet();
 };
-$('mnDel').onclick = async () => { if(!confirm('Отменить получение зарплаты?')) return; delete fin().periods[walletYm].salary; await saveFin(); $('moneyBg').classList.remove('open'); renderWallet(); };
+$('mnDel').onclick = async () => { if(!confirm('Отменить получение зарплаты?')) return; delete fin().periods[moneyYm].salary; await saveFin(); $('moneyBg').classList.remove('open'); renderWallet(); };
 $('mnCancel').onclick = () => $('moneyBg').classList.remove('open');
 
 /* --- расход --- */
