@@ -346,7 +346,7 @@
   /* план занятий на день */
   #studyPartBg,#resetBg,#goalBg,#woPickBg{z-index:30}
   #vocabBg,#examBg,#diaryBg,#workoutBg,#recBg{z-index:26}
-  #weekBg{z-index:30}
+  #weekBg,#schedBg{z-index:30}
   #readerBg{z-index:27}
   #focusBg{z-index:28}
   .sp-day{font-size:14px;margin-bottom:6px}
@@ -424,6 +424,13 @@
   .wo-pick.done .sp-btns{margin-top:6px}
   .sp-banner.wo.off{border-style:dashed;color:var(--muted)}
   .sp-note.ok{color:var(--income)}
+  .sched-body{max-height:64vh;overflow-y:auto}
+  .sched-body label{display:block;margin:12px 0 6px;font-size:13px;color:var(--muted)}
+  .sched-body select,.sched-body input[type=number]{width:100%;box-sizing:border-box;padding:8px 10px;font:inherit;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:var(--radius)}
+  .sc-time{display:flex;align-items:center;gap:6px;margin:4px 0;font-size:13px}
+  .sc-time span{width:80px;color:var(--muted)}
+  .sc-time input{padding:6px 8px;font:inherit;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px}
+  .sc-sum{margin-top:12px}
   .bk-chk{display:flex;gap:8px;align-items:center;font-size:13px;margin:10px 0}
   .rc-row{padding:10px 0;border-top:1px dashed var(--line)}
   .rc-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -1471,6 +1478,15 @@
   </div>
 </div>
 
+<div class="sheet-bg" id="schedBg">
+  <div class="sheet">
+    <h2>График смен из Excel</h2>
+    <div id="schedBody" class="sched-body"></div>
+    <input type="file" id="schedFile" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+    <div class="actions"><button id="schedCancel">Отмена</button><button id="schedGo" class="primary" disabled>Поставить смены</button></div>
+  </div>
+</div>
+
 <div class="sheet-bg" id="woPickBg">
   <div class="sheet">
     <h2>Тренировка вне плана</h2>
@@ -1843,6 +1859,7 @@
       <button id="openBooks">Книги</button>
       <button id="openHarmful">Вредные приложения</button>
       <button id="openNews">Новости</button>
+      <button id="openSchedule">Загрузить график смен (Excel)</button>
     </div>
 
     <button class="sv-head" data-sec="secTheme">Оформление</button>
@@ -2063,7 +2080,7 @@
       <button id="openReset">Сбросить настройки…</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 95 — резервная копия (авто раз в N дней + отправка в Telegram/Drive + восстановление); личные рекорды и прогрессия нормы; итог недели отдельным окном; дневник, словарь, таймер, экзамены</div>
+    <div class="hint sv-version" id="version">Версия 96 — график смен из Excel: смены ставятся сами, ЗП за месяц; резервная копия; рекорды и прогрессия; итог недели</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -2437,6 +2454,8 @@ async function openDatabase(){
   settings.backup = parseJSON(s.backup, null);
   settings.normOverride = parseJSON(s.normOverride, {});
   settings.weekShown = s.weekShown || '';
+  settings.shiftName = s.shiftName || '';
+  settings.lastSchedule = parseJSON(s.lastSchedule, null);
   settings.studyDays = parseJSON(s.studyDays, []);
   settings.remind = Object.assign({on: true, morning: '09:00', train: '18:00', evening: '21:00'}, parseJSON(s.remind, {}));
   settings.physStart = s.physStart || '';
@@ -3875,7 +3894,7 @@ $('menuDelete').onclick = async () => {
   render();
 };
 
-['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg','bookTocBg','lockBg','tmplBg','tmplEditBg','studyPartBg','resetBg','goalBg','woPickBg','weekBg'].forEach(id => {
+['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg','bookTocBg','lockBg','tmplBg','tmplEditBg','studyPartBg','resetBg','goalBg','woPickBg','weekBg','schedBg'].forEach(id => {
   const bg = $(id);
   bg.onclick = e => { if(e.target === bg) bg.classList.remove('open'); };
 });
@@ -3883,7 +3902,7 @@ $('menuDelete').onclick = async () => {
 if(window.Capacitor && window.Capacitor.Plugins.App){
   window.Capacitor.Plugins.App.addListener('backButton', () => {
     if($('diaryBg').classList.contains('open')){ flushDiary().finally(diaryLock); return; }
-    for(const id of ['weekBg','recBg','goalBg','woPickBg','examBg','vocabBg','workoutBg','resetBg','studyPartBg','tmplEditBg','tmplBg','pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg','newsBg','lockBg','studyBg']){
+    for(const id of ['schedBg','weekBg','recBg','goalBg','woPickBg','examBg','vocabBg','workoutBg','resetBg','studyPartBg','tmplEditBg','tmplBg','pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg','newsBg','lockBg','studyBg']){
       if($(id).classList.contains('open')){ $(id).classList.remove('open'); return; }
     }
     if(path.length){ path.pop(); render(); return; }
@@ -11180,6 +11199,229 @@ async function maybeShowWeekSummary(){
 }
 $('weekClose').onclick = () => $('weekBg').classList.remove('open');
 $('weekStats').onclick = async () => { $('weekBg').classList.remove('open'); await openStats(); };
+
+/* =====================================================================
+   ИМПОРТ ГРАФИКА СМЕН ИЗ EXCEL
+   Файл вида: строка заголовков «Число | День недели | Смена 1 | Смена 2»,
+   дальше по строке на день с именами сотрудников. Месяц и год — из заголовка
+   («График смен — Сентябрь 2026»), из имени листа или файла. Твои смены
+   ставятся в денежную категорию со ставкой: там же сразу видно «Смен · ЗП».
+   Повторный импорт того же месяца заменяет смены из прошлого графика,
+   смены, добавленные вручную, не трогает.
+   ===================================================================== */
+const RU_MONTHS = ['январ', 'феврал', 'март', 'апрел', 'ма', 'июн', 'июл', 'август', 'сентябр', 'октябр', 'ноябр', 'декабр'];
+const normName = s => String(s == null ? '' : s).trim().toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ');
+const colIdx = ref => { let n = 0; for(const ch of ref.replace(/\d+/g, '')) n = n * 26 + ch.charCodeAt(0) - 64; return n - 1; };
+async function readXlsx(buf){
+  if(!window.JSZip) throw new Error('нет модуля чтения Excel (нужен интернет при первом запуске)');
+  const zip = await JSZip.loadAsync(buf);
+  const txt = async p => { const f = zip.file(p); return f ? f.async('string') : null; };
+  const P = s => new DOMParser().parseFromString(s, 'application/xml');
+  const ss = [];
+  const sx = await txt('xl/sharedStrings.xml');
+  if(sx) for(const si of P(sx).getElementsByTagName('si')) ss.push([...si.getElementsByTagName('t')].map(t => t.textContent).join(''));
+  const wb = P(await txt('xl/workbook.xml'));
+  const rels = P(await txt('xl/_rels/workbook.xml.rels'));
+  const relMap = {};
+  for(const r of rels.getElementsByTagName('Relationship')) relMap[r.getAttribute('Id')] = r.getAttribute('Target');
+  const sheets = [];
+  for(const sh of wb.getElementsByTagName('sheet')){
+    const rid = sh.getAttribute('r:id') || sh.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id');
+    let target = relMap[rid] || '';
+    target = target.replace(/^\/?xl\//, '').replace(/^\//, '');
+    const xml = await txt('xl/' + target);
+    if(!xml) continue;
+    const grid = [];
+    for(const c of P(xml).getElementsByTagName('c')){
+      const ref = c.getAttribute('r'), t = c.getAttribute('t');
+      const v = c.getElementsByTagName('v')[0];
+      let val = null;
+      if(t === 's' && v) val = ss[Number(v.textContent)];
+      else if(t === 'inlineStr') val = [...c.getElementsByTagName('t')].map(x => x.textContent).join('');
+      else if(v) val = t === 'str' ? v.textContent : (isNaN(Number(v.textContent)) ? v.textContent : Number(v.textContent));
+      if(val == null || val === '') continue;
+      const row = Number(ref.replace(/\D+/g, '')) - 1, col = colIdx(ref);
+      (grid[row] = grid[row] || [])[col] = val;
+    }
+    sheets.push({name: sh.getAttribute('name'), grid});
+  }
+  return sheets;
+}
+function excelSerialToISO(n){ const d = new Date(Date.UTC(1899, 11, 30) + Math.round(n) * 86400000); return d.toISOString().slice(0, 10); }
+function monthFromText(s){
+  const m = String(s || '').toLowerCase().match(/(январ|феврал|март|апрел|ма[йя]|июн|июл|август|сентябр|октябр|ноябр|декабр)[а-я]*\s*(\d{4})/);
+  if(m){ const i = RU_MONTHS.findIndex(x => m[1].startsWith(x)); return m[2] + '-' + String(i + 1).padStart(2, '0'); }
+  const n = String(s || '').match(/(20\d\d)[-_.](\d{1,2})(?!\d)/);
+  if(n && Number(n[2]) >= 1 && Number(n[2]) <= 12) return n[1] + '-' + n[2].padStart(2, '0');
+  const r = String(s || '').match(/(?:^|\D)(\d{1,2})[-_.](20\d\d)/);
+  if(r && Number(r[1]) >= 1 && Number(r[1]) <= 12) return r[2] + '-' + r[1].padStart(2, '0');
+  return null;
+}
+/* разбор листа: {ym, shifts:[{date, no, name}], names:[...]} */
+function parseSchedule(sheets, fileName){
+  for(const sh of sheets){
+    const g = sh.grid;
+    let hdr = -1, cols = [], dayCol = 0;
+    for(let r = 0; r < Math.min(g.length, 30) && hdr < 0; r++){
+      const row = g[r] || [];
+      const found = [];
+      row.forEach((v, c) => { const m = String(v || '').match(/смена\s*№?\s*(\d)/i); if(m) found.push({c, no: Number(m[1])}); });
+      if(found.length){
+        hdr = r; cols = found;
+        row.forEach((v, c) => { if(/^(число|дата|день)$/i.test(String(v || '').trim())) dayCol = c; });
+      }
+    }
+    if(hdr < 0) continue;
+    let ym = null;
+    for(let r = 0; r < hdr && !ym; r++) for(const v of (g[r] || [])) if(!ym && typeof v === 'string') ym = monthFromText(v);
+    ym = ym || monthFromText(sh.name) || monthFromText(fileName);
+    const shifts = [], names = new Set();
+    for(let r = hdr + 1; r < g.length; r++){
+      const row = g[r] || [];
+      const dv = row[dayCol];
+      let date = null;
+      if(typeof dv === 'number' && dv > 20000) date = excelSerialToISO(dv);
+      else if(typeof dv === 'number' && dv >= 1 && dv <= 31 && ym) date = ym + '-' + String(Math.round(dv)).padStart(2, '0');
+      else if(typeof dv === 'string'){
+        const m = dv.match(/(\d{1,2})[./](\d{1,2})[./](\d{4})/);
+        if(m) date = m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0');
+        else if(/^\d{1,2}$/.test(dv.trim()) && ym) date = ym + '-' + dv.trim().padStart(2, '0');
+      }
+      if(!date){ if(shifts.length && !row.some(v => v != null)) continue; if(shifts.length) break; else continue; }
+      if(!ym) ym = date.slice(0, 7);
+      for(const {c, no} of cols){
+        const who = row[c];
+        if(who == null || String(who).trim() === '') continue;
+        for(const part of String(who).split(/[\/,;+]|\s+и\s+/)){
+          const nm = part.trim();
+          if(!nm) continue;
+          names.add(nm);
+          shifts.push({date, no, name: nm});
+        }
+      }
+    }
+    if(shifts.length) return {ym, shifts, names: [...names], sheet: sh.name};
+  }
+  return null;
+}
+let schedParsed = null;
+function inMoneyTree(n){ while(n){ if(n.mode === 'money') return true; n = n.parent_id != null ? index.byId.get(n.parent_id) : null; } return false; }
+function moneyCats(){
+  return index.all.filter(n => n.kind === 'category' && inMoneyTree(n) && !isLockedNode(n) && !hasLockedAncestor(n))
+    .sort((a, b) => (b.shift_rate != null) - (a.shift_rate != null) || /работ|смен|зарплат/i.test(b.name) - /работ|смен|зарплат/i.test(a.name));
+}
+function openScheduleImport(){
+  $('serviceBg').classList.remove('open');
+  schedParsed = null;
+  $('schedBody').innerHTML = '<div class="sp-note">Выбери Excel-файл с графиком смен (.xlsx). Нужны столбцы «Число» и «Смена 1», «Смена 2»… с именами — как в твоём графике.</div>';
+  $('schedGo').disabled = true;
+  $('schedBg').classList.add('open');
+  $('schedFile').value = '';
+  $('schedFile').click();
+}
+function schedTemplates(cat){
+  const t = templatesOf(cat)[0];
+  return {s1: t && t.s1 ? t.s1 : ['', ''], s2: t && t.s2 ? t.s2 : ['', '']};
+}
+function renderSchedPreview(){
+  const p = schedParsed;
+  const name = settings.shiftName && p.names.some(n => normName(n) === normName(settings.shiftName)) ? settings.shiftName : null;
+  const cats = moneyCats();
+  const catId = Number($('schedCat') && $('schedCat').value) || (cats.find(c => c.shift_rate != null) || cats[0] || {}).id;
+  const cat = index.byId.get(catId);
+  const mine = name ? p.shifts.filter(s => normName(s.name) === normName(name)) : [];
+  const nos = [...new Set(p.shifts.map(s => s.no))].sort();
+  const tm = schedTemplates(cat);
+  const [y, mo] = (p.ym || '').split('-');
+  let h = '<div class="st-ath"><b>' + (p.ym ? MONTHS[Number(mo) - 1][0].toUpperCase() + MONTHS[Number(mo) - 1].slice(1) + ' ' + y : 'Месяц не найден') + '</b>' +
+          '<div class="st-ath-l">В графике смен: ' + p.shifts.length + ' · сотрудники: ' + escHtml(p.names.join(', ')) + '</div></div>';
+  h += '<label>Кто ты в графике</label><div class="sp-chips">' + p.names.map(n => '<button data-sn="' + escHtml(n) + '" aria-pressed="' + (name === n) + '">' + escHtml(n) + '</button>').join('') + '</div>';
+  h += '<label>Куда ставить смены (категория в финансах)</label>';
+  if(!cats.length) h += '<div class="sp-note">Нет денежной категории. Создай в «Финансах» категорию «Работа» (тип — деньги), потом загрузи график снова. Или нажми кнопку ниже — создам сам.</div><div class="sp-btns"><button data-sact="mkcat">Создать категорию «Работа»</button></div>';
+  else h += '<select id="schedCat">' + cats.map(c => '<option value="' + c.id + '"' + (c.id === catId ? ' selected' : '') + '>' + escHtml((nodePath(c) && nodePath(c) !== c.name ? nodePath(c) + ' › ' : '') + c.name) + (c.shift_rate != null ? ' · ставка ' + money(c.shift_rate) : '') + '</option>').join('') + '</select>';
+  h += '<label>Ставка за смену, ₸</label><input id="schedRate" type="number" inputmode="numeric" value="' + (cat && cat.shift_rate != null ? cat.shift_rate : '') + '" placeholder="например 12000">';
+  h += '<label>Время смен (для списка, можно оставить пустым)</label>';
+  for(const no of nos){
+    const t = no === 1 ? tm.s1 : no === 2 ? tm.s2 : ['', ''];
+    h += '<div class="sc-time"><span>' + no + '-я смена</span><input type="time" id="schedS' + no + '" value="' + (t[0] || '') + '"> – <input type="time" id="schedE' + no + '" value="' + (t[1] || '') + '"></div>';
+  }
+  h += '<div id="schedSum"></div>';
+  $('schedBody').innerHTML = h;
+  $('schedGo').disabled = !(name && p.ym && cats.length);
+  if($('schedRate')) $('schedRate').oninput = updateSchedSum;
+  if($('schedCat')) $('schedCat').onchange = renderSchedPreview;
+  updateSchedSum();
+}
+function updateSchedSum(){
+  const p = schedParsed, box = $('schedSum');
+  if(!box) return;
+  const name = settings.shiftName && p.names.some(n => normName(n) === normName(settings.shiftName)) ? settings.shiftName : null;
+  const cat = index.byId.get(Number($('schedCat') && $('schedCat').value));
+  const mine = name ? p.shifts.filter(s => normName(s.name) === normName(name)) : [];
+  const nos = [...new Set(p.shifts.map(s => s.no))].sort();
+  let h = '';
+  if(name){
+    const rate = num($('schedRate') ? $('schedRate').value : '') ?? (cat && cat.shift_rate != null ? Number(cat.shift_rate) : null);
+    const by = nos.map(no => no + '-я: ' + mine.filter(s => s.no === no).length).join(' · ');
+    const today = todayISO(), past = mine.filter(s => s.date <= today).length;
+    h += '<div class="st-ath sc-sum"><div class="st-ath-h"><b>Твоих смен: ' + mine.length + '</b>' + (rate ? '<span class="st-ath-p ok">' + money(mine.length * rate) + ' ₸</span>' : '') + '</div>' +
+         '<div class="st-ath-l">' + by + (rate ? ' · ' + mine.length + ' × ' + money(rate) + ' ₸' : ' · впиши ставку, чтобы посчитать ЗП') + '</div>' +
+         (p.ym === today.slice(0, 7) ? '<div class="st-ath-l">Уже отработано: ' + past + ' смен' + (rate ? ' (' + money(past * rate) + ' ₸)' : '') + ', впереди ' + (mine.length - past) + '</div>' : '') +
+         '<div class="st-ath-l">Двойные смены (обе в один день): ' + (new Set(mine.map(s => s.date)).size < mine.length ? mine.length - new Set(mine.map(s => s.date)).size : 0) + '</div></div>';
+  } else h += '<div class="sp-note">Выбери своё имя — посчитаю смены и зарплату.</div>';
+  box.innerHTML = h;
+}
+$('schedFile').onchange = async () => {
+  const f = $('schedFile').files[0];
+  if(!f){ return; }
+  try{
+    const sheets = await readXlsx(await f.arrayBuffer());
+    schedParsed = parseSchedule(sheets, f.name);
+    if(!schedParsed){ $('schedBody').innerHTML = '<div class="sp-note far">Не нашёл в файле график: нужна строка заголовков со столбцами «Смена 1», «Смена 2» и столбец с числами дней.</div>'; return; }
+    schedParsed.file = f.name;
+    await reindex();
+    renderSchedPreview();
+  }catch(e){ $('schedBody').innerHTML = '<div class="sp-note far">Не получилось прочитать файл: ' + escHtml(e.message || String(e)) + '</div>'; }
+};
+$('schedBody').addEventListener('click', async e => {
+  const b = e.target.closest('[data-sn]');
+  if(b){ settings.shiftName = b.dataset.sn; await repo.setSetting('shiftName', b.dataset.sn); renderSchedPreview(); return; }
+  const a = e.target.closest('[data-sact="mkcat"]');
+  if(a){
+    let fin = index.all.find(n => n.parent_id == null && n.kind === 'category' && /финанс/i.test(n.name));
+    const id = await createNode(fin ? fin.id : null, {name: 'Работа', kind: 'category', mode: 'money'});
+    await reindex(); renderSchedPreview(); $('schedCat') && ($('schedCat').value = id); renderSchedPreview();
+  }
+});
+async function importSchedule(){
+  const p = schedParsed, name = settings.shiftName;
+  const catId = Number($('schedCat').value), cat = index.byId.get(catId);
+  const rate = num($('schedRate').value);
+  if(rate != null && rate > 0 && Number(cat.shift_rate) !== rate){ await repo.update(catId, {shift_rate: rate}); cat.shift_rate = rate; }
+  const mine = p.shifts.filter(s => normName(s.name) === normName(name));
+  /* прошлый импорт этого месяца — убираем, ручные смены оставляем */
+  const kids = await repo.listChildren(catId);
+  let removed = 0;
+  for(const k of kids) if(k.entry_kind === 'shift' && k.op_date && k.op_date.startsWith(p.ym) && k.note === 'из графика'){ await repo.remove(k.id); removed++; }
+  const manual = new Set((await repo.listChildren(catId)).filter(k => k.entry_kind === 'shift').map(k => k.op_date + '|' + (Number(k.shift_no) || 1)));
+  let added = 0;
+  for(const s of mine){
+    if(manual.has(s.date + '|' + s.no)) continue;
+    const st = ($('schedS' + s.no) || {}).value || null, en = ($('schedE' + s.no) || {}).value || null;
+    await createNode(catId, {name: s.no + ' смена', kind: 'entry', op_date: s.date, entry_kind: 'shift', shift_no: s.no,
+                             start_time: st, end_time: en, note: 'из графика', amount: null, direction: null});
+    added++;
+  }
+  settings.lastSchedule = {ym: p.ym, file: p.file, name, count: mine.length, catId, at: todayISO()};
+  await repo.setSetting('lastSchedule', JSON.stringify(settings.lastSchedule));
+  $('schedBg').classList.remove('open');
+  const r = Number(cat.shift_rate) || 0;
+  toast('Смен поставлено: ' + added + (removed ? ' (старый график заменён)' : '') + (r ? ' · ЗП за месяц ≈ ' + money(mine.length * r) + ' ₸' : ''));
+  await reindex(); await render();
+}
+$('schedGo').onclick = () => importSchedule().catch(err => toast('Не получилось: ' + err.message));
+$('schedCancel').onclick = () => $('schedBg').classList.remove('open');
+$('openSchedule').onclick = openScheduleImport;
 
 /* ------------------------------ старт --------------------------- */
 
