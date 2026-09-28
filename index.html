@@ -346,7 +346,7 @@
   /* план занятий на день */
   #studyPartBg,#resetBg,#goalBg,#woPickBg{z-index:30}
   #vocabBg,#examBg,#diaryBg,#workoutBg,#recBg{z-index:26}
-  #weekBg,#schedBg,#moneyBg,#expBg,#jarBg,#moveBg,#fxBg{z-index:30}
+  #weekBg,#schedBg,#moneyBg,#expBg,#jarBg,#moveBg,#fxBg,#debtBg,#payBg{z-index:30}
   #walletBg{z-index:26}
   #finCatBg{z-index:27}
   #readerBg{z-index:27}
@@ -442,6 +442,12 @@
   .wl-conv{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:10px;align-items:center}
   .wl-conv input,.wl-conv select{font:inherit;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--text);min-width:0}
   .wl-conv b{grid-column:1/-1;font-size:16px}
+  .wl-conv-c{display:flex;gap:6px;align-items:center}
+  .db-amt{display:grid;grid-template-columns:1fr 110px;gap:8px}
+  .wl-debt .db-due{font-size:12px;color:var(--muted)} .wl-debt .db-due.far{color:var(--accent);font-weight:600} .wl-debt .db-due.soon{color:#e0a030}
+  .wl-debt .db-pays{font-size:12px;color:var(--muted);margin-top:4px}
+  .wl-debt.closed{opacity:.55}
+  .wl-sub{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:10px 0 4px}
   .sp-btns.wl-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .sp-btns.wl-acts button{width:100%;margin:0}
   .sp-btns.wl-acts button:last-child{grid-column:1/-1}
@@ -1555,6 +1561,34 @@
     <div class="actions"><button id="mvCancel">Отмена</button><button id="mvSave" class="primary">Отложить</button></div>
   </div>
 </div>
+<div class="sheet-bg" id="debtBg">
+  <div class="sheet">
+    <h2 id="dbTitle">Долг</h2>
+    <div class="exp-body">
+      <div class="field"><label for="dbDir">Кто кому</label><select id="dbDir"><option value="lend">Мне должны (я дал в долг)</option><option value="owe">Я должен (я взял в долг)</option></select></div>
+      <div class="field"><label for="dbWho" id="dbWhoLbl">Кто</label><input id="dbWho" list="dbWhoList" autocomplete="off" placeholder="Имя"><datalist id="dbWhoList"></datalist></div>
+      <div class="field"><label for="dbWhat">За что / на что</label><input id="dbWhat" placeholder="Например: на ремонт машины"></div>
+      <div class="field"><label for="dbAmount">Сумма</label><div class="db-amt"><input id="dbAmount" type="number" inputmode="decimal"><select id="dbCur"></select></div></div>
+      <div class="field"><label for="dbDate">Когда</label><input id="dbDate" type="date"></div>
+      <div class="field"><label for="dbDue">Срок возврата (необязательно)</label><input id="dbDue" type="date"></div>
+      <label class="bk-chk"><input type="checkbox" id="dbFlow" checked> <span id="dbFlowLbl">Деньги прошли через мой кошелёк</span></label>
+      <div class="field" id="dbSrcF"><label for="dbSrc">Откуда дал</label><select id="dbSrc"></select></div>
+      <div class="hint" id="dbHint"></div>
+    </div>
+    <div class="actions"><button id="dbCancel">Отмена</button><button id="dbDel">Удалить</button><button id="dbSave" class="primary">Сохранить</button></div>
+  </div>
+</div>
+<div class="sheet-bg" id="payBg">
+  <div class="sheet">
+    <h2 id="pyTitle">Возврат долга</h2>
+    <div class="field"><label for="pyAmount" id="pyAmtLbl">Сколько</label><input id="pyAmount" type="number" inputmode="decimal"></div>
+    <div class="field"><label for="pyDate">Дата</label><input id="pyDate" type="date"></div>
+    <label class="bk-chk"><input type="checkbox" id="pyFlow" checked> <span id="pyFlowLbl">Через мой кошелёк</span></label>
+    <div class="field" id="pySrcF"><label for="pySrc">Откуда отдаю</label><select id="pySrc"></select></div>
+    <div class="hint" id="pyHint"></div>
+    <div class="actions"><button id="pyCancel">Отмена</button><button id="pySave" class="primary">Записать</button></div>
+  </div>
+</div>
 <div class="sheet-bg" id="fxBg">
   <div class="sheet">
     <h2>Обмен валюты</h2>
@@ -2196,7 +2230,7 @@
       <button id="openReset">Сбросить настройки…</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 101 — кошелёк: курсы валют Нацбанка РК онлайн + калькулятор; валюты (обмен ₸↔₽/$/€…, копилки в валюте), копилки (откладывай из зарплаты, аванса или подработки), доход с подработок; остаток аванса плюсуется к зарплате, стартовые деньги (сверка); зарплата по графику, аванс, получение зарплаты, расходы по категориям и продуктам, КБЖУ для еды; график смен из Excel; резервная копия; рекорды</div>
+    <div class="hint sv-version" id="version">Версия 102 — кошелёк: долги (мне должны / я должен, сроки, валюта, напоминания), конвертер любых валют; курсы валют Нацбанка РК онлайн + калькулятор; валюты (обмен ₸↔₽/$/€…, копилки в валюте), копилки (откладывай из зарплаты, аванса или подработки), доход с подработок; остаток аванса плюсуется к зарплате, стартовые деньги (сверка); зарплата по графику, аванс, получение зарплаты, расходы по категориям и продуктам, КБЖУ для еды; график смен из Excel; резервная копия; рекорды</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -4013,7 +4047,7 @@ $('menuDelete').onclick = async () => {
   render();
 };
 
-['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg','bookTocBg','lockBg','tmplBg','tmplEditBg','studyPartBg','resetBg','goalBg','woPickBg','weekBg','schedBg','moneyBg','expBg','jarBg','moveBg','fxBg'].forEach(id => {
+['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg','bookTocBg','lockBg','tmplBg','tmplEditBg','studyPartBg','resetBg','goalBg','woPickBg','weekBg','schedBg','moneyBg','expBg','jarBg','moveBg','fxBg','debtBg','payBg'].forEach(id => {
   const bg = $(id);
   bg.onclick = e => { if(e.target === bg) bg.classList.remove('open'); };
 });
@@ -4021,7 +4055,7 @@ $('menuDelete').onclick = async () => {
 if(window.Capacitor && window.Capacitor.Plugins.App){
   window.Capacitor.Plugins.App.addListener('backButton', () => {
     if($('diaryBg').classList.contains('open')){ flushDiary().finally(diaryLock); return; }
-    for(const id of ['fxBg','moveBg','jarBg','expBg','moneyBg','finCatBg','walletBg','schedBg','weekBg','recBg','goalBg','woPickBg','examBg','vocabBg','workoutBg','resetBg','studyPartBg','tmplEditBg','tmplBg','pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg','newsBg','lockBg','studyBg']){
+    for(const id of ['payBg','debtBg','fxBg','moveBg','jarBg','expBg','moneyBg','finCatBg','walletBg','schedBg','weekBg','recBg','goalBg','woPickBg','examBg','vocabBg','workoutBg','resetBg','studyPartBg','tmplEditBg','tmplBg','pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg','newsBg','lockBg','studyBg']){
       if($(id).classList.contains('open')){ $(id).classList.remove('open'); return; }
     }
     if(path.length){ path.pop(); render(); return; }
@@ -9205,7 +9239,7 @@ async function scheduleReminders(){
   const plugin = statusNotifPlugin();
   if(!plugin) return 0;
   try{
-    await plugin.cancel({notifications: Array.from({length: 22}, (_, i) => ({id: REMIND_BASE + i}))});
+    await plugin.cancel({notifications: Array.from({length: 40}, (_, i) => ({id: REMIND_BASE + i}))});
   }catch(e){}
   if(!settings.remind || !settings.remind.on) return 0;
   await reindex();
@@ -9232,6 +9266,16 @@ async function scheduleReminders(){
       const w = weekStats(weekStart(d));
       list.push({id: REMIND_BASE + 21, title: 'Итог недели', body: 'Учёба ' + (w.studyMin / 60).toFixed(1).replace('.', ',') + ' ч · тренировки ' + w.covered + (w.planned ? ' из ' + w.planned : '') + '. Открой статистику — там сравнение с прошлой неделей.',
                  schedule: {at, allowWhileIdle: true}});
+    }
+  }
+  /* сроки долгов: накануне и в день срока, утром */
+  let dk = 0;
+  for(const d of (settings.fin && settings.fin.debts || []).map(debtInfo).filter(x => !x.closed && x.due).sort((a, b) => a.due < b.due ? -1 : 1)){
+    for(const [shift, when] of [[-1, 'завтра'], [0, 'сегодня']]){
+      const day = addDays(d.due, shift), at = remindAt(day, settings.remind.morning || '09:00');
+      if(at > now && day <= addDays(today, 14) && dk < 16)
+        list.push({id: REMIND_BASE + 22 + dk++, title: d.dir === 'owe' ? 'Срок долга ' + when : 'Тебе должны вернуть ' + when,
+                   body: (d.dir === 'owe' ? 'Ты должен ' + d.who : d.who + ' должен тебе') + ': ' + mc(d.left, d.cur) + (d.what ? ' · ' + d.what : ''), schedule: {at, allowWhileIdle: true}});
     }
   }
   if(!list.length) return 0;
@@ -11578,7 +11622,7 @@ function fin(){
     f.seq = id;
   }
   f.products = f.products || []; f.ops = f.ops || []; f.periods = f.periods || {};
-  f.side = f.side || []; f.jars = f.jars || []; f.moves = f.moves || [];
+  f.side = f.side || []; f.jars = f.jars || []; f.moves = f.moves || []; f.debts = f.debts || [];
   return f;
 }
 async function saveFin(){ await repo.setSetting('fin', JSON.stringify(fin())); }
@@ -11604,7 +11648,9 @@ function finUses(){
   const f = fin();
   return f.ops.map(o => o.cur && o.cur !== 'KZT' && !(o.src && o.src.kind === 'cur') && !(o.src && o.src.kind === 'jar') ? Object.assign({}, o, {amount: o.srcAmount != null ? o.srcAmount : o.amount}) : o)
     .concat(f.moves.filter(m => m.amount > 0 && m.src).map(m => ({src: m.src, amount: m.srcAmount != null ? m.srcAmount : m.amount, date: m.date})))
-    .concat((f.fx || []).filter(x => x.src).map(x => ({src: x.src, amount: x.give, date: x.date})));
+    .concat((f.fx || []).filter(x => x.src).map(x => ({src: x.src, amount: x.give, date: x.date})))
+    .concat(f.debts.filter(d => d.dir === 'lend' && d.src).map(d => ({src: d.src, amount: d.amount, date: d.date})))
+    .concat(f.debts.filter(d => d.dir === 'owe').flatMap(d => (d.pays || []).filter(p => p.src).map(p => ({src: p.src, amount: p.amount, date: p.date}))));
 }
 /* валюта на руках: получено при обмене + снято из копилок − отдано/отложено/потрачено */
 function curWallets(){
@@ -11717,7 +11763,7 @@ function finSources(){
     out.push({ym: '', kind: 'cur', id: w.cur, cur: w.cur, at: '9999', left: w.left, label: curName(w.cur) + ' на руках'});
   const cur = todayISO().slice(0, 7);
   for(const x of sideList()) if(x.left !== 0 || x.date.slice(0, 7) === cur)
-    out.push({ym: x.date.slice(0, 7), kind: 'side', id: x.id, at: x.date, left: x.left, label: (x.fromJar || x.fromFx ? '' : 'Подработка · ') + (x.name || 'без названия') + ' (' + x.date.slice(8) + '.' + x.date.slice(5, 7) + ')'});
+    out.push({ym: x.date.slice(0, 7), kind: 'side', id: x.id, at: x.date, left: x.left, label: (x.fromJar || x.fromFx || x.fromDebt ? '' : 'Подработка · ') + (x.name || 'без названия') + ' (' + x.date.slice(8) + '.' + x.date.slice(5, 7) + ')'});
   return out;
 }
 /* платим сначала самыми старыми деньгами: остаток сентября уходит раньше октябрьских */
@@ -11774,8 +11820,8 @@ function renderWallet(){
   if(si){ onHand += si.left; if(si.left !== 0 || si.spent === 0) cards.push(wallet('Стартовые деньги · сверка ' + studyDateLabel(si.date), si.amount, si.spent, si.left, 'start')); }
   for(const x of sideList()){
     onHand += x.left;
-    if(x.left !== 0 || x.date.slice(0, 7) === walletYm) cards.push(wallet((x.fromJar || x.fromFx ? '' : 'Подработка · ') + escHtml(x.name || 'без названия') + ' · ' + x.date.slice(8) + '.' + x.date.slice(5, 7), x.amount, x.spent, x.left, 'side', null,
-      x.fromJar || x.fromFx ? '' : '<div class="sp-btns"><button class="mini" data-w="sidedel" data-id="' + x.id + '">Удалить запись</button></div>'));
+    if(x.left !== 0 || x.date.slice(0, 7) === walletYm) cards.push(wallet((x.fromJar || x.fromFx || x.fromDebt ? '' : 'Подработка · ') + escHtml(x.name || 'без названия') + ' · ' + x.date.slice(8) + '.' + x.date.slice(5, 7), x.amount, x.spent, x.left, 'side', null,
+      x.fromJar || x.fromFx || x.fromDebt ? '' : '<div class="sp-btns"><button class="mini" data-w="sidedel" data-id="' + x.id + '">Удалить запись</button></div>'));
   }
   if(cards.length) h += '<h3>Деньги на руках: ' + money(onHand) + ' ₸</h3>' + (cards.length > 1 ? '<div class="sp-note">Всего на руках — сумма остатков всех зарплат и авансов. Расходы по умолчанию списываются с самых старых денег.</div>' : '') + cards.join('');
   /* валюта на руках */
@@ -11805,6 +11851,7 @@ function renderWallet(){
       '<div class="sp-btns"><button class="go" data-w="jarin" data-id="' + j.id + '">Отложить</button><button data-w="jarout" data-id="' + j.id + '"' + (j.bal > 0 ? '' : ' disabled') + '>Снять</button></div></div>';
   }
   h += '<div class="sp-btns"><button data-w="jarnew">+ Копилка</button></div>';
+  h += debtsHTML();
   h += ratesHTML();
   /* расходы месяца (по дате операции) */
   const ops = f.ops.filter(o => o.date.slice(0, 7) === walletYm).sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id);
@@ -11832,6 +11879,7 @@ function renderWallet(){
     }
   } else h += '<div class="sp-note">Расходов в этом месяце пока нет. Нажми «+ Расход».</div>';
   $('walletBody').innerHTML = h;
+  if($('convAmt') && convState.amt){ $('convAmt').value = convState.amt; convCalc(); }
 }
 function rateHint(c){
   if(!c || c === 'KZT') return '';
@@ -11909,29 +11957,203 @@ function ratesHTML(){
            '<i class="' + (d > 0 ? 'up' : d < 0 ? 'dn' : '') + '">' + (d ? (d > 0 ? '▲ ' : '▼ ') + fmtRate(Math.abs(d)) : '') + '</i>' +
            (o ? '<small class="wl-own">твой обмен: ' + fmtRate(o) + '</small>' : '') + '</div>';
     }
-    h += '<div class="wl-conv"><input id="convAmt" type="number" inputmode="decimal" placeholder="Сумма"><select id="convCur">' + RATE_LIST.filter(c => m.v[c]).map(c => '<option value="' + c + '"' + (c === (f.lastFx || 'RUB') ? ' selected' : '') + '>' + curSym(c) + ' → ₸</option>').join('') + '<option value="KZT>">₸ → ' + curSym(f.lastFx || 'RUB') + '</option></select><b id="convOut"></b></div>';
+    const cl = ['KZT'].concat(RATE_LIST.filter(c => m.v[c]));
+    const cs = sel => cl.map(c => '<option value="' + c + '"' + (c === sel ? ' selected' : '') + '>' + curSym(c) + ' ' + c + '</option>').join('');
+    h += '<div class="wl-conv"><input id="convAmt" type="number" inputmode="decimal" placeholder="Сумма">' +
+         '<div class="wl-conv-c"><select id="convFrom">' + cs(convState.from) + '</select><button class="mini" data-w="convswap">⇄</button><select id="convTo">' + cs(convState.to) + '</select></div><b id="convOut"></b></div>';
   } else h += '<div class="st-ath-l">' + (rateBusy ? 'Загружаю курсы…' : 'Курсы ещё не загружены.') + '</div>';
   if(rateBusy) h += '<div class="st-ath-l">Обновляю…</div>';
   else if(rateErr) h += '<div class="st-ath-l far">Не удалось обновить (' + escHtml(rateErr) + ')' + (m ? ' — показаны последние загруженные.' : '') + '</div>';
   h += '<div class="sp-btns"><button data-w="rates">Обновить курсы</button></div></div>';
   return h;
 }
+/* ===================== ДОЛГИ: мне должны / я должен ===================== */
+let showClosedDebts = false;
+function debtInfo(d){
+  const paid = (d.pays || []).reduce((x, p) => x + p.amount, 0);
+  const left = Math.round((d.amount - paid) * 100) / 100, today = todayISO();
+  const days = d.due ? Math.round((new Date(d.due) - new Date(today)) / 864e5) : null;
+  return Object.assign({}, d, {cur: d.cur || 'KZT', paid, left, closed: left <= 0, days, overdue: days != null && days < 0 && left > 0});
+}
+/* поступление денег (взял в долг / мне вернули): тенге — отдельный кошелёк, валюта — в «Валюта на руках» */
+function addIncome(cur, amount, date, name, debtId){
+  const f = fin();
+  if(!cur || cur === 'KZT'){ const x = {id: finId(), date, amount, name, fromDebt: debtId}; f.side.push(x); return {side: x.id}; }
+  const x = {id: finId(), date, from: cur, to: cur, give: 0, get: amount, note: name, debtId}; (f.fx = f.fx || []).push(x); return {fx: x.id};
+}
+function removeIncome(ref){
+  if(!ref) return true;
+  const f = fin();
+  if(ref.side){ if(usedFrom('side', ref.side) > 0) return false; f.side = f.side.filter(x => x.id !== ref.side); }
+  if(ref.fx) f.fx = (f.fx || []).filter(x => x.id !== ref.fx);
+  return true;
+}
+const dueText = di => di.closed ? '✓ закрыт' + (di.pays && di.pays.length ? ' ' + studyDateLabel(di.pays[di.pays.length - 1].date) : '')
+  : !di.due ? 'без срока' : di.days < 0 ? 'просрочен на ' + (-di.days) + ' дн. (срок ' + di.due.split('-').reverse().join('.') + ')'
+  : di.days === 0 ? 'срок сегодня' : di.days === 1 ? 'срок завтра' : 'срок ' + di.due.split('-').reverse().join('.') + ' · через ' + di.days + ' дн.';
+function debtTotals(list){
+  const by = {};
+  for(const d of list) by[d.cur] = (by[d.cur] || 0) + d.left;
+  const parts = Object.entries(by).map(([c, v]) => mc(v, c));
+  const kz = Object.entries(by).reduce((x, [c, v]) => x + (toKZT(v, c) || 0), 0);
+  return parts.length ? parts.join(' + ') + (Object.keys(by).some(c => c !== 'KZT') ? ' ≈ ' + money(kz) + ' ₸' : '') : '0';
+}
+function debtsHTML(){
+  const all = fin().debts.map(debtInfo);
+  const open = all.filter(d => !d.closed).sort((a, b) => (a.due || '9999') < (b.due || '9999') ? -1 : (a.due || '9999') > (b.due || '9999') ? 1 : a.date < b.date ? -1 : 1);
+  const closed = all.filter(d => d.closed);
+  let h = '<h3>Долги</h3>';
+  if(!all.length) return h + '<div class="sp-note">Здесь — кто тебе должен и кому должен ты: сумма, валюта, за что и срок. Накануне срока придёт напоминание.</div><div class="sp-btns"><button data-w="debtnew">+ Долг</button></div>';
+  const lend = open.filter(d => d.dir === 'lend'), owe = open.filter(d => d.dir === 'owe');
+  h += '<div class="st-ath"><div class="st-ath-l">Мне должны: <b class="ok">' + debtTotals(lend) + '</b></div><div class="st-ath-l">Я должен: <b class="far">' + debtTotals(owe) + '</b></div></div>';
+  const card = d => '<div class="st-ath wl-debt' + (d.closed ? ' closed' : '') + '"><div class="st-ath-h" data-w="debtedit" data-id="' + d.id + '"><b>' + (d.dir === 'lend' ? '⬅ ' : '➡ ') + escHtml(d.who) + '</b><span class="st-ath-p ' + (d.dir === 'lend' ? 'ok' : 'far') + '">' + mc(d.closed ? d.amount : d.left, d.cur) + '</span></div>' +
+    (d.what ? '<div class="st-ath-l">' + escHtml(d.what) + '</div>' : '') +
+    '<div class="st-ath-l">' + (d.dir === 'lend' ? 'Дал ' : 'Взял ') + studyDateLabel(d.date) + ': ' + mc(d.amount, d.cur) + (d.paid && !d.closed ? ' · вернули ' + mc(d.paid, d.cur) : '') + approx(d.closed ? d.amount : d.left, d.cur) + '</div>' +
+    (d.paid && !d.closed ? '<span class="pl-bar"><i style="width:' + Math.round(d.paid / d.amount * 100) + '%"></i></span>' : '') +
+    '<div class="db-due' + (d.overdue ? ' far' : !d.closed && d.days != null && d.days <= 3 ? ' soon' : '') + '">' + dueText(d) + '</div>' +
+    ((d.pays || []).length ? '<div class="db-pays">Возвраты: ' + d.pays.map(p => mc(p.amount, d.cur) + ' (' + p.date.slice(8) + '.' + p.date.slice(5, 7) + ')').join(', ') + '</div>' : '') +
+    (d.closed ? '' : '<div class="sp-btns"><button class="go" data-w="debtpay" data-id="' + d.id + '">' + (d.dir === 'lend' ? 'Мне вернули' : 'Я отдал') + '</button></div>') + '</div>';
+  if(lend.length) h += '<div class="wl-sub">Мне должны</div>' + lend.map(card).join('');
+  if(owe.length) h += '<div class="wl-sub">Я должен</div>' + owe.map(card).join('');
+  if(!open.length) h += '<div class="sp-note">Открытых долгов нет 👍</div>';
+  h += '<div class="sp-btns"><button data-w="debtnew">+ Долг</button>' + (closed.length ? '<button data-w="debtclosed">' + (showClosedDebts ? 'Скрыть закрытые' : 'Закрытые (' + closed.length + ')') + '</button>' : '') + '</div>';
+  if(showClosedDebts) h += closed.sort((a, b) => a.date < b.date ? 1 : -1).map(card).join('');
+  return h;
+}
+let debtEdit = null;
+function debtSrcOptions(cur, selKey){
+  const list = finSources().filter(x => (x.cur || 'KZT') === cur && (x.left > 0 || srcKey(x) === selKey));
+  const cur0 = selKey || (cur === 'KZT' ? srcKey(defaultSource()) : list[0] && srcKey(list[0]));
+  return list.map(x => '<option value="' + srcKey(x) + '"' + (srcKey(x) === cur0 ? ' selected' : '') + '>' + escHtml(x.label) + ' · остаток ' + mc(x.left, x.cur || 'KZT') + '</option>').join('');
+}
+function openDebt(id){
+  const f = fin();
+  debtEdit = id ? f.debts.find(d => d.id === id) : null;
+  const d = debtEdit || {dir: 'lend', cur: 'KZT', date: todayISO()};
+  $('dbTitle').textContent = debtEdit ? 'Долг' : 'Новый долг';
+  $('dbDir').value = d.dir; $('dbWho').value = d.who || ''; $('dbWhat').value = d.what || '';
+  $('dbAmount').value = d.amount || ''; $('dbDate').value = d.date; $('dbDue').value = d.due || '';
+  $('dbCur').innerHTML = CURS.map(c => '<option value="' + c[0] + '">' + c[1] + ' ' + c[0] + '</option>').join('');
+  $('dbCur').value = d.cur || 'KZT';
+  $('dbWhoList').innerHTML = [...new Set(f.debts.map(x => x.who))].map(w => '<option value="' + escHtml(w) + '">').join('');
+  $('dbFlow').checked = debtEdit ? !!(d.src || d.inc) : true;
+  const locked = debtEdit && ((d.pays || []).length || d.src || d.inc);
+  for(const k of ['dbDir', 'dbCur', 'dbAmount', 'dbFlow']) $(k).disabled = !!locked;
+  $('dbDel').style.display = debtEdit ? '' : 'none';
+  syncDebt();
+  $('debtBg').classList.add('open');
+  if(!debtEdit) setTimeout(() => $('dbWho').focus(), 50);
+}
+function syncDebt(){
+  const dir = $('dbDir').value, cur = $('dbCur').value, flow = $('dbFlow').checked;
+  $('dbWhoLbl').textContent = dir === 'lend' ? 'Кто мне должен' : 'Кому я должен';
+  $('dbFlowLbl').textContent = dir === 'lend' ? 'Дал из своих денег (списать из кошелька)' : 'Деньги пришли мне на руки (зачислить в кошелёк)';
+  const showSrc = dir === 'lend' && flow && !$('dbFlow').disabled;
+  $('dbSrcF').style.display = showSrc ? '' : 'none';
+  if(showSrc) $('dbSrc').innerHTML = debtSrcOptions(cur, debtEdit && debtEdit.src ? srcKey(debtEdit.src) : null) || '<option value="">Нет денег в этой валюте на руках</option>';
+  $('dbHint').textContent = !flow ? 'Только запись: деньги на руках не изменятся (например, старый долг).'
+    : dir === 'lend' ? 'Сумма уйдёт из «денег на руках». Когда вернут — нажмёшь «Мне вернули», и деньги вернутся в кошелёк.'
+    : 'Сумма появится в «деньгах на руках» отдельным кошельком. Когда будешь отдавать — «Я отдал», выберешь откуда.';
+}
+for(const k of ['dbDir', 'dbCur', 'dbFlow']) $(k).onchange = syncDebt;
+$('dbSave').onclick = async () => {
+  const f = fin(), who = $('dbWho').value.trim(), amount = num($('dbAmount').value);
+  if(!who){ toast('Напиши, кто'); return; }
+  if(!(amount > 0)){ toast('Введи сумму'); return; }
+  const d = debtEdit || {id: finId(), pays: []};
+  const isNew = !debtEdit;
+  Object.assign(d, {who, what: $('dbWhat').value.trim() || null, date: $('dbDate').value || todayISO(), due: $('dbDue').value || null});
+  if(isNew){
+    Object.assign(d, {dir: $('dbDir').value, cur: $('dbCur').value || 'KZT', amount});
+    if($('dbFlow').checked){
+      if(d.dir === 'lend'){
+        const src = parseSrcKey($('dbSrc').value);
+        if(!src){ toast('Нет денег в этой валюте на руках — сними галочку или сначала обменяй'); return; }
+        const s = finSources().find(x => srcKey(x) === srcKey(src));
+        if(s && amount > s.left + 1e-9){ toast('Там осталось только ' + mc(Math.max(0, s.left), d.cur)); return; }
+        d.src = src;
+      } else d.inc = addIncome(d.cur, amount, d.date, 'В долг от ' + who, d.id);
+    }
+    f.debts.push(d);
+  } else if(!((d.pays || []).length || d.src || d.inc)) Object.assign(d, {dir: $('dbDir').value, cur: $('dbCur').value || 'KZT', amount});
+  await saveFin();
+  $('debtBg').classList.remove('open');
+  renderWallet();
+  scheduleReminders().catch(() => {});
+  toast(isNew ? (d.dir === 'lend' ? 'Тебе должны: ' : 'Ты должен: ') + who + ' — ' + mc(d.amount, d.cur) : 'Сохранено');
+};
+$('dbDel').onclick = async () => {
+  if(!debtEdit || !confirm('Удалить долг? Связанные с ним движения денег тоже отменятся.')) return;
+  const f = fin(), d = debtEdit;
+  const refs = [d.inc].concat((d.pays || []).map(p => p.inc)).filter(Boolean);
+  for(const r of refs) if(r.side && usedFrom('side', r.side) > 0){ toast('Из денег по этому долгу уже есть расходы — сначала удали их'); return; }
+  refs.forEach(removeIncome);
+  f.debts = f.debts.filter(x => x !== d);
+  await saveFin();
+  $('debtBg').classList.remove('open');
+  renderWallet();
+  scheduleReminders().catch(() => {});
+};
+$('dbCancel').onclick = () => $('debtBg').classList.remove('open');
+let payDebt = null;
+function openPay(id){
+  payDebt = fin().debts.find(d => d.id === id);
+  if(!payDebt) return;
+  const di = debtInfo(payDebt);
+  $('pyTitle').textContent = di.dir === 'lend' ? di.who + ' возвращает' : 'Отдаю ' + di.who;
+  $('pyAmtLbl').textContent = 'Сколько, ' + curSym(di.cur) + ' (осталось ' + mc(di.left, di.cur) + ')';
+  $('pyAmount').value = di.left; $('pyDate').value = todayISO();
+  $('pyFlow').checked = true;
+  $('pyFlowLbl').textContent = di.dir === 'lend' ? 'Зачислить в кошелёк' : 'Списать из кошелька';
+  syncPay();
+  $('payBg').classList.add('open');
+}
+function syncPay(){
+  const di = debtInfo(payDebt), flow = $('pyFlow').checked, showSrc = di.dir === 'owe' && flow;
+  $('pySrcF').style.display = showSrc ? '' : 'none';
+  if(showSrc) $('pySrc').innerHTML = debtSrcOptions(di.cur, null) || '<option value="">Нет денег в этой валюте на руках</option>';
+  $('pyHint').textContent = !flow ? 'Только отметка о возврате, деньги на руках не изменятся.' : di.dir === 'lend' ? 'Вернувшиеся деньги появятся в «деньгах на руках».' : 'Сумма спишется с выбранного кошелька.';
+}
+$('pyFlow').onchange = syncPay;
+$('pySave').onclick = async () => {
+  const di = debtInfo(payDebt), amount = num($('pyAmount').value), date = $('pyDate').value || todayISO();
+  if(!(amount > 0)){ toast('Введи сумму'); return; }
+  if(amount > di.left + 1e-9){ toast('Осталось только ' + mc(di.left, di.cur)); return; }
+  const p = {id: finId(), date, amount};
+  if($('pyFlow').checked){
+    if(di.dir === 'owe'){
+      const src = parseSrcKey($('pySrc').value);
+      if(!src){ toast('Нет денег в этой валюте на руках — сними галочку или сначала обменяй'); return; }
+      const s = finSources().find(x => srcKey(x) === srcKey(src));
+      if(s && amount > s.left + 1e-9){ toast('Там осталось только ' + mc(Math.max(0, s.left), di.cur)); return; }
+      p.src = src;
+    } else p.inc = addIncome(di.cur, amount, date, 'Возврат долга: ' + di.who, payDebt.id);
+  }
+  (payDebt.pays = payDebt.pays || []).push(p);
+  await saveFin();
+  $('payBg').classList.remove('open');
+  renderWallet();
+  scheduleReminders().catch(() => {});
+  const after = debtInfo(payDebt);
+  toast(after.closed ? '✓ Долг закрыт: ' + di.who : 'Записано · осталось ' + mc(after.left, di.cur));
+};
+$('pyCancel').onclick = () => $('payBg').classList.remove('open');
+const convState = {from: 'KZT', to: 'USD', amt: ''};
 function convCalc(){
   const out = $('convOut'); if(!out) return;
-  const a = num($('convAmt').value), c = $('convCur').value, lf = fin().lastFx || 'RUB';
-  if(!a){ out.textContent = ''; return; }
-  if(c === 'KZT>'){ const r = mktRate(lf); out.textContent = r ? '= ' + mc(a / r, lf) : ''; }
-  else { const r = mktRate(c); out.textContent = r ? '= ' + money(a * r) + ' ₸' : ''; }
+  convState.from = $('convFrom').value; convState.to = $('convTo').value; convState.amt = $('convAmt').value;
+  const a = num($('convAmt').value), rf = mktRate(convState.from), rt = mktRate(convState.to);
+  out.textContent = a && rf && rt ? '= ' + mc(a * rf / rt, convState.to) : '';
 }
 function srcText(src, date){
   if(src.kind === 'jar'){ const j = fin().jars.find(x => x.id === src.id); return 'из копилки' + (j ? ' «' + escHtml(j.name) + '»' : ''); }
-  if(src.kind === 'side'){ const x = fin().side.find(y => y.id === src.id); return 'из подработки' + (x && x.name ? ' «' + escHtml(x.name) + '»' : ''); }
+  if(src.kind === 'side'){ const x = fin().side.find(y => y.id === src.id); return (x && x.fromDebt ? 'из денег в долг' : 'из подработки') + (x && x.name && !x.fromDebt ? ' «' + escHtml(x.name) + '»' : ''); }
   if(src.kind === 'start') return 'из стартовых';
   if(src.kind === 'cur') return 'из валюты (' + curSym(src.id) + ')';
   return (src.kind === 'advance' ? 'из аванса' : 'из зарплаты') + (src.ym !== date.slice(0, 7) ? ' за ' + MONTHS[Number(src.ym.slice(5)) - 1] : '');
 }
 $('walletBody').addEventListener('input', e => { if(e.target.id === 'convAmt') convCalc(); });
-$('walletBody').addEventListener('change', e => { if(e.target.id === 'convCur') convCalc(); });
+$('walletBody').addEventListener('change', e => { if(e.target.id === 'convFrom' || e.target.id === 'convTo') convCalc(); });
 $('walletBody').addEventListener('click', async e => {
   const el = e.target.closest('[data-w]');
   if(!el) return;
@@ -11944,6 +12166,11 @@ $('walletBody').addEventListener('click', async e => {
   else if(a === 'start') openMoneySheet('start');
   else if(a === 'side') openMoneySheet('side');
   else if(a === 'fx') openFx(el.dataset.cur || null);
+  else if(a === 'debtnew') openDebt(null);
+  else if(a === 'debtedit') openDebt(Number(el.dataset.id));
+  else if(a === 'debtpay') openPay(Number(el.dataset.id));
+  else if(a === 'debtclosed'){ showClosedDebts = !showClosedDebts; renderWallet(); }
+  else if(a === 'convswap'){ const x = $('convFrom').value; $('convFrom').value = $('convTo').value; $('convTo').value = x; convCalc(); }
   else if(a === 'rates') refreshMarket(true).then(ok => toast(ok ? 'Курсы обновлены' : 'Нет связи — курсы не обновились'));
   else if(a === 'rate'){
     const c = el.dataset.cur, r = rateOf(c);
@@ -12349,12 +12576,14 @@ function walletBannerHTML(){
   if(!settings.fin && !shiftCat()) return '';
   const cur = todayISO().slice(0, 7), pi = periodInfo(cur);
   const s = finSources().filter(x => x.left > 0 && x.kind !== 'cur');
-  if(!pi.accrued && !s.length && !fin().jars.length) return '';
+  if(!pi.accrued && !s.length && !fin().jars.length && !fin().debts.length) return '';
   const onHand = s.reduce((x, y) => x + y.left, 0);
   const parts = [];
   if(s.length) parts.push('на руках ' + money(onHand) + ' ₸');
   const jb = fin().jars.reduce((x, j) => x + (jarInfo(j).kzt || 0), 0);
   if(jb > 0) parts.push('🐷 ' + (fin().jars.some(j => j.cur && j.cur !== 'KZT') ? '≈ ' : '') + money(jb) + ' ₸');
+  const od = fin().debts.map(debtInfo).filter(d => !d.closed && d.days != null && d.days <= 1);
+  if(od.length) parts.push('⚠ ' + (od.some(d => d.overdue) ? 'просрочен долг' : 'срок долга') + ': ' + od.map(d => escHtml(d.who)).join(', '));
   const cw = curWallets().filter(w => w.left > 0);
   if(cw.length) parts.push(cw.map(w => mc(w.left, w.cur)).join(' · '));
   if(pi.accrued && !pi.salaryAny) parts.push('к получению за ' + MONTHS[Number(cur.slice(5)) - 1] + ' ' + money(pi.toReceive) + ' ₸');
