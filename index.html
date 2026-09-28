@@ -346,7 +346,7 @@
   /* план занятий на день */
   #studyPartBg,#resetBg,#goalBg,#woPickBg{z-index:30}
   #vocabBg,#examBg,#diaryBg,#workoutBg,#recBg{z-index:26}
-  #weekBg,#schedBg,#moneyBg,#expBg,#jarBg,#moveBg{z-index:30}
+  #weekBg,#schedBg,#moneyBg,#expBg,#jarBg,#moveBg,#fxBg{z-index:30}
   #walletBg{z-index:26}
   #finCatBg{z-index:27}
   #readerBg{z-index:27}
@@ -434,6 +434,9 @@
   .ex-grid label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:4px}
   .ex-grid input{padding:7px 8px;font:inherit;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px}
   .wl-pend{border-color:var(--accent)}
+  .sp-btns.wl-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .sp-btns.wl-acts button{width:100%;margin:0}
+  .sp-btns.wl-acts button:last-child{grid-column:1/-1}
   .wl-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
   .wl-nav button{font:inherit;padding:6px 14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--surface);color:var(--text)}
   .wl-cat{display:grid;grid-template-columns:minmax(0,1.2fr) 1fr 72px;gap:8px;align-items:center;font-size:13px;padding:4px 0}
@@ -1526,7 +1529,8 @@
   <div class="sheet">
     <h2 id="jarTitle">Копилка</h2>
     <div class="field"><label for="jarName">На что копишь</label><input id="jarName" placeholder="Например: машина, отпуск, подушка"></div>
-    <div class="field"><label for="jarTarget">Цель, ₸ (необязательно)</label><input id="jarTarget" type="number" inputmode="numeric"></div>
+    <div class="field"><label for="jarTarget" id="jarTargetLbl">Цель (необязательно)</label><input id="jarTarget" type="number" inputmode="numeric"></div>
+    <div class="field"><label for="jarCur">Валюта копилки</label><select id="jarCur"></select></div>
     <div class="field"><label for="jarDeadline">Накопить к дате (необязательно)</label><input id="jarDeadline" type="date"></div>
     <div class="actions"><button id="jarCancel">Отмена</button><button id="jarDel">Удалить</button><button id="jarSave" class="primary">Сохранить</button></div>
   </div>
@@ -1535,11 +1539,25 @@
   <div class="sheet">
     <h2 id="mvTitle">Отложить</h2>
     <div class="field"><label for="mvJar">Копилка</label><select id="mvJar"></select></div>
-    <div class="field"><label for="mvAmount">Сколько, ₸</label><input id="mvAmount" type="number" inputmode="numeric"></div>
     <div class="field" id="mvSrcF"><label for="mvSrc">Откуда</label><select id="mvSrc"></select></div>
+    <div class="field"><label for="mvAmount" id="mvAmtLbl">Сколько, ₸</label><input id="mvAmount" type="number" inputmode="decimal"></div>
+    <div class="field" id="mvPaidF" style="display:none"><label for="mvPaid" id="mvPaidLbl">Сколько тенге отдал при обмене</label><input id="mvPaid" type="number" inputmode="decimal"></div>
     <div class="field"><label for="mvDate">Дата</label><input id="mvDate" type="date"></div>
     <div class="hint" id="mvHint"></div>
     <div class="actions"><button id="mvCancel">Отмена</button><button id="mvSave" class="primary">Отложить</button></div>
+  </div>
+</div>
+<div class="sheet-bg" id="fxBg">
+  <div class="sheet">
+    <h2>Обмен валюты</h2>
+    <div class="field"><label for="fxFrom">Что отдаёшь (откуда)</label><select id="fxFrom"></select></div>
+    <div class="field"><label for="fxGive" id="fxGiveLbl">Сколько отдал</label><input id="fxGive" type="number" inputmode="decimal"></div>
+    <div class="field"><label for="fxTo">Что получаешь</label><select id="fxTo"></select></div>
+    <div class="field"><label for="fxGet" id="fxGetLbl">Сколько получил</label><input id="fxGet" type="number" inputmode="decimal"></div>
+    <div class="field" id="fxJarF"><label for="fxJar">Куда положить</label><select id="fxJar"></select></div>
+    <div class="field"><label for="fxDate">Дата</label><input id="fxDate" type="date"></div>
+    <div class="hint" id="fxHint"></div>
+    <div class="actions"><button id="fxCancel">Отмена</button><button id="fxSave" class="primary">Обменять</button></div>
   </div>
 </div>
 <div class="sheet-bg" id="expBg">
@@ -1547,7 +1565,7 @@
     <h2 id="exTitle">Расход</h2>
     <div class="exp-body">
       <div class="field"><label for="exName">Что купил (продукт) — необязательно</label><input id="exName" list="exProdList" placeholder="Например: Хлеб, Джинсы" autocomplete="off"><datalist id="exProdList"></datalist></div>
-      <div class="field"><label for="exAmount">Сумма, ₸</label><input id="exAmount" type="number" inputmode="numeric"></div>
+      <div class="field"><label for="exAmount" id="exAmtLbl">Сумма, ₸</label><input id="exAmount" type="number" inputmode="numeric"></div>
       <div class="field"><label for="exCat">Категория</label><select id="exCat"></select></div>
       <label class="bk-chk"><input type="checkbox" id="exSaveProd" checked> Запомнить как продукт (категория, цена, КБЖУ подставятся в следующий раз)</label>
       <div class="field"><label for="exSrc">Из чего платишь</label><select id="exSrc"></select></div>
@@ -2170,7 +2188,7 @@
       <button id="openReset">Сбросить настройки…</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 99 — кошелёк: копилки (откладывай из зарплаты, аванса или подработки), доход с подработок; остаток аванса плюсуется к зарплате, стартовые деньги (сверка); зарплата по графику, аванс, получение зарплаты, расходы по категориям и продуктам, КБЖУ для еды; график смен из Excel; резервная копия; рекорды</div>
+    <div class="hint sv-version" id="version">Версия 100 — кошелёк: валюты (обмен ₸↔₽/$/€…, копилки в валюте), копилки (откладывай из зарплаты, аванса или подработки), доход с подработок; остаток аванса плюсуется к зарплате, стартовые деньги (сверка); зарплата по графику, аванс, получение зарплаты, расходы по категориям и продуктам, КБЖУ для еды; график смен из Excel; резервная копия; рекорды</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -3987,7 +4005,7 @@ $('menuDelete').onclick = async () => {
   render();
 };
 
-['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg','bookTocBg','lockBg','tmplBg','tmplEditBg','studyPartBg','resetBg','goalBg','woPickBg','weekBg','schedBg','moneyBg','expBg','jarBg','moveBg'].forEach(id => {
+['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg','bookTocBg','lockBg','tmplBg','tmplEditBg','studyPartBg','resetBg','goalBg','woPickBg','weekBg','schedBg','moneyBg','expBg','jarBg','moveBg','fxBg'].forEach(id => {
   const bg = $(id);
   bg.onclick = e => { if(e.target === bg) bg.classList.remove('open'); };
 });
@@ -3995,7 +4013,7 @@ $('menuDelete').onclick = async () => {
 if(window.Capacitor && window.Capacitor.Plugins.App){
   window.Capacitor.Plugins.App.addListener('backButton', () => {
     if($('diaryBg').classList.contains('open')){ flushDiary().finally(diaryLock); return; }
-    for(const id of ['moveBg','jarBg','expBg','moneyBg','finCatBg','walletBg','schedBg','weekBg','recBg','goalBg','woPickBg','examBg','vocabBg','workoutBg','resetBg','studyPartBg','tmplEditBg','tmplBg','pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg','newsBg','lockBg','studyBg']){
+    for(const id of ['fxBg','moveBg','jarBg','expBg','moneyBg','finCatBg','walletBg','schedBg','weekBg','recBg','goalBg','woPickBg','examBg','vocabBg','workoutBg','resetBg','studyPartBg','tmplEditBg','tmplBg','pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg','newsBg','lockBg','studyBg']){
       if($(id).classList.contains('open')){ $(id).classList.remove('open'); return; }
     }
     if(path.length){ path.pop(); render(); return; }
@@ -11556,8 +11574,35 @@ function fin(){
   return f;
 }
 async function saveFin(){ await repo.setSetting('fin', JSON.stringify(fin())); }
-/* всё, что уменьшает деньги на руках: расходы + отложенное в копилки */
-function finUses(){ const f = fin(); return f.ops.concat(f.moves.filter(m => m.amount > 0 && m.src)); }
+/* ---- валюты: тенге — основная; остальные — отдельные кошельки «на руках» и копилки ---- */
+const CURS = [['KZT', '₸', 'Тенге'], ['RUB', '₽', 'Рубли'], ['USD', '$', 'Доллары'], ['EUR', '€', 'Евро'], ['CNY', '¥', 'Юани'], ['KGS', 'сом', 'Сомы'], ['UZS', 'сум', 'Сумы'], ['TRY', '₺', 'Лиры'], ['AED', 'дирх.', 'Дирхамы']];
+const curSym = c => (CURS.find(x => x[0] === (c || 'KZT')) || [c, c])[1];
+const curName = c => (CURS.find(x => x[0] === (c || 'KZT')) || [c, c, c])[2];
+const mc = (v, c) => (Number(v) || 0).toLocaleString('ru-RU', {maximumFractionDigits: c && c !== 'KZT' ? 2 : 0}) + ' ' + curSym(c);
+/* курс = сколько тенге за 1 единицу; берётся из последнего обмена, можно поправить руками */
+const rateOf = c => !c || c === 'KZT' ? 1 : ((fin().rates || {})[c] || {}).v || null;
+const toKZT = (v, c) => { const r = rateOf(c); return r ? v * r : null; };
+const approx = (v, c) => { if(!c || c === 'KZT') return ''; const k = toKZT(v, c); return k == null ? '' : ' ≈ ' + money(k) + ' ₸'; };
+const fmtRate = v => v >= 10 ? v.toFixed(1).replace('.', ',') : v.toFixed(2).replace('.', ',');
+function setRate(c, kztPerUnit, date){ if(!c || c === 'KZT' || !(kztPerUnit > 0)) return; const f = fin(); f.rates = f.rates || {}; f.rates[c] = {v: kztPerUnit, date: date || todayISO()}; }
+/* сколько тенге ушло из источника: для обмена/копилки в валюте это «отдал», иначе сама сумма */
+/* всё, что уменьшает деньги на руках: расходы + отложенное в копилки + отданное при обмене */
+function finUses(){
+  const f = fin();
+  return f.ops.map(o => o.cur && o.cur !== 'KZT' && !(o.src && o.src.kind === 'cur') && !(o.src && o.src.kind === 'jar') ? Object.assign({}, o, {amount: o.srcAmount != null ? o.srcAmount : o.amount}) : o)
+    .concat(f.moves.filter(m => m.amount > 0 && m.src).map(m => ({src: m.src, amount: m.srcAmount != null ? m.srcAmount : m.amount, date: m.date})))
+    .concat((f.fx || []).filter(x => x.src).map(x => ({src: x.src, amount: x.give, date: x.date})));
+}
+/* валюта на руках: получено при обмене + снято из копилок − отдано/отложено/потрачено */
+function curWallets(){
+  const f = fin(), out = {};
+  const add = (c, k, v) => { if(!c || c === 'KZT') return; (out[c] = out[c] || {cur: c, inn: 0, used: 0})[k] += v; };
+  for(const x of (f.fx || [])){ if(!x.jarId) add(x.to, 'inn', x.get); if(x.from !== 'KZT' && !x.src) add(x.from, 'used', x.give); }
+  for(const m of f.moves){ const j = f.jars.find(y => y.id === m.jarId); const jc = j ? j.cur || 'KZT' : 'KZT'; if(m.amount < 0 && jc !== 'KZT') add(jc, 'inn', -m.amount); }
+  for(const u of finUses()) if(u.src && u.src.kind === 'cur') add(u.src.id, 'used', u.amount);
+  for(const c of Object.keys(out)) out[c].left = Math.round((out[c].inn - out[c].used) * 100) / 100;
+  return Object.values(out);
+}
 const usedFrom = (kind, id) => finUses().filter(o => o.src && o.src.kind === kind && o.src.id === id).reduce((x, o) => x + o.amount, 0);
 /* подработки: каждая — отдельный источник со своим остатком */
 function sideList(){
@@ -11581,7 +11626,8 @@ function jarInfo(j){
     if(perMonth > 0){ const k = Math.ceil((j.target - bal) / perMonth); eta = ymShift(todayISO().slice(0, 7), k); }
     if(j.deadline){ const ml = Math.max(1, Math.round((new Date(j.deadline) - new Date(todayISO())) / (30.44 * 864e5))); need = Math.ceil((j.target - bal) / ml); }
   }
-  return Object.assign({}, j, {inn, out, spent, bal, perMonth, eta, need});
+  const cur = j.cur || 'KZT';
+  return Object.assign({}, j, {cur, inn, out, spent, bal: Math.round(bal * 100) / 100, kzt: toKZT(bal, cur), perMonth, eta, need});
 }
 const finId = () => { const f = fin(); return f.seq = (f.seq || 1000) + 1; };
 const finCat = id => fin().cats.find(c => c.id === id);
@@ -11654,14 +11700,16 @@ function finSources(){
   }
   const si = startInfo();
   if(si) out.push({ym: si.date.slice(0, 7), kind: 'start', id: si.id, at: si.date, left: si.left, label: 'Стартовые деньги (' + si.date.slice(8) + '.' + si.date.slice(5, 7) + ')'});
+  for(const w of curWallets()) if(w.left > 0)
+    out.push({ym: '', kind: 'cur', id: w.cur, cur: w.cur, at: '9999', left: w.left, label: curName(w.cur) + ' на руках'});
   const cur = todayISO().slice(0, 7);
   for(const x of sideList()) if(x.left !== 0 || x.date.slice(0, 7) === cur)
-    out.push({ym: x.date.slice(0, 7), kind: 'side', id: x.id, at: x.date, left: x.left, label: (x.fromJar ? '' : 'Подработка · ') + (x.name || 'без названия') + ' (' + x.date.slice(8) + '.' + x.date.slice(5, 7) + ')'});
+    out.push({ym: x.date.slice(0, 7), kind: 'side', id: x.id, at: x.date, left: x.left, label: (x.fromJar || x.fromFx ? '' : 'Подработка · ') + (x.name || 'без названия') + ' (' + x.date.slice(8) + '.' + x.date.slice(5, 7) + ')'});
   return out;
 }
 /* платим сначала самыми старыми деньгами: остаток сентября уходит раньше октябрьских */
 function defaultSource(){
-  const s = finSources().filter(x => x.left > 0).sort((a, b) => a.at < b.at ? -1 : a.at > b.at ? 1 : 0);
+  const s = finSources().filter(x => x.left > 0 && x.kind !== 'cur').sort((a, b) => a.at < b.at ? -1 : a.at > b.at ? 1 : 0);
   return s[0] || finSources()[0] || null;
 }
 let walletYm = null;
@@ -11712,32 +11760,45 @@ function renderWallet(){
   if(si){ onHand += si.left; if(si.left !== 0 || si.spent === 0) cards.push(wallet('Стартовые деньги · сверка ' + studyDateLabel(si.date), si.amount, si.spent, si.left, 'start')); }
   for(const x of sideList()){
     onHand += x.left;
-    if(x.left !== 0 || x.date.slice(0, 7) === walletYm) cards.push(wallet((x.fromJar ? '' : 'Подработка · ') + escHtml(x.name || 'без названия') + ' · ' + x.date.slice(8) + '.' + x.date.slice(5, 7), x.amount, x.spent, x.left, 'side', null,
-      x.fromJar ? '' : '<div class="sp-btns"><button class="mini" data-w="sidedel" data-id="' + x.id + '">Удалить запись</button></div>'));
+    if(x.left !== 0 || x.date.slice(0, 7) === walletYm) cards.push(wallet((x.fromJar || x.fromFx ? '' : 'Подработка · ') + escHtml(x.name || 'без названия') + ' · ' + x.date.slice(8) + '.' + x.date.slice(5, 7), x.amount, x.spent, x.left, 'side', null,
+      x.fromJar || x.fromFx ? '' : '<div class="sp-btns"><button class="mini" data-w="sidedel" data-id="' + x.id + '">Удалить запись</button></div>'));
   }
   if(cards.length) h += '<h3>Деньги на руках: ' + money(onHand) + ' ₸</h3>' + (cards.length > 1 ? '<div class="sp-note">Всего на руках — сумма остатков всех зарплат и авансов. Расходы по умолчанию списываются с самых старых денег.</div>' : '') + cards.join('');
-  h += '<div class="sp-btns"><button class="go" data-w="exp">+ Расход</button><button data-w="side">+ Подработка</button><button data-w="cats">Категории и продукты</button><button data-w="start">Сверить остаток (стартовые деньги)</button></div>';
+  /* валюта на руках */
+  const cws = curWallets().filter(w => w.left !== 0 || (f.fx || []).some(x => (x.to === w.cur || x.from === w.cur) && x.date.slice(0, 7) === walletYm));
+  if(cws.length){
+    h += '<h3>Валюта на руках</h3>';
+    for(const w of cws){
+      const r = (f.rates || {})[w.cur];
+      h += '<div class="st-ath wl-src"><div class="st-ath-h"><b>' + curName(w.cur) + '</b><span class="st-ath-p ok">' + mc(w.left, w.cur) + '</span></div>' +
+        '<div class="st-ath-l">' + (r ? 'Курс: 1 ' + curSym(w.cur) + ' = ' + fmtRate(r.v) + ' ₸ (' + (r.manual ? 'вручную ' : 'по обмену ') + r.date.slice(8) + '.' + r.date.slice(5, 7) + ')' + approx(w.left, w.cur).replace(' ≈', ' · на руках ≈') : 'Курс неизвестен') + '</div>' +
+        '<div class="sp-btns"><button data-w="fx" data-cur="' + w.cur + '">Обменять</button><button data-w="rate" data-cur="' + w.cur + '">Курс</button></div></div>';
+    }
+  }
+  h += '<div class="sp-btns wl-acts"><button class="go" data-w="exp">+ Расход</button><button data-w="side">+ Подработка</button><button data-w="fx">Обмен валюты</button><button data-w="cats">Категории и продукты</button><button data-w="start">Сверить остаток (стартовые деньги)</button></div>';
   /* копилки */
   const jars = f.jars.map(jarInfo);
-  h += '<h3>Копилки' + (jars.length ? ': ' + money(jars.reduce((x, j) => x + j.bal, 0)) + ' ₸' : '') + '</h3>';
+  h += '<h3>Копилки' + (jars.length ? ': ' + (jars.some(j => j.cur !== 'KZT') ? '≈ ' : '') + money(jars.reduce((x, j) => x + (j.kzt || 0), 0)) + ' ₸' : '') + '</h3>';
   if(!jars.length) h += '<div class="sp-note">Копилка — деньги, отложенные на цель. Они не считаются «на руках» и не тратятся случайно. Откладывай сколько хочешь — из зарплаты, аванса или подработки.</div>';
   for(const j of jars){
     const pct = j.target ? Math.min(100, Math.round(j.bal / j.target * 100)) : null;
-    h += '<div class="st-ath wl-jar"><div class="st-ath-h" data-w="jaredit" data-id="' + j.id + '"><b>🐷 ' + escHtml(j.name) + '</b><span class="st-ath-p ok">' + money(j.bal) + ' ₸</span></div>' +
-      (j.target ? '<span class="pl-bar"><i style="width:' + pct + '%"></i></span><div class="st-ath-l">' + money(j.bal) + ' из ' + money(j.target) + ' ₸ · <b>' + pct + '%</b>' + (j.bal >= j.target ? ' · цель достигнута 🎉' : '') + '</div>' : '') +
-      (j.perMonth ? '<div class="st-ath-l">В среднем откладываешь ' + money(j.perMonth) + ' ₸ в месяц' + (j.eta ? ' · при таком темпе накопишь к: <b>' + ymLabel(j.eta).toLowerCase() + '</b>' : '') + '</div>' : '') +
-      (j.need ? '<div class="st-ath-l' + (j.perMonth >= j.need ? ' ok' : ' far') + '">Чтобы успеть к ' + j.deadline.split('-').reverse().join('.') + ', нужно откладывать ' + money(j.need) + ' ₸ в месяц</div>' : '') +
-      (j.spent || j.out ? '<div class="st-ath-l">Положено ' + money(j.inn) + (j.out ? ' · снято ' + money(j.out) : '') + (j.spent ? ' · потрачено ' + money(j.spent) : '') + '</div>' : '') +
+    h += '<div class="st-ath wl-jar"><div class="st-ath-h" data-w="jaredit" data-id="' + j.id + '"><b>🐷 ' + escHtml(j.name) + '</b><span class="st-ath-p ok">' + mc(j.bal, j.cur) + '</span></div>' +
+      (j.cur !== 'KZT' ? '<div class="st-ath-l">' + curName(j.cur) + (approx(j.bal, j.cur) ? ' · сейчас' + approx(j.bal, j.cur) : '') + '</div>' : '') +
+      (j.target ? '<span class="pl-bar"><i style="width:' + pct + '%"></i></span><div class="st-ath-l">' + mc(j.bal, j.cur).replace(/ \S+$/, '') + ' из ' + mc(j.target, j.cur) + ' · <b>' + pct + '%</b>' + (j.bal >= j.target ? ' · цель достигнута 🎉' : '') + '</div>' : '') +
+      (j.perMonth ? '<div class="st-ath-l">В среднем откладываешь ' + mc(j.perMonth, j.cur) + ' в месяц' + (j.eta ? ' · при таком темпе накопишь к: <b>' + ymLabel(j.eta).toLowerCase() + '</b>' : '') + '</div>' : '') +
+      (j.need ? '<div class="st-ath-l' + (j.perMonth >= j.need ? ' ok' : ' far') + '">Чтобы успеть к ' + j.deadline.split('-').reverse().join('.') + ', нужно откладывать ' + mc(j.need, j.cur) + ' в месяц</div>' : '') +
+      (j.spent || j.out ? '<div class="st-ath-l">Положено ' + mc(j.inn, j.cur) + (j.out ? ' · снято ' + mc(j.out, j.cur) : '') + (j.spent ? ' · потрачено ' + mc(j.spent, j.cur) : '') + '</div>' : '') +
       '<div class="sp-btns"><button class="go" data-w="jarin" data-id="' + j.id + '">Отложить</button><button data-w="jarout" data-id="' + j.id + '"' + (j.bal > 0 ? '' : ' disabled') + '>Снять</button></div></div>';
   }
   h += '<div class="sp-btns"><button data-w="jarnew">+ Копилка</button></div>';
   /* расходы месяца (по дате операции) */
   const ops = f.ops.filter(o => o.date.slice(0, 7) === walletYm).sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id);
-  const total = ops.reduce((x, o) => x + o.amount, 0);
-  h += '<h3>Расходы за ' + MONTHS[Number(walletYm.slice(5)) - 1] + ': ' + money(total) + ' ₸</h3>';
+  const kz = o => o.cur && o.cur !== 'KZT' ? (toKZT(o.amount, o.cur) || 0) : o.amount;
+  const total = ops.reduce((x, o) => x + kz(o), 0);
+  h += '<h3>Расходы за ' + MONTHS[Number(walletYm.slice(5)) - 1] + ': ' + (ops.some(o => o.cur && o.cur !== 'KZT') ? '≈ ' : '') + money(total) + ' ₸</h3>';
   if(ops.length){
     const byRoot = {};
-    for(const o of ops){ const r = finRootOf(o.catId); const k = r ? r.name : 'Без категории'; byRoot[k] = (byRoot[k] || 0) + o.amount; }
+    for(const o of ops){ const r = finRootOf(o.catId); const k = r ? r.name : 'Без категории'; byRoot[k] = (byRoot[k] || 0) + kz(o); }
     const rows = Object.entries(byRoot).sort((a, b) => b[1] - a[1]);
     h += '<div class="st-ath">' + rows.map(([k, v]) => '<div class="wl-cat"><span>' + escHtml(k) + '</span><span class="pl-bar"><i style="width:' + Math.round(v / rows[0][1] * 100) + '%"></i></span><b>' + money(v) + '</b></div>').join('') + '</div>';
     const food = ops.filter(o => o.mass || o.kcal);
@@ -11752,7 +11813,7 @@ function renderWallet(){
       const prod = o.productId ? (f.products.find(p => p.id === o.productId) || {}).name : null;
       h += '<div class="wl-op" data-w="edit" data-id="' + o.id + '"><span>' + escHtml(o.name || prod || (finCat(o.catId) || {}).name || 'Расход') +
            '<small>' + escHtml(finCatPath(o.catId)) + (o.unaccounted ? ' · разница при сверке' : '') + (o.src ? ' · ' + srcText(o.src, o.date) : '') +
-           (o.mass ? ' · ' + o.mass + ' г' : '') + (o.kcal ? ' · ' + money(o.kcal) + ' ккал' : '') + '</small></span><b>−' + money(o.amount) + '</b></div>';
+           (o.mass ? ' · ' + o.mass + ' г' : '') + (o.kcal ? ' · ' + money(o.kcal) + ' ккал' : '') + (o.cur && o.cur !== 'KZT' ? approx(o.amount, o.cur) : '') + '</small></span><b>−' + (o.cur && o.cur !== 'KZT' ? mc(o.amount, o.cur) : money(o.amount)) + '</b></div>';
     }
   } else h += '<div class="sp-note">Расходов в этом месяце пока нет. Нажми «+ Расход».</div>';
   $('walletBody').innerHTML = h;
@@ -11761,6 +11822,7 @@ function srcText(src, date){
   if(src.kind === 'jar'){ const j = fin().jars.find(x => x.id === src.id); return 'из копилки' + (j ? ' «' + escHtml(j.name) + '»' : ''); }
   if(src.kind === 'side'){ const x = fin().side.find(y => y.id === src.id); return 'из подработки' + (x && x.name ? ' «' + escHtml(x.name) + '»' : ''); }
   if(src.kind === 'start') return 'из стартовых';
+  if(src.kind === 'cur') return 'из валюты (' + curSym(src.id) + ')';
   return (src.kind === 'advance' ? 'из аванса' : 'из зарплаты') + (src.ym !== date.slice(0, 7) ? ' за ' + MONTHS[Number(src.ym.slice(5)) - 1] : '');
 }
 $('walletBody').addEventListener('click', async e => {
@@ -11774,6 +11836,13 @@ $('walletBody').addEventListener('click', async e => {
   else if(a === 'salp') openMoneySheet('sal', el.dataset.ym);
   else if(a === 'start') openMoneySheet('start');
   else if(a === 'side') openMoneySheet('side');
+  else if(a === 'fx') openFx(el.dataset.cur || null);
+  else if(a === 'rate'){
+    const c = el.dataset.cur, r = rateOf(c);
+    const v = prompt('Сколько тенге за 1 ' + curSym(c) + '?', r ? fmtRate(r) : '');
+    const n = v == null ? null : Number(String(v).replace(',', '.').replace(/\s/g, ''));
+    if(n > 0){ setRate(c, n); fin().rates[c].manual = true; await saveFin(); renderWallet(); }
+  }
   else if(a === 'sidedel'){
     const f = fin(), id = Number(el.dataset.id);
     if(usedFrom('side', id) > 0){ toast('Из этой подработки уже есть расходы или отложенное — сначала удали их'); return; }
@@ -11800,13 +11869,13 @@ function openMoneySheet(mode, ym){
   const pi = periodInfo(moneyYm);
   $('mnNameF').style.display = mode === 'side' ? '' : 'none'; $('mnName').value = '';
   $('mnTitle').textContent = mode === 'adv' ? 'Взять аванс · ' + ymLabel(moneyYm) : mode === 'start' ? 'Стартовые деньги (сверка)' : mode === 'side' ? 'Доход с подработки' : 'Получить зарплату за ' + MONTHS[Number(moneyYm.slice(5)) - 1] + ' ' + moneyYm.slice(0, 4);
-  const onHand = finSources().reduce((x, s) => x + Math.max(0, s.left), 0);
+  const onHand = finSources().filter(x => x.kind !== 'cur').reduce((x, s) => x + Math.max(0, s.left), 0);
   $('mnAmount').value = mode === 'sal' ? (pi.salaryAny ? pi.salaryAny.amount : Math.max(0, pi.toReceive)) : '';
   $('mnDate').value = mode === 'sal' && pi.salaryAny ? pi.salaryAny.date : todayISO();
   $('mnHint').textContent = mode === 'side'
     ? 'Деньги с подработки — отдельный кошелёк со своим остатком. Из него можно тратить и откладывать в копилки.'
     : mode === 'start'
-    ? 'Впиши, сколько денег у тебя сейчас на руках (наличные + карта). С этого момента считаем от этой суммы. По учёту сейчас: ' + money(onHand) + ' ₸ — разница запишется как «неучтённые расходы», чтобы было видно, сколько ушло мимо учёта.'
+    ? 'Впиши, сколько ТЕНГЕ у тебя сейчас на руках (наличные + карта; валюта и копилки не в счёт). С этого момента считаем от этой суммы. По учёту сейчас: ' + money(onHand) + ' ₸ — разница запишется как «неучтённые расходы», чтобы было видно, сколько ушло мимо учёта.'
     : mode === 'adv'
     ? 'Аванс вычтется из зарплаты за ' + MONTHS[Number(moneyYm.slice(5)) - 1] + ': сейчас к получению ' + money(pi.toReceive) + ' ₸. Расходы после этого спишутся с аванса.'
     : 'По графику: ' + money(pi.accrued) + ' ₸' + (pi.advSum ? ' − авансы ' + money(pi.advSum) : '') + ' = ' + money(pi.toReceive) + ' ₸. Впиши, сколько получил на руки на самом деле.' +
@@ -11840,7 +11909,7 @@ $('mnSave').onclick = async () => {
     if(wasNew) offer = {ym: moneyYm, kind: 'salary'};
     toast('Зарплата ' + money(amount) + ' ₸ получена' + (advLeftNow > 0 ? ' + остаток аванса ' + money(advLeftNow) + ' = ' + money(amount + advLeftNow) + ' ₸' : ''));
   } else if(moneyMode === 'start'){
-    const onHand = finSources().reduce((x, s) => x + Math.max(0, s.left), 0);
+    const onHand = finSources().filter(x => x.kind !== 'cur').reduce((x, s) => x + Math.max(0, s.left), 0);
     const base = {};   // снимок: всё, что было до сверки, уже внутри стартовой суммы
     for(const ym of finMonths()){ const pi = periodInfo(ym); base[ym] = {adv: pi.advSum, spentAdv: pi.spentAdvAll, spentSal: pi.spentSalAll, sal: !!pi.salaryAny}; }
     base.sideIds = f.side.map(x => x.id);
@@ -11869,13 +11938,15 @@ function catOptions(sel){
     f.cats.filter(c => c.parent === r.id).map(c => '<option value="' + c.id + '"' + (sel === c.id ? ' selected' : '') + '>' + escHtml(r.name + ' › ' + c.name) + '</option>').join('') + '</optgroup>').join('');
 }
 const srcKey = x => x ? x.ym + '|' + x.kind + (x.id != null ? '|' + x.id : '') : '';
-const parseSrcKey = v => { if(!v) return null; const [ym, kind, id] = v.split('|'); return Object.assign({ym, kind}, id ? {id: Number(id)} : {}); };
+const parseSrcKey = v => { if(!v) return null; const [ym, kind, id] = v.split('|'); return Object.assign({ym, kind}, id ? {id: /^\d+$/.test(id) ? Number(id) : id} : {}); };
+/* валюта источника: тенге, валюта на руках или валюта копилки */
+const srcCur = src => !src ? 'KZT' : src.kind === 'cur' ? src.id : src.kind === 'jar' ? ((fin().jars.find(j => j.id === src.id) || {}).cur || 'KZT') : 'KZT';
 function srcOptions(cur){
   const s = finSources();
   const curKey = cur ? srcKey(cur) : srcKey(defaultSource());
   const jars = fin().jars.map(jarInfo).filter(j => j.bal > 0 || (cur && cur.kind === 'jar' && cur.id === j.id));
-  return s.map(x => '<option value="' + srcKey(x) + '"' + (srcKey(x) === curKey ? ' selected' : '') + '>' + escHtml(x.label) + ' · остаток ' + money(x.left) + '</option>').join('') +
-         (jars.length ? '<optgroup label="Из копилки">' + jars.map(j => { const k = srcKey({kind: 'jar', ym: '', id: j.id}); return '<option value="' + k + '"' + (k === curKey ? ' selected' : '') + '>🐷 ' + escHtml(j.name) + ' · в копилке ' + money(j.bal) + '</option>'; }).join('') + '</optgroup>' : '') +
+  return s.map(x => '<option value="' + srcKey(x) + '"' + (srcKey(x) === curKey ? ' selected' : '') + '>' + escHtml(x.label) + ' · остаток ' + mc(x.left, x.cur || 'KZT') + '</option>').join('') +
+         (jars.length ? '<optgroup label="Из копилки">' + jars.map(j => { const k = srcKey({kind: 'jar', ym: '', id: j.id}); return '<option value="' + k + '"' + (k === curKey ? ' selected' : '') + '>🐷 ' + escHtml(j.name) + ' · в копилке ' + mc(j.bal, j.cur) + '</option>'; }).join('') + '</optgroup>' : '') +
          '<option value=""' + (curKey === '' ? ' selected' : '') + '>Не из зарплаты / аванса</option>';
 }
 function openExpense(id){
@@ -11889,6 +11960,7 @@ function openExpense(id){
   $('exCat').innerHTML = catOptions(o.catId || null);
   if(!o.catId) $('exCat').value = '';
   $('exSrc').innerHTML = srcOptions(expEdit ? o.src : null);
+  syncExCur();
   $('exMass').value = o.mass || ''; $('exKcal').value = o.kcal100 || ''; $('exP').value = o.p100 || ''; $('exF').value = o.f100 || ''; $('exC').value = o.c100 || '';
   $('exSaveProd').checked = !o.productId;
   $('exDel').style.display = expEdit ? '' : 'none';
@@ -11897,6 +11969,8 @@ function openExpense(id){
   $('expBg').classList.add('open');
   if(!expEdit) setTimeout(() => $('exName').focus(), 50);
 }
+function syncExCur(){ $('exAmtLbl').textContent = 'Сумма, ' + curSym(srcCur(parseSrcKey($('exSrc').value))); }
+$('exSrc').onchange = syncExCur;
 function syncFoodBox(){ $('exFood').style.display = isFoodCat(Number($('exCat').value)) ? '' : 'none'; }
 $('exCat').onchange = syncFoodBox;
 $('exName').oninput = () => {
@@ -11913,7 +11987,7 @@ $('exSave').onclick = async () => {
   const f = fin(), amount = num($('exAmount').value), catId = Number($('exCat').value) || null, name = $('exName').value.trim();
   if(!amount || amount <= 0){ toast('Введи сумму'); return; }
   if(!catId){ toast('Выбери категорию'); return; }
-  const src = parseSrcKey($('exSrc').value);
+  const src = parseSrcKey($('exSrc').value), cur = srcCur(src);
   const food = isFoodCat(catId);
   const mass = food ? num($('exMass').value) : null;
   const per = k => food ? num($(k).value) : null;
@@ -11923,12 +11997,13 @@ $('exSave').onclick = async () => {
   if(!prod && name && $('exSaveProd').checked){ prod = {id: finId(), name, catId}; f.products.push(prod); }
   if(prod){ prod.catId = catId; prod.lastPrice = amount; if(mass) prod.mass = mass; if(k100 != null) prod.kcal100 = k100; if(p100 != null) prod.p100 = p100; if(f100 != null) prod.f100 = f100; if(c100 != null) prod.c100 = c100; }
   const op = expEdit || {id: finId()};
-  Object.assign(op, {date: $('exDate').value || todayISO(), amount, catId, name: name || null, productId: prod ? prod.id : null, src,
+  Object.assign(op, {cur: cur !== 'KZT' ? cur : undefined, date: $('exDate').value || todayISO(), amount, catId, name: name || null, productId: prod ? prod.id : null, src,
                      mass, kcal100: k100, p100, f100, c100, kcal: tot(k100), p: tot(p100), f: tot(f100), c: tot(c100)});
   if(!expEdit) f.ops.push(op);
   await saveFin();
   $('expBg').classList.remove('open');
-  if(src && src.kind === 'jar'){ const j = f.jars.find(x => x.id === src.id); toast('−' + money(amount) + ' ₸ · ' + finCatPath(catId) + (j ? ' · в копилке «' + j.name + '» ' + money(jarInfo(j).bal) + ' ₸' : '')); }
+  if(src && src.kind === 'jar'){ const j = f.jars.find(x => x.id === src.id); const ji = j && jarInfo(j); toast('−' + mc(amount, cur) + ' · ' + finCatPath(catId) + (j ? ' · в копилке «' + j.name + '» ' + mc(ji.bal, ji.cur) : '')); }
+  else if(src && src.kind === 'cur'){ const w = curWallets().find(x => x.cur === cur); toast('−' + mc(amount, cur) + ' · ' + finCatPath(catId) + (w ? ' · осталось ' + mc(w.left, cur) : '')); }
   else if(src){ const s = finSources().find(x => srcKey(x) === srcKey(src)); toast('−' + money(amount) + ' ₸ · ' + finCatPath(catId) + (s ? ' · остаток ' + (src.kind === 'advance' ? 'аванса ' : src.kind === 'start' ? 'стартовых ' : src.kind === 'side' ? 'подработки ' : 'зарплаты ') + money(s.left) + ' ₸' : '')); }
   else toast('−' + money(amount) + ' ₸ · ' + finCatPath(catId));
   if($('walletBg').classList.contains('open')) renderWallet(); else render();
@@ -11943,15 +12018,22 @@ function openJar(id){
   const j = jarEdit || {};
   $('jarTitle').textContent = jarEdit ? 'Копилка' : 'Новая копилка';
   $('jarName').value = j.name || ''; $('jarTarget').value = j.target || ''; $('jarDeadline').value = j.deadline || '';
+  $('jarCur').innerHTML = CURS.map(c => '<option value="' + c[0] + '">' + c[2] + ' (' + c[1] + ')</option>').join('');
+  $('jarCur').value = j.cur || 'KZT';
+  const used = jarEdit && fin().moves.some(m => m.jarId === jarEdit.id);
+  $('jarCur').disabled = !!used;
+  syncJarCur();
   $('jarDel').style.display = jarEdit ? '' : 'none';
   $('jarBg').classList.add('open');
   if(!jarEdit) setTimeout(() => $('jarName').focus(), 50);
 }
+function syncJarCur(){ $('jarTargetLbl').textContent = 'Цель, ' + curSym($('jarCur').value) + ' (необязательно)'; }
+$('jarCur').onchange = syncJarCur;
 $('jarSave').onclick = async () => {
   const name = $('jarName').value.trim();
   if(!name){ toast('Напиши, на что копишь'); return; }
   const f = fin(), j = jarEdit || {id: finId(), created: todayISO()};
-  Object.assign(j, {name, target: num($('jarTarget').value) || null, deadline: $('jarDeadline').value || null});
+  Object.assign(j, {name, target: num($('jarTarget').value) || null, deadline: $('jarDeadline').value || null, cur: $('jarCur').value || 'KZT'});
   if(!jarEdit) f.jars.push(j);
   await saveFin();
   $('jarBg').classList.remove('open');
@@ -11961,11 +12043,13 @@ $('jarSave').onclick = async () => {
 $('jarDel').onclick = async () => {
   if(!jarEdit) return;
   const f = fin(), ji = jarInfo(jarEdit);
-  if(!confirm(ji.bal > 0 ? 'В копилке ' + money(ji.bal) + ' ₸ — они вернутся на руки как «Из копилки». Удалить копилку?' : 'Удалить копилку?')) return;
-  if(ji.bal > 0){
+  if(!confirm(ji.bal > 0 ? 'В копилке ' + mc(ji.bal, ji.cur) + ' — они вернутся на руки. Удалить копилку?' : 'Удалить копилку?')) return;
+  if(ji.bal > 0 && ji.cur === 'KZT'){
     const x = {id: finId(), date: todayISO(), amount: ji.bal, name: 'Из копилки «' + jarEdit.name + '»', fromJar: true};
     f.side.push(x);
   }
+  /* валютная копилка: её деньги остаются валютой на руках */
+  if(ji.bal > 0 && ji.cur !== 'KZT') (f.fx = f.fx || []).push({id: finId(), date: todayISO(), from: ji.cur, to: ji.cur, give: 0, get: ji.bal, note: 'из удалённой копилки «' + jarEdit.name + '»'});
   f.moves = f.moves.filter(m => m.jarId !== jarEdit.id);
   for(const o of f.ops) if(o.src && o.src.kind === 'jar' && o.src.id === jarEdit.id) o.src = null;
   f.jars = f.jars.filter(j => j !== jarEdit);
@@ -11975,49 +12059,138 @@ $('jarDel').onclick = async () => {
 };
 $('jarCancel').onclick = () => $('jarBg').classList.remove('open');
 
-let moveMode = 'in';
+let moveMode = 'in', movePreset = null;
 function openMove(mode, jarId, src){
   const f = fin();
   if(!f.jars.length){ openJar(null); return; }
-  moveMode = mode;
+  moveMode = mode; movePreset = src || null;
   $('mvTitle').textContent = mode === 'in' ? 'Отложить в копилку' : 'Снять из копилки';
   $('mvSave').textContent = mode === 'in' ? 'Отложить' : 'Снять на руки';
-  $('mvJar').innerHTML = f.jars.map(j => '<option value="' + j.id + '">🐷 ' + escHtml(j.name) + ' · ' + money(jarInfo(j).bal) + ' ₸</option>').join('');
+  $('mvJar').innerHTML = f.jars.map(j => { const ji = jarInfo(j); return '<option value="' + j.id + '">🐷 ' + escHtml(j.name) + ' · ' + mc(ji.bal, ji.cur) + '</option>'; }).join('');
   if(jarId) $('mvJar').value = String(jarId);
-  $('mvAmount').value = '';
+  $('mvAmount').value = ''; $('mvPaid').value = ''; $('mvPaid').dataset.touched = ''; $('mvSrc').innerHTML = '';
   $('mvDate').value = todayISO();
   $('mvSrcF').style.display = mode === 'in' ? '' : 'none';
-  if(mode === 'in'){
-    const list = finSources().filter(x => x.left > 0 || (src && srcKey(x) === srcKey(src)));
-    const cur = src ? srcKey(src) : srcKey(defaultSource());
-    $('mvSrc').innerHTML = list.map(x => '<option value="' + srcKey(x) + '"' + (srcKey(x) === cur ? ' selected' : '') + '>' + escHtml(x.label) + ' · остаток ' + money(x.left) + '</option>').join('');
-    $('mvHint').textContent = src ? 'Деньги пришли — сколько отложить? Можно ничего: нажми «Отмена».' : 'Выбери, откуда откладываешь: зарплата, аванс или подработка. Сумма уйдёт из «денег на руках» в копилку.';
-  } else $('mvHint').textContent = 'Снятое вернётся на руки отдельным кошельком «Из копилки». Чтобы сразу оплатить покупку из копилки — «+ Расход» и в «Откуда» выбери копилку.';
+  syncMove();
   $('moveBg').classList.add('open');
   setTimeout(() => $('mvAmount').focus(), 50);
 }
+/* валюта копилки и источника: если разные — это обмен, спрашиваем «сколько отдал» */
+function syncMove(){
+  const f = fin(), jar = f.jars.find(j => j.id === Number($('mvJar').value)), jc = (jar && jar.cur) || 'KZT';
+  $('mvAmtLbl').textContent = 'Сколько, ' + curSym(jc);
+  if(moveMode === 'in'){
+    const keep = $('mvSrc').value;
+    const list = finSources().filter(x => (x.kind !== 'cur' || x.cur === jc) && (x.left > 0 || (movePreset && srcKey(x) === srcKey(movePreset))));
+    const cur = keep && list.some(x => srcKey(x) === keep) ? keep : movePreset ? srcKey(movePreset) : (list.find(x => x.kind === 'cur') ? srcKey(list.find(x => x.kind === 'cur')) : srcKey(defaultSource()));
+    $('mvSrc').innerHTML = list.map(x => '<option value="' + srcKey(x) + '"' + (srcKey(x) === cur ? ' selected' : '') + '>' + escHtml(x.label) + ' · остаток ' + mc(x.left, x.cur || 'KZT') + '</option>').join('');
+    const sc = srcCur(parseSrcKey($('mvSrc').value));
+    const fx = sc !== jc;
+    $('mvPaidF').style.display = fx ? '' : 'none';
+    $('mvPaidLbl').textContent = 'Сколько ' + (sc === 'KZT' ? 'тенге' : curSym(sc)) + ' отдал при обмене';
+    $('mvHint').textContent = fx
+      ? 'Копилка в валюте «' + curName(jc) + '». Впиши, сколько ' + curSym(jc) + ' получил и сколько ' + curSym(sc) + ' за это отдал — курс запомнится.' + (rateOf(jc) ? ' Последний курс: 1 ' + curSym(jc) + ' = ' + fmtRate(rateOf(jc)) + ' ₸.' : '')
+      : movePreset ? 'Деньги пришли — сколько отложить? Можно ничего: нажми «Отмена».' : 'Выбери, откуда откладываешь: зарплата, аванс, подработка или валюта на руках. Сумма уйдёт в копилку.';
+  } else $('mvHint').textContent = jc === 'KZT'
+    ? 'Снятое вернётся на руки отдельным кошельком «Из копилки». Чтобы сразу оплатить покупку из копилки — «+ Расход» и в «Откуда» выбери копилку.'
+    : 'Снятое вернётся в «Валюта на руках» (' + curName(jc).toLowerCase() + '). Поменять на тенге — кнопка «Обменять».';
+}
+$('mvJar').onchange = syncMove;
+$('mvSrc').onchange = syncMove;
+$('mvAmount').oninput = () => {
+  if($('mvPaidF').style.display === 'none') return;
+  const jar = fin().jars.find(j => j.id === Number($('mvJar').value)), jc = (jar && jar.cur) || 'KZT', sc = srcCur(parseSrcKey($('mvSrc').value));
+  const a = num($('mvAmount').value), rj = rateOf(jc), rs = rateOf(sc);
+  if(a && rj && rs && !$('mvPaid').dataset.touched) $('mvPaid').value = Math.round(a * rj / rs * 100) / 100;
+};
+$('mvPaid').oninput = () => { $('mvPaid').dataset.touched = $('mvPaid').value ? '1' : ''; };
 $('mvSave').onclick = async () => {
   const f = fin(), amount = num($('mvAmount').value), jar = f.jars.find(j => j.id === Number($('mvJar').value)), date = $('mvDate').value || todayISO();
   if(!amount || amount <= 0){ toast('Введи сумму'); return; }
   if(!jar) return;
+  const jc = jar.cur || 'KZT';
   if(moveMode === 'in'){
     const src = parseSrcKey($('mvSrc').value);
     if(!src){ toast('Выбери, откуда откладываешь'); return; }
+    const sc = srcCur(src), fx = sc !== jc;
+    const paid = fx ? num($('mvPaid').value) : amount;
+    if(fx && !(paid > 0)){ toast('Впиши, сколько ' + curSym(sc) + ' отдал при обмене'); return; }
     const s = finSources().find(x => srcKey(x) === srcKey(src));
-    if(s && amount > s.left){ toast('Там осталось только ' + money(Math.max(0, s.left)) + ' ₸'); return; }
-    f.moves.push({id: finId(), date, jarId: jar.id, amount, src});
+    if(s && paid > s.left + 1e-9){ toast('Там осталось только ' + mc(Math.max(0, s.left), sc)); return; }
+    const m = {id: finId(), date, jarId: jar.id, amount, src};
+    if(fx){ m.srcAmount = paid; m.srcCur = sc; if(sc === 'KZT') setRate(jc, paid / amount, date); else if(jc === 'KZT') setRate(sc, amount / paid, date); else if(rateOf(sc)) setRate(jc, paid * rateOf(sc) / amount, date); }
+    f.moves.push(m);
   } else {
     const bal = jarInfo(jar).bal;
-    if(amount > bal){ toast('В копилке только ' + money(bal) + ' ₸'); return; }
-    const x = {id: finId(), date, amount, name: 'Из копилки «' + jar.name + '»', fromJar: true};
-    f.side.push(x);
-    f.moves.push({id: finId(), date, jarId: jar.id, amount: -amount, sideId: x.id});
+    if(amount > bal + 1e-9){ toast('В копилке только ' + mc(bal, jc)); return; }
+    const m = {id: finId(), date, jarId: jar.id, amount: -amount};
+    if(jc === 'KZT'){ const x = {id: finId(), date, amount, name: 'Из копилки «' + jar.name + '»', fromJar: true}; f.side.push(x); m.sideId = x.id; }
+    f.moves.push(m);
   }
+  $('mvPaid').dataset.touched = '';
   await saveFin();
   $('moveBg').classList.remove('open');
   renderWallet();
-  toast((moveMode === 'in' ? '🐷 +' : '🐷 −') + money(amount) + ' ₸ · «' + jar.name + '»: ' + money(jarInfo(jar).bal) + ' ₸');
+  toast((moveMode === 'in' ? '🐷 +' : '🐷 −') + mc(amount, jc) + ' · «' + jar.name + '»: ' + mc(jarInfo(jar).bal, jc));
 };
+/* --- обмен валюты --- */
+function openFx(fromCur){
+  const f = fin();
+  const opts = finSources().filter(x => x.left > 0);
+  const pre = fromCur ? opts.find(x => x.kind === 'cur' && x.cur === fromCur) : null;
+  $('fxFrom').innerHTML = opts.map(x => '<option value="' + srcKey(x) + '"' + (pre && x === pre ? ' selected' : '') + '>' + escHtml(x.label) + ' · ' + mc(x.left, x.cur || 'KZT') + '</option>').join('');
+  if(!pre){ const d = defaultSource(); if(d) $('fxFrom').value = srcKey(d); }
+  $('fxTo').innerHTML = CURS.map(c => '<option value="' + c[0] + '">' + c[2] + ' (' + c[1] + ')</option>').join('');
+  $('fxTo').value = pre ? 'KZT' : (f.lastFx || 'RUB');
+  $('fxGive').value = ''; $('fxGet').value = ''; $('fxGet').dataset.touched = '';
+  $('fxDate').value = todayISO();
+  syncFx();
+  $('fxBg').classList.add('open');
+  setTimeout(() => $('fxGive').focus(), 50);
+}
+function syncFx(){
+  const f = fin(), sc = srcCur(parseSrcKey($('fxFrom').value)), tc = $('fxTo').value;
+  $('fxGiveLbl').textContent = 'Сколько отдал, ' + curSym(sc);
+  $('fxGetLbl').textContent = 'Сколько получил, ' + curSym(tc);
+  const jars = f.jars.filter(j => (j.cur || 'KZT') === tc);
+  $('fxJarF').style.display = tc === 'KZT' ? 'none' : '';
+  $('fxJar').innerHTML = '<option value="">' + curName(tc) + ' на руки</option>' + jars.map(j => '<option value="' + j.id + '">Сразу в копилку 🐷 ' + escHtml(j.name) + '</option>').join('');
+  const rs = rateOf(sc), rt = rateOf(tc);
+  $('fxHint').textContent = sc === tc ? 'Выбери другую валюту.' : 'Впиши, сколько отдал и сколько получил на самом деле — курс посчитается и запомнится.' +
+    (rt && tc !== 'KZT' ? ' Последний курс: 1 ' + curSym(tc) + ' = ' + fmtRate(rt) + ' ₸.' : rs && sc !== 'KZT' ? ' Последний курс: 1 ' + curSym(sc) + ' = ' + fmtRate(rs) + ' ₸.' : '');
+  fxAuto();
+}
+function fxAuto(){
+  if($('fxGet').dataset.touched) return;
+  const sc = srcCur(parseSrcKey($('fxFrom').value)), tc = $('fxTo').value, g = num($('fxGive').value), rs = rateOf(sc), rt = rateOf(tc);
+  $('fxGet').value = g && rs && rt && sc !== tc ? Math.round(g * rs / rt * 100) / 100 : '';
+}
+$('fxFrom').onchange = syncFx; $('fxTo').onchange = syncFx;
+$('fxGive').oninput = fxAuto;
+$('fxGet').oninput = () => { $('fxGet').dataset.touched = $('fxGet').value ? '1' : ''; };
+$('fxSave').onclick = async () => {
+  const f = fin(), src = parseSrcKey($('fxFrom').value), sc = srcCur(src), tc = $('fxTo').value;
+  const give = num($('fxGive').value), get = num($('fxGet').value), date = $('fxDate').value || todayISO();
+  if(!src){ toast('Выбери, что отдаёшь'); return; }
+  if(sc === tc){ toast('Выбери другую валюту'); return; }
+  if(!(give > 0) || !(get > 0)){ toast('Впиши обе суммы'); return; }
+  const s = finSources().find(x => srcKey(x) === srcKey(src));
+  if(s && give > s.left + 1e-9){ toast('Там осталось только ' + mc(Math.max(0, s.left), sc)); return; }
+  if(sc === 'KZT') setRate(tc, give / get, date); else if(tc === 'KZT') setRate(sc, get / give, date); else if(rateOf(sc)) setRate(tc, give * rateOf(sc) / get, date);
+  const jarId = Number($('fxJar').value) || null;
+  if(jarId) f.moves.push({id: finId(), date, jarId, amount: get, src, srcAmount: give, srcCur: sc});
+  else if(tc === 'KZT'){
+    const x = {id: finId(), date, amount: get, name: 'Обмен ' + curSym(sc) + ' → ₸', fromFx: true};
+    f.side.push(x);
+    (f.fx = f.fx || []).push({id: finId(), date, src, from: sc, give, to: 'KZT', get, sideId: x.id});
+  } else (f.fx = f.fx || []).push({id: finId(), date, src, from: sc, give, to: tc, get});
+  if(tc !== 'KZT') f.lastFx = tc;
+  await saveFin();
+  $('fxBg').classList.remove('open');
+  renderWallet();
+  toast('Обмен: −' + mc(give, sc) + ' → +' + mc(get, tc) + (jarId ? ' в копилку' : ''));
+};
+$('fxCancel').onclick = () => $('fxBg').classList.remove('open');
 $('mvCancel').onclick = () => $('moveBg').classList.remove('open');
 
 /* --- категории и продукты --- */
@@ -12069,13 +12242,15 @@ $('finCatClose').onclick = () => { $('finCatBg').classList.remove('open'); if($(
 function walletBannerHTML(){
   if(!settings.fin && !shiftCat()) return '';
   const cur = todayISO().slice(0, 7), pi = periodInfo(cur);
-  const s = finSources().filter(x => x.left > 0);
+  const s = finSources().filter(x => x.left > 0 && x.kind !== 'cur');
   if(!pi.accrued && !s.length && !fin().jars.length) return '';
   const onHand = s.reduce((x, y) => x + y.left, 0);
   const parts = [];
   if(s.length) parts.push('на руках ' + money(onHand) + ' ₸');
-  const jb = fin().jars.reduce((x, j) => x + jarInfo(j).bal, 0);
-  if(jb > 0) parts.push('🐷 ' + money(jb) + ' ₸');
+  const jb = fin().jars.reduce((x, j) => x + (jarInfo(j).kzt || 0), 0);
+  if(jb > 0) parts.push('🐷 ' + (fin().jars.some(j => j.cur && j.cur !== 'KZT') ? '≈ ' : '') + money(jb) + ' ₸');
+  const cw = curWallets().filter(w => w.left > 0);
+  if(cw.length) parts.push(cw.map(w => mc(w.left, w.cur)).join(' · '));
   if(pi.accrued && !pi.salaryAny) parts.push('к получению за ' + MONTHS[Number(cur.slice(5)) - 1] + ' ' + money(pi.toReceive) + ' ₸');
   return parts.length ? '<button class="sp-banner" id="walletBanner">💰 ' + parts.join(' · ') + '</button>' : '';
 }
