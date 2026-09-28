@@ -2334,7 +2334,7 @@
       <button id="openReset">Сбросить настройки…</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 105 — тихий режим тренировки (без скакалки, берпи и прыжков); дневник питания (блюда с КБЖУ, цена → расход, статистика день/неделя/месяц); кошелёк: долги с графиком платежей и рассрочкой, календарь выплат (мне должны / я должен, сроки, валюта, напоминания), конвертер любых валют; курсы валют Нацбанка РК онлайн + калькулятор; валюты (обмен ₸↔₽/$/€…, копилки в валюте), копилки (откладывай из зарплаты, аванса или подработки), доход с подработок; остаток аванса плюсуется к зарплате, стартовые деньги (сверка); зарплата по графику, аванс, получение зарплаты, расходы по категориям и продуктам, КБЖУ для еды; график смен из Excel; резервная копия; рекорды</div>
+    <div class="hint sv-version" id="version">Версия 106 — стойка на руках у стены заменена отжиманиями с ногами на возвышении (норма в повторах); тихий режим тренировки (без скакалки, берпи и прыжков); дневник питания (блюда с КБЖУ, цена → расход, статистика день/неделя/месяц); кошелёк: долги с графиком платежей и рассрочкой, календарь выплат (мне должны / я должен, сроки, валюта, напоминания), конвертер любых валют; курсы валют Нацбанка РК онлайн + калькулятор; валюты (обмен ₸↔₽/$/€…, копилки в валюте), копилки (откладывай из зарплаты, аванса или подработки), доход с подработок; остаток аванса плюсуется к зарплате, стартовые деньги (сверка); зарплата по графику, аванс, получение зарплаты, расходы по категориям и продуктам, КБЖУ для еды; график смен из Excel; резервная копия; рекорды</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -5504,6 +5504,13 @@ function physPlanFor(date, kids){
   }
   return physTrainPlan(slot, date, kids, isIntensive(date));
 }
+/* постоянные замены упражнений (по просьбе): стойка на руках у стены → отжимания с ногами на возвышении.
+   Норма пересчитывается из секунд удержания в повторения: 20 с → 8, 30 с → 10, 40 с → 12, дольше → 15. */
+const PHYS_SWAPS = [
+  {re: /стойка на руках.*у стены/i, name: 'Отжимания с ногами на возвышении', cat: 'Сила',
+   how: 'Руки на полу чуть шире плеч, ноги на скамье, стуле или диване (40–60 см). Тело прямое, опускайся грудью к полу за 2 секунды, выжимай вверх. Нагружает плечи и верх груди — как стойка на руках. Если тяжело — пониже опора.',
+   target: t => ({value: !t ? 10 : t.unit === 'сек' ? (t.value <= 20 ? 8 : t.value <= 30 ? 10 : t.value <= 40 ? 12 : 15) : t.value, unit: 'повт.'})},
+];
 /* тренировка атлета на дату: фаза и неделя этой даты, интенсив — по флагу */
 function physTrainPlan(name, date, kids, intensive){
   kids = kids || studyKids();
@@ -5513,9 +5520,10 @@ function physTrainPlan(name, date, kids, intensive){
   if(!p) return null;
   const m = p.ph.name.match(/недели (\d+)\s*[-–]\s*(\d+)/);
   const items = (kids.get(p.ph.id) || []).filter(n => n.kind === 'entry')
-    .map(n => { const base = Number(n.plan) || 0, prog = physTarget(n.note), ov = (settings.normOverride || {})[n.id];
+    .map(n => { const base = Number(n.plan) || 0, sw = PHYS_SWAPS.find(x => x.re.test(n.name)), ov = (settings.normOverride || {})[n.id];
+      const prog = sw ? sw.target(physTarget(n.note)) : physTarget(n.note);
       const target = prog && ov ? {value: ov, unit: prog.unit} : prog;
-      return {id: n.id, name: n.name, base, sets: base + (intensive && base ? 1 : 0), note: n.note || '', target, custom: !!(prog && ov), progTarget: prog ? prog.value : null}; });
+      return {id: n.id, name: sw ? sw.name : n.name, swappedFrom: sw ? n.name : undefined, base, sets: base + (intensive && base ? 1 : 0), note: sw ? sw.cat + '. ' + sw.how : n.note || '', target, custom: !!(prog && ov), progTarget: prog ? prog.value : null}; });
   const sets = items.reduce((x, i) => x + i.sets, 0);
   return {sub: 'train', intensive, athleteId: ath.id, athlete: ath.name, phaseId: p.ph.id, phase: p.ph.name, week: p.week,
           phaseWeek: m ? p.week - Number(m[1]) + 1 : null, phaseLen: m ? Number(m[2]) - Number(m[1]) + 1 : null, items,
@@ -5751,7 +5759,7 @@ function renderWorkout(){
     const desc = qs ? qs.how : it.note.replace(/^[^.]*\.\s*/, '');
     const cat = (it.note.match(/^([^.]*)\./) || [])[1] || '';
     const tgq = qs ? tg.replace(/прыжк\S*/g, 'шагов') : tg;
-    h += '<div class="wo-ex' + (qs ? ' quiet' : '') + '" data-ex="' + it.id + '"><h4>' + (qs ? '🤫 ' + escHtml(qs.name) + '<small>вместо «' + escHtml(it.name) + '»</small>' : escHtml(it.name)) + '</h4>' +
+    h += '<div class="wo-ex' + (qs || it.swappedFrom ? ' quiet' : '') + '" data-ex="' + it.id + '"><h4>' + (qs ? '🤫 ' + escHtml(qs.name) + '<small>вместо «' + escHtml(it.name) + '»</small>' : escHtml(it.name) + (it.swappedFrom ? '<small>вместо «' + escHtml(it.swappedFrom) + '»</small>' : '')) + '</h4>' +
          '<div class="tg">Норма: <b>' + escHtml(tgq) + '</b>' + (cat ? ' · ' + escHtml(cat) : '') + (desc ? '<br>' + escHtml(desc) : '') + '</div>';
     const pv = woPrev[it.id];
     if(pv) h += '<div class="prev">В прошлый раз (' + escHtml(pv.date.slice(8) + '.' + pv.date.slice(5, 7)) + '): ' + pv.vals.map(fmt).join(' · ') + '</div>';
