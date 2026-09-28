@@ -2149,7 +2149,7 @@
       <button id="openReset">Сбросить настройки…</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 97 — кошелёк: зарплата по графику, аванс, получение зарплаты, расходы по категориям и продуктам, КБЖУ для еды; график смен из Excel; резервная копия; рекорды</div>
+    <div class="hint sv-version" id="version">Версия 98 — кошелёк: остаток аванса плюсуется к зарплате, стартовые деньги (сверка); зарплата по графику, аванс, получение зарплаты, расходы по категориям и продуктам, КБЖУ для еды; график смен из Excel; резервная копия; рекорды</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -11566,9 +11566,17 @@ function periodInfo(ym){
   const ops = f.ops.filter(o => o.src && o.src.ym === ym);
   const spentAdv = ops.filter(o => o.src.kind === 'advance').reduce((x, o) => x + o.amount, 0);
   const spentSal = ops.filter(o => o.src.kind === 'salary').reduce((x, o) => x + o.amount, 0);
-  const sal = p.salary || null;
-  return {ym, cat, shifts, rate, accrued, past, advances, advSum, toReceive: accrued - advSum,
-          advLeft: advSum - spentAdv, spentAdv, salary: sal, salLeft: sal ? sal.amount - spentSal : 0, spentSal};
+  /* после сверки остатка («стартовые деньги») всё, что было на руках до неё, уже учтено в старте */
+  /* снимок на момент сверки: что уже было взято/потрачено, в зачёт не идёт */
+  const st = finStart(), b = st && st.base ? st.base[ym] || {adv: 0, spentAdv: 0, spentSal: 0, sal: false} : null;
+  const advLive = b ? advSum - b.adv : advSum;
+  const sal = p.salary && !(b && b.sal) ? p.salary : null;
+  const spentAdvLive = b ? spentAdv - b.spentAdv : spentAdv, spentSalLive = b ? spentSal - b.spentSal : spentSal;
+  const carry = sal ? Number(sal.carry) || 0 : 0;       // остаток аванса, перешедший в зарплату
+  return {ym, cat, shifts, rate, accrued, past, advances, advSum, toReceive: accrued - advSum, advLive,
+          advLeft: advLive - spentAdvLive - carry, spentAdv: spentAdvLive, salary: sal, carry, salTotal: sal ? sal.amount + carry : 0,
+          salLeft: sal ? sal.amount + carry - spentSalLive : 0, spentSal: spentSalLive, spentAdvAll: spentAdv, spentSalAll: spentSal,
+          salaryAny: p.salary || null};
 }
 function isUnder(n, rootId){ while(n){ if(n.parent_id === rootId) return true; n = n.parent_id != null ? index.byId.get(n.parent_id) : null; } return false; }
 /* откуда платить по умолчанию: полученная зарплата с остатком (последняя), иначе аванс с остатком */
@@ -11581,13 +11589,22 @@ function finMonths(){
   if(cat) for(const n of index.all) if(n.entry_kind === 'advance' && n.op_date && isUnder(n, cat.id)) set.add(n.op_date.slice(0, 7));
   return [...set].filter(ym => ym <= ymShift(cur, 1)).sort().reverse();
 }
+function finStart(){ const l = fin().starts || []; return l.length ? l[l.length - 1] : null; }
+function startInfo(){
+  const st = finStart();
+  if(!st) return null;
+  const spent = fin().ops.filter(o => o.src && o.src.kind === 'start' && o.src.id === st.id).reduce((x, o) => x + o.amount, 0);
+  return Object.assign({}, st, {spent, left: st.amount - spent});
+}
 function finSources(){
   const out = [];
   for(const ym of finMonths()){
     const pi = periodInfo(ym);
     if(pi.salary) out.push({ym, kind: 'salary', left: pi.salLeft, label: 'Зарплата · ' + ymLabel(ym)});
-    if(pi.advSum) out.push({ym, kind: 'advance', left: pi.advLeft, label: 'Аванс · ' + ymLabel(ym)});
+    if(pi.advLive && !(pi.salary && pi.advLeft === 0)) out.push({ym, kind: 'advance', left: pi.advLeft, label: 'Аванс · ' + ymLabel(ym)});
   }
+  const si = startInfo();
+  if(si) out.push({ym: si.date.slice(0, 7), kind: 'start', id: si.id, left: si.left, label: 'Стартовые деньги (' + si.date.slice(8) + '.' + si.date.slice(5, 7) + ')'});
   return out;
 }
 /* платим сначала самыми старыми деньгами: остаток сентября уходит раньше октябрьских */
@@ -11612,16 +11629,17 @@ function renderWallet(){
   else h += '<div class="st-ath-l far">Нет категории со ставкой за смену — загрузи график смен (Сервис → «Загрузить график смен»).</div>';
   if(pi.advSum) h += '<div class="st-ath-l">Авансы: <b>−' + money(pi.advSum) + ' ₸</b> (' + pi.advances.map(a => money(a.amount) + ' · ' + a.date.slice(8) + '.' + a.date.slice(5, 7)).join(', ') + ')</div>';
   h += '<div class="st-ath-l">К получению: <b>' + money(pi.toReceive) + ' ₸</b></div>';
-  if(pi.salary) h += '<div class="st-ath-l ok">✓ Получена ' + studyDateLabel(pi.salary.date) + ': ' + money(pi.salary.amount) + ' ₸</div>';
-  h += '<div class="sp-btns"><button data-w="adv">Взять аванс</button><button class="go" data-w="sal">' + (pi.salary ? 'Изменить получение' : 'Получить зарплату') + '</button></div></div>';
+  if(pi.salaryAny) h += '<div class="st-ath-l ok">✓ Получена ' + studyDateLabel(pi.salaryAny.date) + ': ' + money(pi.salaryAny.amount) + ' ₸</div>';
+  h += '<div class="sp-btns"><button data-w="adv">Взять аванс</button><button class="go" data-w="sal">' + (pi.salaryAny ? 'Изменить получение' : 'Получить зарплату') + '</button></div></div>';
   /* кошельки */
-  const wallet = (title, total, spent, left, kind) => '<div class="st-ath wl-src"><div class="st-ath-h"><b>' + title + '</b><span class="st-ath-p ' + (left < 0 ? 'far' : 'ok') + '">' + money(left) + ' ₸</span></div>' +
+  const wallet = (title, total, spent, left, kind, formula) => '<div class="st-ath wl-src"><div class="st-ath-h"><b>' + title + '</b><span class="st-ath-p ' + (left < 0 ? 'far' : 'ok') + '">' + money(left) + ' ₸</span></div>' +
     '<span class="pl-bar"><i style="width:' + (total ? Math.max(0, Math.min(100, left / total * 100)) : 0) + '%"></i></span>' +
+    (formula ? '<div class="st-ath-l">' + formula + '</div>' : '') +
     '<div class="st-ath-l">' + money(total) + ' − расходы ' + money(spent) + ' = остаток <b>' + money(left) + '</b></div></div>';
   /* неполученная зарплата за прошлые месяцы — напоминание с кнопкой */
   for(let k = -1; k >= -2; k--){
     const ym = ymShift(todayISO().slice(0, 7), k), pp = periodInfo(ym);
-    if(ym !== walletYm && pp.accrued > 0 && !pp.salary)
+    if(ym !== walletYm && pp.accrued > 0 && !pp.salaryAny)
       h += '<div class="st-ath wl-pend"><div class="st-ath-h"><b>Зарплата за ' + MONTHS[Number(ym.slice(5)) - 1] + ' ещё не получена</b><span class="st-ath-p">' + money(pp.toReceive) + ' ₸</span></div>' +
            '<div class="st-ath-l">Начислено ' + money(pp.accrued) + (pp.advSum ? ' − авансы ' + money(pp.advSum) : '') + '</div>' +
            '<div class="sp-btns"><button class="go" data-w="salp" data-ym="' + ym + '">Получил зарплату за ' + MONTHS[Number(ym.slice(5)) - 1] + '</button></div></div>';
@@ -11632,13 +11650,16 @@ function renderWallet(){
   for(const ym of finMonths()){
     const pp = periodInfo(ym);
     if(pp.salary) onHand += pp.salLeft;
-    if(pp.advSum) onHand += pp.advLeft;
+    if(pp.advLive) onHand += pp.advLeft;
     const mon = MONTHS[Number(ym.slice(5)) - 1];
-    if(pp.salary && (pp.salLeft !== 0 || ym === walletYm)) cards.push(wallet('Зарплата за ' + mon, pp.salary.amount, pp.spentSal, pp.salLeft, 'salary'));
-    if(pp.advSum && (pp.advLeft !== 0 || ym === walletYm)) cards.push(wallet('Аванс за ' + mon, pp.advSum, pp.spentAdv, pp.advLeft, 'advance'));
+    if(pp.salary && (pp.salLeft !== 0 || ym === walletYm)) cards.push(wallet('Зарплата за ' + mon + (pp.carry ? ' (+ остаток аванса)' : ''), pp.salTotal, pp.spentSal, pp.salLeft, 'salary',
+      pp.carry ? money(pp.salary.amount) + ' + остаток аванса ' + money(pp.carry) + ' = ' + money(pp.salTotal) : null));
+    if(pp.advLive && !(pp.salary && pp.advLeft === 0) && (pp.advLeft !== 0 || ym === walletYm)) cards.push(wallet('Аванс за ' + mon, pp.advLive, pp.spentAdv, pp.advLeft, 'advance'));
   }
+  const si = startInfo();
+  if(si){ onHand += si.left; if(si.left !== 0 || si.spent === 0) cards.push(wallet('Стартовые деньги · сверка ' + studyDateLabel(si.date), si.amount, si.spent, si.left, 'start')); }
   if(cards.length) h += '<h3>Деньги на руках: ' + money(onHand) + ' ₸</h3>' + (cards.length > 1 ? '<div class="sp-note">Всего на руках — сумма остатков всех зарплат и авансов. Расходы по умолчанию списываются с самых старых денег.</div>' : '') + cards.join('');
-  h += '<div class="sp-btns"><button class="go" data-w="exp">+ Расход</button><button data-w="cats">Категории и продукты</button></div>';
+  h += '<div class="sp-btns"><button class="go" data-w="exp">+ Расход</button><button data-w="cats">Категории и продукты</button><button data-w="start">Сверить остаток (стартовые деньги)</button></div>';
   /* расходы месяца (по дате операции) */
   const ops = f.ops.filter(o => o.date.slice(0, 7) === walletYm).sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id);
   const total = ops.reduce((x, o) => x + o.amount, 0);
@@ -11659,7 +11680,7 @@ function renderWallet(){
       if(o.date !== lastD){ h += '<div class="wl-day">' + studyDateLabel(o.date) + '</div>'; lastD = o.date; }
       const prod = o.productId ? (f.products.find(p => p.id === o.productId) || {}).name : null;
       h += '<div class="wl-op" data-w="edit" data-id="' + o.id + '"><span>' + escHtml(o.name || prod || (finCat(o.catId) || {}).name || 'Расход') +
-           '<small>' + escHtml(finCatPath(o.catId)) + (o.src ? ' · ' + (o.src.kind === 'advance' ? 'из аванса' : o.src.kind === 'salary' ? 'из зарплаты' : '') + (o.src.ym !== o.date.slice(0, 7) ? ' за ' + MONTHS[Number(o.src.ym.slice(5)) - 1] : '') : '') +
+           '<small>' + escHtml(finCatPath(o.catId)) + (o.unaccounted ? ' · разница при сверке' : '') + (o.src ? ' · ' + (o.src.kind === 'advance' ? 'из аванса' : o.src.kind === 'salary' ? 'из зарплаты' : o.src.kind === 'start' ? 'из стартовых' : '') + (o.src.kind !== 'start' && o.src.ym !== o.date.slice(0, 7) ? ' за ' + MONTHS[Number(o.src.ym.slice(5)) - 1] : '') : '') +
            (o.mass ? ' · ' + o.mass + ' г' : '') + (o.kcal ? ' · ' + money(o.kcal) + ' ккал' : '') + '</small></span><b>−' + money(o.amount) + '</b></div>';
     }
   } else h += '<div class="sp-note">Расходов в этом месяце пока нет. Нажми «+ Расход».</div>';
@@ -11674,6 +11695,7 @@ $('walletBody').addEventListener('click', async e => {
   else if(a === 'adv') openMoneySheet('adv');
   else if(a === 'sal') openMoneySheet('sal');
   else if(a === 'salp') openMoneySheet('sal', el.dataset.ym);
+  else if(a === 'start') openMoneySheet('start');
   else if(a === 'exp') openExpense(null);
   else if(a === 'edit') openExpense(Number(el.dataset.id));
   else if(a === 'cats') openFinCats();
@@ -11688,13 +11710,17 @@ function openMoneySheet(mode, ym){
   moneyMode = mode;
   moneyYm = ym || walletYm;
   const pi = periodInfo(moneyYm);
-  $('mnTitle').textContent = mode === 'adv' ? 'Взять аванс · ' + ymLabel(moneyYm) : 'Получить зарплату за ' + MONTHS[Number(moneyYm.slice(5)) - 1] + ' ' + moneyYm.slice(0, 4);
-  $('mnAmount').value = mode === 'sal' ? (pi.salary ? pi.salary.amount : Math.max(0, pi.toReceive)) : '';
-  $('mnDate').value = mode === 'sal' && pi.salary ? pi.salary.date : todayISO();
-  $('mnHint').textContent = mode === 'adv'
+  $('mnTitle').textContent = mode === 'adv' ? 'Взять аванс · ' + ymLabel(moneyYm) : mode === 'start' ? 'Стартовые деньги (сверка)' : 'Получить зарплату за ' + MONTHS[Number(moneyYm.slice(5)) - 1] + ' ' + moneyYm.slice(0, 4);
+  const onHand = finSources().reduce((x, s) => x + Math.max(0, s.left), 0);
+  $('mnAmount').value = mode === 'sal' ? (pi.salaryAny ? pi.salaryAny.amount : Math.max(0, pi.toReceive)) : '';
+  $('mnDate').value = mode === 'sal' && pi.salaryAny ? pi.salaryAny.date : todayISO();
+  $('mnHint').textContent = mode === 'start'
+    ? 'Впиши, сколько денег у тебя сейчас на руках (наличные + карта). С этого момента считаем от этой суммы. По учёту сейчас: ' + money(onHand) + ' ₸ — разница запишется как «неучтённые расходы», чтобы было видно, сколько ушло мимо учёта.'
+    : mode === 'adv'
     ? 'Аванс вычтется из зарплаты за ' + MONTHS[Number(moneyYm.slice(5)) - 1] + ': сейчас к получению ' + money(pi.toReceive) + ' ₸. Расходы после этого спишутся с аванса.'
-    : 'По графику: ' + money(pi.accrued) + ' ₸' + (pi.advSum ? ' − авансы ' + money(pi.advSum) : '') + ' = ' + money(pi.toReceive) + ' ₸. Впиши, сколько получил на руки на самом деле.';
-  $('mnDel').style.display = mode === 'sal' && pi.salary ? '' : 'none';
+    : 'По графику: ' + money(pi.accrued) + ' ₸' + (pi.advSum ? ' − авансы ' + money(pi.advSum) : '') + ' = ' + money(pi.toReceive) + ' ₸. Впиши, сколько получил на руки на самом деле.' +
+      (pi.advLive - pi.spentAdv > 0 ? ' Остаток аванса ' + money(pi.advLive - pi.spentAdv) + ' ₸ прибавится к зарплате.' : '');
+  $('mnDel').style.display = mode === 'sal' && pi.salaryAny ? '' : 'none';
   $('moneyBg').classList.add('open');
 }
 $('mnSave').onclick = async () => {
@@ -11708,9 +11734,23 @@ $('mnSave').onclick = async () => {
       await reindex();
     } else (p.advances = p.advances || []).push({id: finId(), date, amount});
     toast('Аванс ' + money(amount) + ' ₸ записан');
-  } else {
-    p.salary = {amount, date};
-    toast('Зарплата ' + money(amount) + ' ₸ получена');
+  } else if(moneyMode === 'sal'){
+    const before = periodInfo(moneyYm);
+    const advLeftNow = before.advLive - before.spentAdv;   // остаток аванса до получения
+    p.salary = {amount, date, carry: Math.max(0, advLeftNow)};
+    toast('Зарплата ' + money(amount) + ' ₸ получена' + (advLeftNow > 0 ? ' + остаток аванса ' + money(advLeftNow) + ' = ' + money(amount + advLeftNow) + ' ₸' : ''));
+  } else if(moneyMode === 'start'){
+    const onHand = finSources().reduce((x, s) => x + Math.max(0, s.left), 0);
+    const base = {};   // снимок: всё, что было до сверки, уже внутри стартовой суммы
+    for(const ym of finMonths()){ const pi = periodInfo(ym); base[ym] = {adv: pi.advSum, spentAdv: pi.spentAdvAll, spentSal: pi.spentSalAll, sal: !!pi.salaryAny}; }
+    const st = {id: finId(), date, amount, prevOnHand: onHand, base};
+    (f.starts = f.starts || []).push(st);
+    const lost = onHand - amount;
+    if(lost > 0){
+      const other = f.cats.find(c => !c.parent && /^другое/i.test(c.name)) || f.cats[0];
+      f.ops.push({id: finId(), date, amount: lost, catId: other.id, name: 'Неучтённые расходы (сверка)', src: null, unaccounted: true});
+    }
+    toast('Стартовые деньги: ' + money(amount) + ' ₸' + (lost > 0 ? ' · неучтено ' + money(lost) + ' ₸' : lost < 0 ? ' · лишних ' + money(-lost) + ' ₸ (неучтённый доход)' : ''));
   }
   await saveFin();
   $('moneyBg').classList.remove('open');
@@ -11728,7 +11768,7 @@ function catOptions(sel){
 }
 function srcOptions(cur){
   const s = finSources();
-  const key = x => x ? x.ym + '|' + x.kind : '';
+  const key = x => x ? x.ym + '|' + x.kind + (x.kind === 'start' ? '|' + x.id : '') : '';
   const curKey = cur ? key(cur) : key(defaultSource());
   return s.map(x => '<option value="' + key(x) + '"' + (key(x) === curKey ? ' selected' : '') + '>' + escHtml(x.label) + ' · остаток ' + money(x.left) + '</option>').join('') +
          '<option value=""' + (curKey === '' ? ' selected' : '') + '>Не из зарплаты / аванса</option>';
@@ -11768,7 +11808,7 @@ $('exSave').onclick = async () => {
   const f = fin(), amount = num($('exAmount').value), catId = Number($('exCat').value) || null, name = $('exName').value.trim();
   if(!amount || amount <= 0){ toast('Введи сумму'); return; }
   if(!catId){ toast('Выбери категорию'); return; }
-  const sv = $('exSrc').value, src = sv ? {ym: sv.split('|')[0], kind: sv.split('|')[1]} : null;
+  const sv = $('exSrc').value, src = sv ? Object.assign({ym: sv.split('|')[0], kind: sv.split('|')[1]}, sv.split('|')[2] ? {id: Number(sv.split('|')[2])} : {}) : null;
   const food = isFoodCat(catId);
   const mass = food ? num($('exMass').value) : null;
   const per = k => food ? num($(k).value) : null;
@@ -11783,7 +11823,7 @@ $('exSave').onclick = async () => {
   if(!expEdit) f.ops.push(op);
   await saveFin();
   $('expBg').classList.remove('open');
-  if(src){ const s = finSources().find(x => x.ym === src.ym && x.kind === src.kind); toast('−' + money(amount) + ' ₸ · ' + finCatPath(catId) + (s ? ' · остаток ' + (src.kind === 'advance' ? 'аванса ' : 'зарплаты ') + money(s.left) + ' ₸' : '')); }
+  if(src){ const s = finSources().find(x => x.ym === src.ym && x.kind === src.kind); toast('−' + money(amount) + ' ₸ · ' + finCatPath(catId) + (s ? ' · остаток ' + (src.kind === 'advance' ? 'аванса ' : src.kind === 'start' ? 'стартовых ' : 'зарплаты ') + money(s.left) + ' ₸' : '')); }
   else toast('−' + money(amount) + ' ₸ · ' + finCatPath(catId));
   if($('walletBg').classList.contains('open')) renderWallet(); else render();
 };
@@ -11841,8 +11881,11 @@ function walletBannerHTML(){
   const cur = todayISO().slice(0, 7), pi = periodInfo(cur);
   const s = finSources().filter(x => x.left > 0);
   if(!pi.accrued && !s.length) return '';
-  return '<button class="sp-banner" id="walletBanner">💰 ' + (s.length ? s.map(x => (x.kind === 'advance' ? 'аванс ' : 'зарплата ') + money(x.left)).join(' · ') + ' · ' : '') +
-         'к получению за ' + MONTHS[Number(cur.slice(5)) - 1] + ' ' + money(pi.toReceive) + ' ₸</button>';
+  const onHand = s.reduce((x, y) => x + y.left, 0);
+  const parts = [];
+  if(s.length) parts.push('на руках ' + money(onHand) + ' ₸');
+  if(pi.accrued && !pi.salaryAny) parts.push('к получению за ' + MONTHS[Number(cur.slice(5)) - 1] + ' ' + money(pi.toReceive) + ' ₸');
+  return parts.length ? '<button class="sp-banner" id="walletBanner">💰 ' + parts.join(' · ') + '</button>' : '';
 }
 
 /* ------------------------------ старт --------------------------- */
