@@ -346,7 +346,9 @@
   /* план занятий на день */
   #studyPartBg,#resetBg,#goalBg,#woPickBg{z-index:30}
   #vocabBg,#examBg,#diaryBg,#workoutBg,#recBg{z-index:26}
-  #weekBg,#schedBg{z-index:30}
+  #weekBg,#schedBg,#moneyBg,#expBg{z-index:30}
+  #walletBg{z-index:26}
+  #finCatBg{z-index:27}
   #readerBg{z-index:27}
   #focusBg{z-index:28}
   .sp-day{font-size:14px;margin-bottom:6px}
@@ -425,6 +427,27 @@
   .sp-banner.wo.off{border-style:dashed;color:var(--muted)}
   .sp-note.ok{color:var(--income)}
   .sched-body{max-height:64vh;overflow-y:auto}
+  .exp-body{max-height:62vh;overflow-y:auto}
+  .exp-body select{width:100%;box-sizing:border-box;padding:8px 10px;font:inherit;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:var(--radius)}
+  .ex-food{border:1px dashed var(--line);border-radius:var(--radius);padding:8px 10px;margin-top:8px}
+  .ex-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+  .ex-grid label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:4px}
+  .ex-grid input{padding:7px 8px;font:inherit;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px}
+  .wl-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .wl-nav button{font:inherit;padding:6px 14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--surface);color:var(--text)}
+  .wl-cat{display:grid;grid-template-columns:minmax(0,1.2fr) 1fr 72px;gap:8px;align-items:center;font-size:13px;padding:4px 0}
+  .wl-cat b{text-align:right}
+  .bk-chk input{width:auto !important;flex:none;margin:0}
+  .bk-chk{justify-content:flex-start;text-align:left}
+  .wl-day{font-size:12px;color:var(--muted);margin:12px 0 4px}
+  .wl-op{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px dashed var(--line);cursor:pointer;font-size:14px}
+  .wl-op small{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+  .wl-op b{white-space:nowrap;color:var(--accent)}
+  .fc-root{border:1px solid var(--line);border-radius:var(--radius);padding:8px 10px;margin-bottom:8px;background:var(--surface)}
+  .fc-row{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14px}
+  .fc-sub{padding:6px 0 0 12px;border-top:1px dashed var(--line);margin-top:6px}
+  .fc-prods{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+  .fc-prod{font-size:12px;border:1px solid var(--line);border-radius:10px;padding:1px 6px}
   .sched-body label{display:block;margin:12px 0 6px;font-size:13px;color:var(--muted)}
   .sched-body select,.sched-body input[type=number]{width:100%;box-sizing:border-box;padding:8px 10px;font:inherit;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:var(--radius)}
   .sc-time{display:flex;align-items:center;gap:6px;margin:4px 0;font-size:13px}
@@ -1478,6 +1501,50 @@
   </div>
 </div>
 
+<div class="graph-bg" id="walletBg">
+  <div class="graph-top"><div><div class="graph-title">Кошелёк</div><div class="graph-sub" id="walletSub"></div></div>
+    <button class="more" id="walletClose" aria-label="Закрыть">✕</button></div>
+  <div class="st-body" id="walletBody"></div>
+</div>
+<div class="graph-bg" id="finCatBg">
+  <div class="graph-top"><div><div class="graph-title">Категории и продукты</div><div class="graph-sub">на что тратишь</div></div>
+    <button class="more" id="finCatClose" aria-label="Закрыть">✕</button></div>
+  <div class="st-body" id="finCatBody"></div>
+</div>
+<div class="sheet-bg" id="moneyBg">
+  <div class="sheet">
+    <h2 id="mnTitle"></h2>
+    <div class="field"><label for="mnAmount">Сумма, ₸</label><input id="mnAmount" type="number" inputmode="numeric"></div>
+    <div class="field"><label for="mnDate">Дата</label><input id="mnDate" type="date"></div>
+    <div class="hint" id="mnHint"></div>
+    <div class="actions"><button id="mnCancel">Отмена</button><button id="mnDel">Отменить получение</button><button id="mnSave" class="primary">Сохранить</button></div>
+  </div>
+</div>
+<div class="sheet-bg" id="expBg">
+  <div class="sheet">
+    <h2 id="exTitle">Расход</h2>
+    <div class="exp-body">
+      <div class="field"><label for="exName">Что купил (продукт) — необязательно</label><input id="exName" list="exProdList" placeholder="Например: Хлеб, Джинсы" autocomplete="off"><datalist id="exProdList"></datalist></div>
+      <div class="field"><label for="exAmount">Сумма, ₸</label><input id="exAmount" type="number" inputmode="numeric"></div>
+      <div class="field"><label for="exCat">Категория</label><select id="exCat"></select></div>
+      <label class="bk-chk"><input type="checkbox" id="exSaveProd" checked> Запомнить как продукт (категория, цена, КБЖУ подставятся в следующий раз)</label>
+      <div class="field"><label for="exSrc">Из чего платишь</label><select id="exSrc"></select></div>
+      <div class="field"><label for="exDate">Дата</label><input id="exDate" type="date"></div>
+      <div id="exFood" class="ex-food">
+        <div class="hint">Еда — можно указать массу и КБЖУ на 100 г (необязательно). Итог посчитается сам.</div>
+        <div class="ex-grid">
+          <label>Масса, г<input id="exMass" type="number" inputmode="decimal"></label>
+          <label>Ккал /100 г<input id="exKcal" type="number" inputmode="decimal"></label>
+          <label>Белки /100 г<input id="exP" type="number" inputmode="decimal"></label>
+          <label>Жиры /100 г<input id="exF" type="number" inputmode="decimal"></label>
+          <label>Углеводы /100 г<input id="exC" type="number" inputmode="decimal"></label>
+        </div>
+      </div>
+    </div>
+    <div class="actions"><button id="exCancel">Отмена</button><button id="exDel">Удалить</button><button id="exSave" class="primary">Сохранить</button></div>
+  </div>
+</div>
+
 <div class="sheet-bg" id="schedBg">
   <div class="sheet">
     <h2>График смен из Excel</h2>
@@ -1860,6 +1927,7 @@
       <button id="openHarmful">Вредные приложения</button>
       <button id="openNews">Новости</button>
       <button id="openSchedule">Загрузить график смен (Excel)</button>
+      <button id="openWallet">Кошелёк: зарплата, аванс, расходы</button>
     </div>
 
     <button class="sv-head" data-sec="secTheme">Оформление</button>
@@ -2080,7 +2148,7 @@
       <button id="openReset">Сбросить настройки…</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 96 — график смен из Excel: смены ставятся сами, ЗП за месяц; резервная копия; рекорды и прогрессия; итог недели</div>
+    <div class="hint sv-version" id="version">Версия 97 — кошелёк: зарплата по графику, аванс, получение зарплаты, расходы по категориям и продуктам, КБЖУ для еды; график смен из Excel; резервная копия; рекорды</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -2455,6 +2523,7 @@ async function openDatabase(){
   settings.normOverride = parseJSON(s.normOverride, {});
   settings.weekShown = s.weekShown || '';
   settings.shiftName = s.shiftName || '';
+  settings.fin = parseJSON(s.fin, null);
   settings.lastSchedule = parseJSON(s.lastSchedule, null);
   settings.studyDays = parseJSON(s.studyDays, []);
   settings.remind = Object.assign({on: true, morning: '09:00', train: '18:00', evening: '21:00'}, parseJSON(s.remind, {}));
@@ -2871,13 +2940,15 @@ async function render(){
         (a.plan ? ' · <b>' + fmt(a.fact) + '</b> из <b>' + fmt(a.plan) + '</b>' +
                   (unit ? ' ' + unit : '') : '');
   } else {
-    totalEl.innerHTML = studyBannerHTML() + await workoutBannerHTML().catch(() => '') + streakHTML();
+    totalEl.innerHTML = studyBannerHTML() + await workoutBannerHTML().catch(() => '') + walletBannerHTML() + streakHTML();
     const sb = $('spBanner');
     if(sb) sb.onclick = openStudy;
     const wb = $('woBanner');
     if(wb) wb.onclick = () => openWorkout();
     const wo = $('woOffBanner');
     if(wo) wo.onclick = openOffPick;
+    const wb2 = $('walletBanner');
+    if(wb2) wb2.onclick = () => openWallet();
   }
 
   const list = $('list');
@@ -3894,7 +3965,7 @@ $('menuDelete').onclick = async () => {
   render();
 };
 
-['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg','bookTocBg','lockBg','tmplBg','tmplEditBg','studyPartBg','resetBg','goalBg','woPickBg','weekBg','schedBg'].forEach(id => {
+['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg','bookTocBg','lockBg','tmplBg','tmplEditBg','studyPartBg','resetBg','goalBg','woPickBg','weekBg','schedBg','moneyBg','expBg'].forEach(id => {
   const bg = $(id);
   bg.onclick = e => { if(e.target === bg) bg.classList.remove('open'); };
 });
@@ -3902,7 +3973,7 @@ $('menuDelete').onclick = async () => {
 if(window.Capacitor && window.Capacitor.Plugins.App){
   window.Capacitor.Plugins.App.addListener('backButton', () => {
     if($('diaryBg').classList.contains('open')){ flushDiary().finally(diaryLock); return; }
-    for(const id of ['schedBg','weekBg','recBg','goalBg','woPickBg','examBg','vocabBg','workoutBg','resetBg','studyPartBg','tmplEditBg','tmplBg','pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg','newsBg','lockBg','studyBg']){
+    for(const id of ['expBg','moneyBg','finCatBg','walletBg','schedBg','weekBg','recBg','goalBg','woPickBg','examBg','vocabBg','workoutBg','resetBg','studyPartBg','tmplEditBg','tmplBg','pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg','newsBg','lockBg','studyBg']){
       if($(id).classList.contains('open')){ $(id).classList.remove('open'); return; }
     }
     if(path.length){ path.pop(); render(); return; }
@@ -11422,6 +11493,325 @@ async function importSchedule(){
 $('schedGo').onclick = () => importSchedule().catch(err => toast('Не получилось: ' + err.message));
 $('schedCancel').onclick = () => $('schedBg').classList.remove('open');
 $('openSchedule').onclick = openScheduleImport;
+
+/* =====================================================================
+   КОШЕЛЁК: зарплата, аванс и расходы по категориям
+   • Зарплата за месяц = смены по графику × ставка (категория со ставкой).
+   • «Взять аванс» — аванс вычитается из зарплаты этого месяца
+     (записывается и в категорию «Работа», там тоже видно «аванс · остаток»).
+   • «Получить зарплату» — сумма по умолчанию = начислено − авансы.
+   • Расходы списываются с аванса или с полученной зарплаты: у каждого
+     источника виден остаток.
+   • Категории и подкатегории расходов, свои продукты (Хлеб → Еда ›
+     Хлебобулочные). Для еды — необязательно масса и КБЖУ на 100 г.
+   ===================================================================== */
+const FIN_BASE = [
+  ['Еда', ['Хлебобулочные', 'Мясо и птица', 'Рыба', 'Молочное и яйца', 'Овощи и фрукты', 'Крупы и макароны', 'Напитки', 'Сладости', 'Кафе и доставка']],
+  ['Одежда и обувь', ['Верхняя одежда', 'Повседневная', 'Обувь', 'Спортивная']],
+  ['Транспорт', ['Такси', 'Бензин', 'Общественный', 'Обслуживание авто']],
+  ['Жильё', ['Аренда', 'Коммунальные', 'Интернет и связь', 'Для дома']],
+  ['Здоровье и уход', ['Аптека', 'Врачи', 'Уход и гигиена', 'Стрижка']],
+  ['Спорт', ['Спортпит', 'Абонемент', 'Инвентарь']],
+  ['Развлечения', ['Кино и события', 'Игры и подписки', 'Отдых и поездки']],
+  ['Образование', ['Курсы', 'Книги']],
+  ['Подарки', []],
+  ['Техника', []],
+  ['Долги и платежи', ['Кредит', 'Долг']],
+  ['Другое', []],
+];
+function fin(){
+  const f = settings.fin = settings.fin || {};
+  if(!f.cats){
+    f.cats = []; let id = 1;
+    for(const [name, subs] of FIN_BASE){
+      const pid = id++; f.cats.push({id: pid, name, parent: null});
+      for(const s of subs) f.cats.push({id: id++, name: s, parent: pid});
+    }
+    f.seq = id;
+  }
+  f.products = f.products || []; f.ops = f.ops || []; f.periods = f.periods || {};
+  return f;
+}
+async function saveFin(){ await repo.setSetting('fin', JSON.stringify(fin())); }
+const finId = () => { const f = fin(); return f.seq = (f.seq || 1000) + 1; };
+const finCat = id => fin().cats.find(c => c.id === id);
+function finCatPath(id){ const c = finCat(id); if(!c) return 'Без категории'; const p = c.parent ? finCat(c.parent) : null; return p ? p.name + ' › ' + c.name : c.name; }
+function finRootOf(id){ let c = finCat(id); while(c && c.parent) c = finCat(c.parent); return c; }
+const isFoodCat = id => { const r = finRootOf(id); return !!r && /^еда/i.test(r.name); };
+const ymLabel = ym => { const [y, m] = ym.split('-'); const s = MONTHS[Number(m) - 1]; return s[0].toUpperCase() + s.slice(1) + ' ' + y; };
+const ymShift = (ym, k) => { const d = new Date(Number(ym.slice(0, 4)), Number(ym.slice(5, 7)) - 1 + k, 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); };
+/* категория со ставкой за смену (куда ставятся смены из графика) */
+function shiftCat(){
+  const last = settings.lastSchedule && index.byId.get(settings.lastSchedule.catId);
+  if(last && last.shift_rate != null) return last;
+  return index.all.find(n => n.kind === 'category' && n.shift_rate != null && !isLockedNode(n)) || null;
+}
+function periodInfo(ym){
+  const f = fin(), p = f.periods[ym] = f.periods[ym] || {};
+  const cat = shiftCat();
+  let shifts = 0, advances = [];
+  if(cat){
+    const walk = pid => { for(const n of index.all.filter(x => x.parent_id === pid)){
+      if(n.kind === 'entry'){ if(n.op_date && n.op_date.startsWith(ym)){ if(n.entry_kind === 'shift') shifts++; else if(n.entry_kind === 'advance') advances.push({id: n.id, date: n.op_date, amount: Number(n.amount) || 0, node: true}); } }
+      else walk(n.id); } };
+    walk(cat.id);
+  }
+  for(const a of (p.advances || [])) advances.push(a);
+  const rate = cat ? Number(cat.shift_rate) || 0 : 0;
+  const accrued = p.accruedOverride != null ? p.accruedOverride : shifts * rate;
+  const advSum = advances.reduce((x, a) => x + a.amount, 0);
+  const today = todayISO();
+  const past = cat ? index.all.filter(n => n.entry_kind === 'shift' && n.op_date && n.op_date.startsWith(ym) && n.op_date <= today && isUnder(n, cat.id)).length : 0;
+  const ops = f.ops.filter(o => o.src && o.src.ym === ym);
+  const spentAdv = ops.filter(o => o.src.kind === 'advance').reduce((x, o) => x + o.amount, 0);
+  const spentSal = ops.filter(o => o.src.kind === 'salary').reduce((x, o) => x + o.amount, 0);
+  const sal = p.salary || null;
+  return {ym, cat, shifts, rate, accrued, past, advances, advSum, toReceive: accrued - advSum,
+          advLeft: advSum - spentAdv, spentAdv, salary: sal, salLeft: sal ? sal.amount - spentSal : 0, spentSal};
+}
+function isUnder(n, rootId){ while(n){ if(n.parent_id === rootId) return true; n = n.parent_id != null ? index.byId.get(n.parent_id) : null; } return false; }
+/* откуда платить по умолчанию: полученная зарплата с остатком (последняя), иначе аванс с остатком */
+function finSources(){
+  const out = [], cur = todayISO().slice(0, 7);
+  for(let k = 0; k >= -3; k--){
+    const ym = ymShift(cur, k), pi = periodInfo(ym);
+    if(pi.salary) out.push({ym, kind: 'salary', left: pi.salLeft, label: 'Зарплата · ' + ymLabel(ym)});
+    if(pi.advSum) out.push({ym, kind: 'advance', left: pi.advLeft, label: 'Аванс · ' + ymLabel(ym)});
+  }
+  return out;
+}
+function defaultSource(){
+  const s = finSources();
+  return s.find(x => x.kind === 'salary' && x.left > 0) || s.find(x => x.kind === 'advance' && x.left > 0) || s[0] || null;
+}
+let walletYm = null;
+function openWallet(ym){
+  $('serviceBg').classList.remove('open');
+  walletYm = ym || walletYm || todayISO().slice(0, 7);
+  renderWallet();
+  $('walletBg').classList.add('open');
+}
+function renderWallet(){
+  const pi = periodInfo(walletYm), f = fin();
+  $('walletSub').textContent = ymLabel(walletYm);
+  let h = '<div class="wl-nav"><button data-w="prev">◀</button><b>' + ymLabel(walletYm) + '</b><button data-w="next">▶</button></div>';
+  /* зарплата */
+  h += '<div class="st-ath"><div class="st-ath-h"><b>Зарплата за месяц</b><span class="st-ath-p">' + money(pi.accrued) + ' ₸</span></div>';
+  if(pi.cat) h += '<div class="st-ath-l">Смен по графику: <b>' + pi.shifts + '</b> × ' + money(pi.rate) + ' ₸' + (walletYm === todayISO().slice(0, 7) ? ' · отработано ' + pi.past : '') + '</div>';
+  else h += '<div class="st-ath-l far">Нет категории со ставкой за смену — загрузи график смен (Сервис → «Загрузить график смен»).</div>';
+  if(pi.advSum) h += '<div class="st-ath-l">Авансы: <b>−' + money(pi.advSum) + ' ₸</b> (' + pi.advances.map(a => money(a.amount) + ' · ' + a.date.slice(8) + '.' + a.date.slice(5, 7)).join(', ') + ')</div>';
+  h += '<div class="st-ath-l">К получению: <b>' + money(pi.toReceive) + ' ₸</b></div>';
+  if(pi.salary) h += '<div class="st-ath-l ok">✓ Получена ' + studyDateLabel(pi.salary.date) + ': ' + money(pi.salary.amount) + ' ₸</div>';
+  h += '<div class="sp-btns"><button data-w="adv">Взять аванс</button><button class="go" data-w="sal">' + (pi.salary ? 'Изменить получение' : 'Получить зарплату') + '</button></div></div>';
+  /* кошельки */
+  const wallet = (title, total, spent, left, kind) => '<div class="st-ath wl-src"><div class="st-ath-h"><b>' + title + '</b><span class="st-ath-p ' + (left < 0 ? 'far' : 'ok') + '">' + money(left) + ' ₸</span></div>' +
+    '<span class="pl-bar"><i style="width:' + (total ? Math.max(0, Math.min(100, left / total * 100)) : 0) + '%"></i></span>' +
+    '<div class="st-ath-l">' + money(total) + ' − расходы ' + money(spent) + ' = остаток <b>' + money(left) + '</b></div></div>';
+  if(pi.advSum) h += wallet('Аванс', pi.advSum, pi.spentAdv, pi.advLeft, 'advance');
+  if(pi.salary) h += wallet('Зарплата', pi.salary.amount, pi.spentSal, pi.salLeft, 'salary');
+  h += '<div class="sp-btns"><button class="go" data-w="exp">+ Расход</button><button data-w="cats">Категории и продукты</button></div>';
+  /* расходы месяца (по дате операции) */
+  const ops = f.ops.filter(o => o.date.slice(0, 7) === walletYm).sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id);
+  const total = ops.reduce((x, o) => x + o.amount, 0);
+  h += '<h3>Расходы за ' + MONTHS[Number(walletYm.slice(5)) - 1] + ': ' + money(total) + ' ₸</h3>';
+  if(ops.length){
+    const byRoot = {};
+    for(const o of ops){ const r = finRootOf(o.catId); const k = r ? r.name : 'Без категории'; byRoot[k] = (byRoot[k] || 0) + o.amount; }
+    const rows = Object.entries(byRoot).sort((a, b) => b[1] - a[1]);
+    h += '<div class="st-ath">' + rows.map(([k, v]) => '<div class="wl-cat"><span>' + escHtml(k) + '</span><span class="pl-bar"><i style="width:' + Math.round(v / rows[0][1] * 100) + '%"></i></span><b>' + money(v) + '</b></div>').join('') + '</div>';
+    const food = ops.filter(o => o.mass || o.kcal);
+    if(food.length){
+      const sum = k => food.reduce((x, o) => x + (Number(o[k]) || 0), 0);
+      h += '<div class="st-ath"><b>Еда с КБЖУ</b><div class="st-ath-l">Покупок: ' + food.length + ' · масса ' + (sum('mass') / 1000).toFixed(1).replace('.', ',') + ' кг · ' +
+           money(sum('kcal')) + ' ккал · Б ' + money(sum('p')) + ' г · Ж ' + money(sum('f')) + ' г · У ' + money(sum('c')) + ' г</div></div>';
+    }
+    let lastD = '';
+    for(const o of ops){
+      if(o.date !== lastD){ h += '<div class="wl-day">' + studyDateLabel(o.date) + '</div>'; lastD = o.date; }
+      const prod = o.productId ? (f.products.find(p => p.id === o.productId) || {}).name : null;
+      h += '<div class="wl-op" data-w="edit" data-id="' + o.id + '"><span>' + escHtml(o.name || prod || (finCat(o.catId) || {}).name || 'Расход') +
+           '<small>' + escHtml(finCatPath(o.catId)) + (o.src ? ' · ' + (o.src.kind === 'advance' ? 'из аванса' : o.src.kind === 'salary' ? 'из зарплаты' : '') : '') +
+           (o.mass ? ' · ' + o.mass + ' г' : '') + (o.kcal ? ' · ' + money(o.kcal) + ' ккал' : '') + '</small></span><b>−' + money(o.amount) + '</b></div>';
+    }
+  } else h += '<div class="sp-note">Расходов в этом месяце пока нет. Нажми «+ Расход».</div>';
+  $('walletBody').innerHTML = h;
+}
+$('walletBody').addEventListener('click', async e => {
+  const el = e.target.closest('[data-w]');
+  if(!el) return;
+  const a = el.dataset.w;
+  if(a === 'prev'){ walletYm = ymShift(walletYm, -1); renderWallet(); }
+  else if(a === 'next'){ walletYm = ymShift(walletYm, 1); renderWallet(); }
+  else if(a === 'adv') openMoneySheet('adv');
+  else if(a === 'sal') openMoneySheet('sal');
+  else if(a === 'exp') openExpense(null);
+  else if(a === 'edit') openExpense(Number(el.dataset.id));
+  else if(a === 'cats') openFinCats();
+});
+$('walletClose').onclick = () => { $('walletBg').classList.remove('open'); render(); };
+$('openWallet').onclick = () => openWallet();
+
+/* --- аванс / получение зарплаты --- */
+let moneyMode = null;
+function openMoneySheet(mode){
+  moneyMode = mode;
+  const pi = periodInfo(walletYm);
+  $('mnTitle').textContent = mode === 'adv' ? 'Взять аванс · ' + ymLabel(walletYm) : 'Получить зарплату · ' + ymLabel(walletYm);
+  $('mnAmount').value = mode === 'sal' ? (pi.salary ? pi.salary.amount : Math.max(0, pi.toReceive)) : '';
+  $('mnDate').value = mode === 'sal' && pi.salary ? pi.salary.date : todayISO();
+  $('mnHint').textContent = mode === 'adv'
+    ? 'Аванс вычтется из зарплаты за ' + MONTHS[Number(walletYm.slice(5)) - 1] + ': сейчас к получению ' + money(pi.toReceive) + ' ₸. Расходы после этого спишутся с аванса.'
+    : 'По графику: ' + money(pi.accrued) + ' ₸' + (pi.advSum ? ' − авансы ' + money(pi.advSum) : '') + ' = ' + money(pi.toReceive) + ' ₸. Впиши, сколько получил на руки на самом деле.';
+  $('mnDel').style.display = mode === 'sal' && pi.salary ? '' : 'none';
+  $('moneyBg').classList.add('open');
+}
+$('mnSave').onclick = async () => {
+  const amount = num($('mnAmount').value), date = $('mnDate').value || todayISO();
+  if(!amount || amount <= 0){ toast('Введи сумму'); return; }
+  const f = fin(), p = f.periods[walletYm] = f.periods[walletYm] || {};
+  if(moneyMode === 'adv'){
+    const cat = shiftCat();
+    if(cat && date.slice(0, 7) === walletYm){
+      await createNode(cat.id, {name: 'Аванс', kind: 'entry', op_date: date, entry_kind: 'advance', amount, direction: 1});
+      await reindex();
+    } else (p.advances = p.advances || []).push({id: finId(), date, amount});
+    toast('Аванс ' + money(amount) + ' ₸ записан');
+  } else {
+    p.salary = {amount, date};
+    toast('Зарплата ' + money(amount) + ' ₸ получена');
+  }
+  await saveFin();
+  $('moneyBg').classList.remove('open');
+  renderWallet();
+};
+$('mnDel').onclick = async () => { if(!confirm('Отменить получение зарплаты?')) return; delete fin().periods[walletYm].salary; await saveFin(); $('moneyBg').classList.remove('open'); renderWallet(); };
+$('mnCancel').onclick = () => $('moneyBg').classList.remove('open');
+
+/* --- расход --- */
+let expEdit = null;
+function catOptions(sel){
+  const f = fin();
+  return f.cats.filter(c => !c.parent).map(r => '<optgroup label="' + escHtml(r.name) + '"><option value="' + r.id + '"' + (sel === r.id ? ' selected' : '') + '>' + escHtml(r.name) + ' (общее)</option>' +
+    f.cats.filter(c => c.parent === r.id).map(c => '<option value="' + c.id + '"' + (sel === c.id ? ' selected' : '') + '>' + escHtml(r.name + ' › ' + c.name) + '</option>').join('') + '</optgroup>').join('');
+}
+function srcOptions(cur){
+  const s = finSources();
+  const key = x => x ? x.ym + '|' + x.kind : '';
+  const curKey = cur ? key(cur) : key(defaultSource());
+  return s.map(x => '<option value="' + key(x) + '"' + (key(x) === curKey ? ' selected' : '') + '>' + escHtml(x.label) + ' · остаток ' + money(x.left) + '</option>').join('') +
+         '<option value=""' + (curKey === '' ? ' selected' : '') + '>Не из зарплаты / аванса</option>';
+}
+function openExpense(id){
+  const f = fin();
+  expEdit = id ? f.ops.find(o => o.id === id) : null;
+  const o = expEdit || {};
+  $('exTitle').textContent = expEdit ? 'Расход' : 'Новый расход';
+  $('exName').value = o.name || '';
+  $('exAmount').value = o.amount || '';
+  $('exDate').value = o.date || todayISO();
+  $('exCat').innerHTML = catOptions(o.catId || null);
+  if(!o.catId) $('exCat').value = '';
+  $('exSrc').innerHTML = srcOptions(expEdit ? o.src : null);
+  $('exMass').value = o.mass || ''; $('exKcal').value = o.kcal100 || ''; $('exP').value = o.p100 || ''; $('exF').value = o.f100 || ''; $('exC').value = o.c100 || '';
+  $('exSaveProd').checked = !o.productId;
+  $('exDel').style.display = expEdit ? '' : 'none';
+  $('exProdList').innerHTML = f.products.map(p => '<option value="' + escHtml(p.name) + '">').join('');
+  syncFoodBox();
+  $('expBg').classList.add('open');
+  if(!expEdit) setTimeout(() => $('exName').focus(), 50);
+}
+function syncFoodBox(){ $('exFood').style.display = isFoodCat(Number($('exCat').value)) ? '' : 'none'; }
+$('exCat').onchange = syncFoodBox;
+$('exName').oninput = () => {
+  const p = fin().products.find(x => normName(x.name) === normName($('exName').value));
+  if(!p) return;
+  $('exCat').value = String(p.catId);
+  if(!$('exAmount').value && p.lastPrice) $('exAmount').value = p.lastPrice;
+  if(p.mass && !$('exMass').value) $('exMass').value = p.mass;
+  for(const [k, el] of [['kcal100', 'exKcal'], ['p100', 'exP'], ['f100', 'exF'], ['c100', 'exC']]) if(p[k] != null && !$(el).value) $(el).value = p[k];
+  $('exSaveProd').checked = false;
+  syncFoodBox();
+};
+$('exSave').onclick = async () => {
+  const f = fin(), amount = num($('exAmount').value), catId = Number($('exCat').value) || null, name = $('exName').value.trim();
+  if(!amount || amount <= 0){ toast('Введи сумму'); return; }
+  if(!catId){ toast('Выбери категорию'); return; }
+  const sv = $('exSrc').value, src = sv ? {ym: sv.split('|')[0], kind: sv.split('|')[1]} : null;
+  const food = isFoodCat(catId);
+  const mass = food ? num($('exMass').value) : null;
+  const per = k => food ? num($(k).value) : null;
+  const k100 = per('exKcal'), p100 = per('exP'), f100 = per('exF'), c100 = per('exC');
+  const tot = v => v != null && mass ? Math.round(v * mass / 100) : null;
+  let prod = name ? f.products.find(x => normName(x.name) === normName(name)) : null;
+  if(!prod && name && $('exSaveProd').checked){ prod = {id: finId(), name, catId}; f.products.push(prod); }
+  if(prod){ prod.catId = catId; prod.lastPrice = amount; if(mass) prod.mass = mass; if(k100 != null) prod.kcal100 = k100; if(p100 != null) prod.p100 = p100; if(f100 != null) prod.f100 = f100; if(c100 != null) prod.c100 = c100; }
+  const op = expEdit || {id: finId()};
+  Object.assign(op, {date: $('exDate').value || todayISO(), amount, catId, name: name || null, productId: prod ? prod.id : null, src,
+                     mass, kcal100: k100, p100, f100, c100, kcal: tot(k100), p: tot(p100), f: tot(f100), c: tot(c100)});
+  if(!expEdit) f.ops.push(op);
+  await saveFin();
+  $('expBg').classList.remove('open');
+  if(src){ const s = finSources().find(x => x.ym === src.ym && x.kind === src.kind); toast('−' + money(amount) + ' ₸ · ' + finCatPath(catId) + (s ? ' · остаток ' + (src.kind === 'advance' ? 'аванса ' : 'зарплаты ') + money(s.left) + ' ₸' : '')); }
+  else toast('−' + money(amount) + ' ₸ · ' + finCatPath(catId));
+  if($('walletBg').classList.contains('open')) renderWallet(); else render();
+};
+$('exDel').onclick = async () => { if(!expEdit || !confirm('Удалить расход?')) return; const f = fin(); f.ops = f.ops.filter(o => o !== expEdit); await saveFin(); $('expBg').classList.remove('open'); renderWallet(); };
+$('exCancel').onclick = () => $('expBg').classList.remove('open');
+
+/* --- категории и продукты --- */
+function openFinCats(){
+  const f = fin();
+  let h = '<div class="sp-note">Свои категории, подкатегории и продукты. Продукт помнит категорию, последнюю цену и КБЖУ — в следующий раз всё подставится само.</div>';
+  for(const r of f.cats.filter(c => !c.parent)){
+    h += '<div class="fc-root"><div class="fc-row"><b>' + escHtml(r.name) + '</b><span><button class="mini" data-fc="addsub" data-id="' + r.id + '">+ подкатегория</button> <button class="mini" data-fc="del" data-id="' + r.id + '">✕</button></span></div>';
+    const prods = id => f.products.filter(p => p.catId === id);
+    const prodHTML = id => prods(id).map(p => '<span class="fc-prod">' + escHtml(p.name) + (p.lastPrice ? ' · ' + money(p.lastPrice) : '') + ' <button class="mini" data-fc="delp" data-id="' + p.id + '">✕</button></span>').join('');
+    h += prodHTML(r.id) ? '<div class="fc-prods">' + prodHTML(r.id) + '</div>' : '';
+    for(const c of f.cats.filter(x => x.parent === r.id))
+      h += '<div class="fc-sub"><div class="fc-row"><span>' + escHtml(c.name) + '</span><span><button class="mini" data-fc="addp" data-id="' + c.id + '">+ продукт</button> <button class="mini" data-fc="del" data-id="' + c.id + '">✕</button></span></div>' +
+           (prodHTML(c.id) ? '<div class="fc-prods">' + prodHTML(c.id) + '</div>' : '') + '</div>';
+    h += '</div>';
+  }
+  h += '<div class="sp-btns"><button data-fc="addroot">+ Категория</button></div>';
+  $('finCatBody').innerHTML = h;
+  $('finCatBg').classList.add('open');
+}
+$('finCatBody').addEventListener('click', async e => {
+  const el = e.target.closest('[data-fc]');
+  if(!el) return;
+  const f = fin(), a = el.dataset.fc, id = Number(el.dataset.id);
+  if(a === 'addroot' || a === 'addsub'){
+    const n = prompt(a === 'addroot' ? 'Название категории' : 'Подкатегория в «' + finCat(id).name + '»');
+    if(!n || !n.trim()) return;
+    f.cats.push({id: finId(), name: n.trim(), parent: a === 'addsub' ? id : null});
+  } else if(a === 'addp'){
+    const n = prompt('Продукт в «' + finCatPath(id) + '», например: Хлеб');
+    if(!n || !n.trim()) return;
+    if(f.products.some(p => normName(p.name) === normName(n))){ toast('Такой продукт уже есть'); return; }
+    f.products.push({id: finId(), name: n.trim(), catId: id});
+  } else if(a === 'delp'){
+    f.products = f.products.filter(p => p.id !== id);
+  } else if(a === 'del'){
+    const kids = f.cats.filter(c => c.parent === id).map(c => c.id);
+    const used = f.ops.filter(o => o.catId === id || kids.includes(o.catId)).length;
+    if(!confirm('Удалить «' + finCat(id).name + '»' + (kids.length ? ' со всеми подкатегориями' : '') + '?' + (used ? ' Расходы (' + used + ') останутся, но без категории.' : ''))) return;
+    f.cats = f.cats.filter(c => c.id !== id && c.parent !== id);
+    f.products = f.products.filter(p => p.catId !== id && !kids.includes(p.catId));
+  }
+  await saveFin();
+  openFinCats();
+});
+$('finCatClose').onclick = () => { $('finCatBg').classList.remove('open'); if($('walletBg').classList.contains('open')) renderWallet(); };
+
+/* строка на главном экране */
+function walletBannerHTML(){
+  if(!settings.fin && !shiftCat()) return '';
+  const cur = todayISO().slice(0, 7), pi = periodInfo(cur);
+  const s = finSources().filter(x => x.left > 0);
+  if(!pi.accrued && !s.length) return '';
+  return '<button class="sp-banner" id="walletBanner">💰 ' + (s.length ? s.map(x => (x.kind === 'advance' ? 'аванс ' : 'зарплата ') + money(x.left)).join(' · ') + ' · ' : '') +
+         'к получению за ' + MONTHS[Number(cur.slice(5)) - 1] + ' ' + money(pi.toReceive) + ' ₸</button>';
+}
 
 /* ------------------------------ старт --------------------------- */
 
