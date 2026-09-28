@@ -466,6 +466,10 @@
   .cal-item b.out{color:var(--accent)} .cal-item b.in{color:#4caf50} .cal-item.done{opacity:.55}
   .cal-sum{font-size:13px;margin:8px 0}
   .wl-sub.far{color:var(--accent)}
+  .wo-quiet{display:flex;gap:8px;align-items:center;margin:0 0 10px;font-size:12px;color:var(--muted)}
+  .wo-quiet .mini{white-space:nowrap;font-size:12px;padding:4px 10px}
+  .wo-quiet .mini.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .wo-ex.quiet h4 small{display:block;font-size:11px;font-weight:400;color:var(--muted);margin-top:2px}
   .fd-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
   .fd-tabs button{font:inherit;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--text)}
   .fd-tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
@@ -2330,7 +2334,7 @@
       <button id="openReset">Сбросить настройки…</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 104 — дневник питания (блюда с КБЖУ, цена → расход, статистика день/неделя/месяц); кошелёк: долги с графиком платежей и рассрочкой, календарь выплат (мне должны / я должен, сроки, валюта, напоминания), конвертер любых валют; курсы валют Нацбанка РК онлайн + калькулятор; валюты (обмен ₸↔₽/$/€…, копилки в валюте), копилки (откладывай из зарплаты, аванса или подработки), доход с подработок; остаток аванса плюсуется к зарплате, стартовые деньги (сверка); зарплата по графику, аванс, получение зарплаты, расходы по категориям и продуктам, КБЖУ для еды; график смен из Excel; резервная копия; рекорды</div>
+    <div class="hint sv-version" id="version">Версия 105 — тихий режим тренировки (без скакалки, берпи и прыжков); дневник питания (блюда с КБЖУ, цена → расход, статистика день/неделя/месяц); кошелёк: долги с графиком платежей и рассрочкой, календарь выплат (мне должны / я должен, сроки, валюта, напоминания), конвертер любых валют; курсы валют Нацбанка РК онлайн + калькулятор; валюты (обмен ₸↔₽/$/€…, копилки в валюте), копилки (откладывай из зарплаты, аванса или подработки), доход с подработок; остаток аванса плюсуется к зарплате, стартовые деньги (сверка); зарплата по графику, аванс, получение зарплаты, расходы по категориям и продуктам, КБЖУ для еды; график смен из Excel; резервная копия; рекорды</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -2694,6 +2698,7 @@ async function openDatabase(){
   settings.physSchedule = (() => { const d = parseJSON(s.physSchedule, null); return d && typeof d === 'object' && !Array.isArray(d) ? d : Object.assign({}, PHYS_DEFAULT_SCHEDULE); })();
   settings.workoutDraft = parseJSON(s.workoutDraft, null);
   settings.workoutLog = parseJSON(s.workoutLog, []);
+  settings.quietWorkout = parseJSON(s.quietWorkout, false);
   settings.physOff = parseJSON(s.physOff, null);
   settings.vocab = parseJSON(s.vocab, []);
   settings.vocabHist = parseJSON(s.vocabHist, {});
@@ -5714,6 +5719,19 @@ async function openWorkout(sess){
   renderWorkout();
   $('workoutBg').classList.add('open');
 }
+/* ---- тихий режим: для ночных тренировок, когда нельзя прыгать (соседи снизу/сверху) ----
+   Прыжковые упражнения показываются тихими заменами. Имя упражнения в журнале
+   остаётся прежним — статистика, нормы и рекорды считаются как обычно. */
+const QUIET_SUBS = [
+  [/HIIT/i, 'HIIT тихий: тихий берпи + бег на месте + высокие колени', 'Те же интервалы, но без прыжков и спринта: тихий берпи (ноги назад и вперёд шагом), затем бег на месте на носках и высокие колени шагом. Темп высокий, приземлений нет.'],
+  [/связка.*берпи/i, 'Связка: тихий берпи — подтягивание — отжимание', 'Берпи без прыжка: присел, руки на пол, ноги назад ШАГОМ по одной, отжался, шагом вернул ноги, встал. Потом подтягивание и отжимание как обычно.'],
+  [/берпи.*препятств/i, 'Тихий берпи + перешагивание препятствия', 'Берпи без прыжка (ноги назад и вперёд шагом, без выпрыгивания), затем перешагни препятствие высоким шагом вместо прыжка.'],
+  [/берпи/i, 'Тихий берпи (без прыжка)', 'Присел, руки на пол, ноги назад ШАГОМ по одной, отжался, шагом вернул ноги и встал. Без прыжка вверх в конце. Или связка «приседание + отжимание» за одно повторение. Количество — как в норме.'],
+  [/скакал/i, 'Бег на месте на носках', 'Быстро перебирай ногами на носочках, не отрывая их от пола и не топая пятками. Считай шаги вместо прыжков — норма та же. Варианты: высокие колени шагом в быстром темпе или «скакалка без скакалки» — крути кистями и пружинь на носках без отрыва.'],
+  [/box jump|прыжки на возвышение/i, 'Зашагивания на возвышение (step-up)', 'Шагом встань на устойчивую скамью или стул, выпрямись полностью, шагом спустись. Чередуй ноги. Мягко, без прыжка — норма та же.'],
+  [/прыжков|jump pistol/i, 'Пистолетик медленно (без прыжка)', 'Опускайся на одной ноге 3 секунды, вставай мощно, но не отрываясь от пола. Можно держаться за опору.'],
+];
+function quietSub(name){ if(!settings.quietWorkout) return null; const m = QUIET_SUBS.find(([re]) => re.test(name)); return m ? {name: m[1], how: m[2]} : null; }
 function renderWorkout(){
   const b = woBlock, vals = woVals();
   $('woTitle').textContent = b.athlete + (b.intensive ? ' · интенсив' : '');
@@ -5722,15 +5740,19 @@ function renderWorkout(){
     b.phase + ' · неделя ' + b.week + (b.phaseWeek ? ' (' + b.phaseWeek + '-я из ' + b.phaseLen + ' в фазе)' : '');
   let h = '<div class="wo-sum" id="woSum">' + woSumHTML() + '</div>' +
           (b.intensive ? '<div class="wo-int">ИНТЕНСИВ НЕДЕЛИ — к каждому упражнению +1 подход. Норма повторов та же. Засчитывается, если сделаны все подходы, включая дополнительный.</div>' : '') +
+          '<div class="wo-quiet"><button class="mini' + (settings.quietWorkout ? ' on' : '') + '" data-act="woquiet">🤫 Тихий режим: ' + (settings.quietWorkout ? 'вкл' : 'выкл') + '</button>' +
+          '<span>' + (settings.quietWorkout ? 'скакалка, берпи и прыжки заменены на тихие варианты — засчитываются как обычно' : 'включи, если нельзя прыгать (ночью, соседи)') + '</span></div>' +
           '<div class="sp-note" style="margin-bottom:10px">Разминка 5–10 минут. Между подходами 60–90 секунд отдыха. ' +
           'Впиши, сколько сделал в каждом подходе — справа сразу видно, насколько это близко к норме. Всё сохраняется на ходу.</div>';
   for(const it of b.items){
     const arr = vals[it.id] || [];
     const tg = (it.target ? it.sets + ' × ' + fmt(it.target.value) + ' ' + it.target.unit : it.sets + ' подх.') + (b.intensive && it.base ? ' (' + it.base + ' + 1 интенсив)' : '');
-    const desc = it.note.replace(/^[^.]*\.\s*/, '');
+    const qs = quietSub(it.name);
+    const desc = qs ? qs.how : it.note.replace(/^[^.]*\.\s*/, '');
     const cat = (it.note.match(/^([^.]*)\./) || [])[1] || '';
-    h += '<div class="wo-ex" data-ex="' + it.id + '"><h4>' + escHtml(it.name) + '</h4>' +
-         '<div class="tg">Норма: <b>' + escHtml(tg) + '</b>' + (cat ? ' · ' + escHtml(cat) : '') + (desc ? '<br>' + escHtml(desc) : '') + '</div>';
+    const tgq = qs ? tg.replace(/прыжк\S*/g, 'шагов') : tg;
+    h += '<div class="wo-ex' + (qs ? ' quiet' : '') + '" data-ex="' + it.id + '"><h4>' + (qs ? '🤫 ' + escHtml(qs.name) + '<small>вместо «' + escHtml(it.name) + '»</small>' : escHtml(it.name)) + '</h4>' +
+         '<div class="tg">Норма: <b>' + escHtml(tgq) + '</b>' + (cat ? ' · ' + escHtml(cat) : '') + (desc ? '<br>' + escHtml(desc) : '') + '</div>';
     const pv = woPrev[it.id];
     if(pv) h += '<div class="prev">В прошлый раз (' + escHtml(pv.date.slice(8) + '.' + pv.date.slice(5, 7)) + '): ' + pv.vals.map(fmt).join(' · ') + '</div>';
     const rec = exRecord(b.athlete, it.name);
@@ -5842,6 +5864,12 @@ $('woBody').addEventListener('click', async e => {
     renderWorkout();
   }
   else if(el.dataset.act === 'woclose') closeWorkout();
+  else if(el.dataset.act === 'woquiet'){
+    settings.quietWorkout = !settings.quietWorkout;
+    await repo.setSetting('quietWorkout', JSON.stringify(settings.quietWorkout));
+    renderWorkout();
+    toast(settings.quietWorkout ? '🤫 Тихий режим включён — без прыжков' : 'Тихий режим выключен');
+  }
 });
 function closeWorkout(){
   clearTimeout(woSaveTimer);
@@ -5861,7 +5889,7 @@ async function saveWorkoutLog(b, vals, sess){
     const arr = (vals[it.id] || []).slice(0, it.sets).filter(v => v !== '' && v != null && !isNaN(v)).map(Number);
     const need = it.target ? it.target.value * it.sets : it.sets;
     const got = it.target ? arr.reduce((x, v) => x + Math.min(v, it.target.value), 0) : arr.length;
-    return {name: it.name, sets: it.sets, filled: arr.length, pct: need ? Math.round(got / need * 100) : 0, vals: arr,
+    return {name: it.name, quiet: quietSub(it.name) ? quietSub(it.name).name : undefined, sets: it.sets, filled: arr.length, pct: need ? Math.round(got / need * 100) : 0, vals: arr,
             allOk: !!it.target && arr.length >= it.sets && arr.every(v => v >= it.target.value),
             avg: arr.length ? Math.round(arr.reduce((x, y) => x + y, 0) / arr.length * 10) / 10 : 0,
             target: it.target ? it.target.value : null, unit: it.target ? it.target.unit : ''};
