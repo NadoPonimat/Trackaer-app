@@ -434,6 +434,14 @@
   .ex-grid label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:4px}
   .ex-grid input{padding:7px 8px;font:inherit;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px}
   .wl-pend{border-color:var(--accent)}
+  .wl-rate{display:grid;grid-template-columns:1fr auto 64px;gap:6px;align-items:baseline;padding:6px 0;border-top:1px dashed var(--line);font-size:14px}
+  .wl-rate small{color:var(--muted);font-size:11px}
+  .wl-rate i{font-style:normal;font-size:12px;text-align:right;color:var(--muted)}
+  .wl-rate i.up{color:#4caf50} .wl-rate i.dn{color:var(--accent)}
+  .wl-rate .wl-own{grid-column:1/-1;margin-top:-4px}
+  .wl-conv{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:10px;align-items:center}
+  .wl-conv input,.wl-conv select{font:inherit;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--text);min-width:0}
+  .wl-conv b{grid-column:1/-1;font-size:16px}
   .sp-btns.wl-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .sp-btns.wl-acts button{width:100%;margin:0}
   .sp-btns.wl-acts button:last-child{grid-column:1/-1}
@@ -2188,7 +2196,7 @@
       <button id="openReset">Сбросить настройки…</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 100 — кошелёк: валюты (обмен ₸↔₽/$/€…, копилки в валюте), копилки (откладывай из зарплаты, аванса или подработки), доход с подработок; остаток аванса плюсуется к зарплате, стартовые деньги (сверка); зарплата по графику, аванс, получение зарплаты, расходы по категориям и продуктам, КБЖУ для еды; график смен из Excel; резервная копия; рекорды</div>
+    <div class="hint sv-version" id="version">Версия 101 — кошелёк: курсы валют Нацбанка РК онлайн + калькулятор; валюты (обмен ₸↔₽/$/€…, копилки в валюте), копилки (откладывай из зарплаты, аванса или подработки), доход с подработок; остаток аванса плюсуется к зарплате, стартовые деньги (сверка); зарплата по графику, аванс, получение зарплаты, расходы по категориям и продуктам, КБЖУ для еды; график смен из Excel; резервная копия; рекорды</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -11580,10 +11588,15 @@ const curSym = c => (CURS.find(x => x[0] === (c || 'KZT')) || [c, c])[1];
 const curName = c => (CURS.find(x => x[0] === (c || 'KZT')) || [c, c, c])[2];
 const mc = (v, c) => (Number(v) || 0).toLocaleString('ru-RU', {maximumFractionDigits: c && c !== 'KZT' ? 2 : 0}) + ' ' + curSym(c);
 /* курс = сколько тенге за 1 единицу; берётся из последнего обмена, можно поправить руками */
-const rateOf = c => !c || c === 'KZT' ? 1 : ((fin().rates || {})[c] || {}).v || null;
+const ownRate = c => !c || c === 'KZT' ? 1 : ((fin().rates || {})[c] || {}).v || null;
+const mktRate = c => !c || c === 'KZT' ? 1 : ((fin().market || {}).v || {})[c] || null;
+/* для оценки «≈ в тенге» — официальный курс (если загружен), иначе твой последний обмен */
+const rateOf = c => mktRate(c) || ownRate(c);
+/* для подстановки сумм при обмене — твой реальный курс обменника, иначе официальный */
+const prefRate = c => ownRate(c) || mktRate(c);
 const toKZT = (v, c) => { const r = rateOf(c); return r ? v * r : null; };
 const approx = (v, c) => { if(!c || c === 'KZT') return ''; const k = toKZT(v, c); return k == null ? '' : ' ≈ ' + money(k) + ' ₸'; };
-const fmtRate = v => v >= 10 ? v.toFixed(1).replace('.', ',') : v.toFixed(2).replace('.', ',');
+const fmtRate = v => (v >= 10 ? v.toFixed(1) : v >= 1 ? v.toFixed(2) : String(Number(v.toPrecision(2)))).replace('.', ',');
 function setRate(c, kztPerUnit, date){ if(!c || c === 'KZT' || !(kztPerUnit > 0)) return; const f = fin(); f.rates = f.rates || {}; f.rates[c] = {v: kztPerUnit, date: date || todayISO()}; }
 /* сколько тенге ушло из источника: для обмена/копилки в валюте это «отдал», иначе сама сумма */
 /* всё, что уменьшает деньги на руках: расходы + отложенное в копилки + отданное при обмене */
@@ -11717,6 +11730,7 @@ function openWallet(ym){
   $('serviceBg').classList.remove('open');
   walletYm = ym || walletYm || todayISO().slice(0, 7);
   renderWallet();
+  refreshMarket(false).catch(() => {});
   $('walletBg').classList.add('open');
 }
 function renderWallet(){
@@ -11771,7 +11785,7 @@ function renderWallet(){
     for(const w of cws){
       const r = (f.rates || {})[w.cur];
       h += '<div class="st-ath wl-src"><div class="st-ath-h"><b>' + curName(w.cur) + '</b><span class="st-ath-p ok">' + mc(w.left, w.cur) + '</span></div>' +
-        '<div class="st-ath-l">' + (r ? 'Курс: 1 ' + curSym(w.cur) + ' = ' + fmtRate(r.v) + ' ₸ (' + (r.manual ? 'вручную ' : 'по обмену ') + r.date.slice(8) + '.' + r.date.slice(5, 7) + ')' + approx(w.left, w.cur).replace(' ≈', ' · на руках ≈') : 'Курс неизвестен') + '</div>' +
+        '<div class="st-ath-l">' + (mktRate(w.cur) ? 'Курс НБ: 1 ' + curSym(w.cur) + ' = ' + fmtRate(mktRate(w.cur)) + ' ₸' + (r ? ' · ' : '') : '') + (r ? (mktRate(w.cur) ? 'твой ' : 'Курс: 1 ' + curSym(w.cur) + ' = ') + (mktRate(w.cur) ? (r.manual ? 'вручную ' : 'обмен ') + fmtRate(r.v) + ' ₸ (' : fmtRate(r.v) + ' ₸ (' + (r.manual ? 'вручную ' : 'по обмену ')) + r.date.slice(8) + '.' + r.date.slice(5, 7) + ')' : '') + (!r && !mktRate(w.cur) ? 'Курс неизвестен' : '') + approx(w.left, w.cur).replace(' ≈', ' · на руках ≈') + '</div>' +
         '<div class="sp-btns"><button data-w="fx" data-cur="' + w.cur + '">Обменять</button><button data-w="rate" data-cur="' + w.cur + '">Курс</button></div></div>';
     }
   }
@@ -11791,6 +11805,7 @@ function renderWallet(){
       '<div class="sp-btns"><button class="go" data-w="jarin" data-id="' + j.id + '">Отложить</button><button data-w="jarout" data-id="' + j.id + '"' + (j.bal > 0 ? '' : ' disabled') + '>Снять</button></div></div>';
   }
   h += '<div class="sp-btns"><button data-w="jarnew">+ Копилка</button></div>';
+  h += ratesHTML();
   /* расходы месяца (по дате операции) */
   const ops = f.ops.filter(o => o.date.slice(0, 7) === walletYm).sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id);
   const kz = o => o.cur && o.cur !== 'KZT' ? (toKZT(o.amount, o.cur) || 0) : o.amount;
@@ -11818,6 +11833,96 @@ function renderWallet(){
   } else h += '<div class="sp-note">Расходов в этом месяце пока нет. Нажми «+ Расход».</div>';
   $('walletBody').innerHTML = h;
 }
+function rateHint(c){
+  if(!c || c === 'KZT') return '';
+  const o = ownRate(c), m = mktRate(c);
+  return (o ? ' Твой последний обмен: 1 ' + curSym(c) + ' = ' + fmtRate(o) + ' ₸.' : '') + (m ? ' Курс Нацбанка: ' + fmtRate(m) + ' ₸.' : '');
+}
+/* ---- курсы валют из интернета: Нацбанк РК, запасной — currency-api (jsDelivr) ---- */
+const RATE_LIST = ['RUB', 'USD', 'EUR', 'CNY', 'KGS', 'UZS', 'TRY', 'AED'];
+let rateBusy = null, rateErr = '';
+async function httpText(url){
+  const C = window.Capacitor, H = C && C.isNativePlatform && C.isNativePlatform() && C.Plugins && C.Plugins.CapacitorHttp;
+  if(H){   // нативный запрос — без ограничений CORS
+    const r = await H.request({url, method: 'GET', responseType: 'text', connectTimeout: 8000, readTimeout: 8000});
+    if(r.status < 200 || r.status >= 300) throw new Error('HTTP ' + r.status);
+    return typeof r.data === 'string' ? r.data : JSON.stringify(r.data);
+  }
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 8000);
+  try{ const r = await fetch(url, {signal: ctl.signal, cache: 'no-store'}); if(!r.ok) throw new Error('HTTP ' + r.status); return await r.text(); }
+  finally{ clearTimeout(t); }
+}
+async function fetchNBK(){
+  const d = todayISO().split('-').reverse().join('.');
+  const xml = await httpText('https://nationalbank.kz/rss/get_rates.cfm?fdate=' + d);
+  const doc = new DOMParser().parseFromString(xml, 'text/xml');
+  const v = {}, ch = {};
+  for(const it of doc.querySelectorAll('item')){
+    const t = k => (it.querySelector(k) || {}).textContent;
+    const code = (t('title') || '').trim(), q = Number(t('quant')) || 1, val = Number(String(t('description') || '').replace(',', '.'));
+    if(code && val > 0){ v[code] = val / q; const c = Number(String(t('change') || '').replace(',', '.')); if(!isNaN(c)) ch[code] = c / q; }
+  }
+  if(!v.USD && !v.RUB) throw new Error('пустой ответ');
+  const ds = ((doc.querySelector('rates > date') || {}).textContent || d).trim().split('.').reverse().join('-');
+  return {src: 'Нацбанк РК', date: ds, v, ch};
+}
+async function fetchCdn(){
+  let last;
+  for(const url of ['https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/kzt.json', 'https://latest.currency-api.pages.dev/v1/currencies/kzt.json']){
+    try{
+      const j = JSON.parse(await httpText(url)), k = j.kzt || {}, v = {};
+      for(const c of RATE_LIST){ const x = Number(k[c.toLowerCase()]); if(x > 0) v[c] = 1 / x; }
+      if(!Object.keys(v).length) throw new Error('пустой ответ');
+      return {src: 'currency-api', date: j.date || todayISO(), v, ch: {}};
+    } catch(e){ last = e; }
+  }
+  throw last || new Error('нет ответа');
+}
+/* обновляем не чаще раза в 3 часа (или по кнопке); без интернета остаются последние курсы */
+function refreshMarket(force){
+  const f = fin(), m = f.market;
+  if(rateBusy) return rateBusy;
+  if(!force && m && m.checked && Date.now() - m.checked < 3 * 3600e3) return Promise.resolve(false);
+  rateBusy = (async () => {
+    let got = null;
+    try{ got = await fetchNBK(); } catch(e){ rateErr = 'Нацбанк: ' + e.message; }
+    if(!got){ try{ got = await fetchCdn(); } catch(e){ rateErr += ' · запасной: ' + e.message; } }
+    if(got){
+      if(!Object.keys(got.ch).length && m && m.v && m.date !== got.date) for(const c of Object.keys(got.v)) if(m.v[c]) got.ch[c] = got.v[c] - m.v[c];
+      f.market = Object.assign(got, {checked: Date.now()});
+      rateErr = '';
+      await saveFin();
+    }
+    return !!got;
+  })().finally(() => { rateBusy = null; if($('walletBg').classList.contains('open')) renderWallet(); });
+  if($('walletBg').classList.contains('open')) renderWallet();
+  return rateBusy;
+}
+function ratesHTML(){
+  const f = fin(), m = f.market;
+  let h = '<h3>Курсы валют</h3><div class="st-ath wl-rates">';
+  if(m && m.v){
+    h += '<div class="st-ath-l">' + escHtml(m.src) + ' · на ' + m.date.split('-').reverse().join('.') + (m.checked ? ' · обновлено ' + new Date(m.checked).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'}) : '') + '</div>';
+    for(const c of RATE_LIST) if(m.v[c]){
+      const d = (m.ch || {})[c], o = ownRate(c);
+      h += '<div class="wl-rate"><span>' + curName(c) + ' <small>' + c + '</small></span><b>1 ' + curSym(c) + ' = ' + fmtRate(m.v[c]) + ' ₸</b>' +
+           '<i class="' + (d > 0 ? 'up' : d < 0 ? 'dn' : '') + '">' + (d ? (d > 0 ? '▲ ' : '▼ ') + fmtRate(Math.abs(d)) : '') + '</i>' +
+           (o ? '<small class="wl-own">твой обмен: ' + fmtRate(o) + '</small>' : '') + '</div>';
+    }
+    h += '<div class="wl-conv"><input id="convAmt" type="number" inputmode="decimal" placeholder="Сумма"><select id="convCur">' + RATE_LIST.filter(c => m.v[c]).map(c => '<option value="' + c + '"' + (c === (f.lastFx || 'RUB') ? ' selected' : '') + '>' + curSym(c) + ' → ₸</option>').join('') + '<option value="KZT>">₸ → ' + curSym(f.lastFx || 'RUB') + '</option></select><b id="convOut"></b></div>';
+  } else h += '<div class="st-ath-l">' + (rateBusy ? 'Загружаю курсы…' : 'Курсы ещё не загружены.') + '</div>';
+  if(rateBusy) h += '<div class="st-ath-l">Обновляю…</div>';
+  else if(rateErr) h += '<div class="st-ath-l far">Не удалось обновить (' + escHtml(rateErr) + ')' + (m ? ' — показаны последние загруженные.' : '') + '</div>';
+  h += '<div class="sp-btns"><button data-w="rates">Обновить курсы</button></div></div>';
+  return h;
+}
+function convCalc(){
+  const out = $('convOut'); if(!out) return;
+  const a = num($('convAmt').value), c = $('convCur').value, lf = fin().lastFx || 'RUB';
+  if(!a){ out.textContent = ''; return; }
+  if(c === 'KZT>'){ const r = mktRate(lf); out.textContent = r ? '= ' + mc(a / r, lf) : ''; }
+  else { const r = mktRate(c); out.textContent = r ? '= ' + money(a * r) + ' ₸' : ''; }
+}
 function srcText(src, date){
   if(src.kind === 'jar'){ const j = fin().jars.find(x => x.id === src.id); return 'из копилки' + (j ? ' «' + escHtml(j.name) + '»' : ''); }
   if(src.kind === 'side'){ const x = fin().side.find(y => y.id === src.id); return 'из подработки' + (x && x.name ? ' «' + escHtml(x.name) + '»' : ''); }
@@ -11825,6 +11930,8 @@ function srcText(src, date){
   if(src.kind === 'cur') return 'из валюты (' + curSym(src.id) + ')';
   return (src.kind === 'advance' ? 'из аванса' : 'из зарплаты') + (src.ym !== date.slice(0, 7) ? ' за ' + MONTHS[Number(src.ym.slice(5)) - 1] : '');
 }
+$('walletBody').addEventListener('input', e => { if(e.target.id === 'convAmt') convCalc(); });
+$('walletBody').addEventListener('change', e => { if(e.target.id === 'convCur') convCalc(); });
 $('walletBody').addEventListener('click', async e => {
   const el = e.target.closest('[data-w]');
   if(!el) return;
@@ -11837,6 +11944,7 @@ $('walletBody').addEventListener('click', async e => {
   else if(a === 'start') openMoneySheet('start');
   else if(a === 'side') openMoneySheet('side');
   else if(a === 'fx') openFx(el.dataset.cur || null);
+  else if(a === 'rates') refreshMarket(true).then(ok => toast(ok ? 'Курсы обновлены' : 'Нет связи — курсы не обновились'));
   else if(a === 'rate'){
     const c = el.dataset.cur, r = rateOf(c);
     const v = prompt('Сколько тенге за 1 ' + curSym(c) + '?', r ? fmtRate(r) : '');
@@ -12089,7 +12197,7 @@ function syncMove(){
     $('mvPaidF').style.display = fx ? '' : 'none';
     $('mvPaidLbl').textContent = 'Сколько ' + (sc === 'KZT' ? 'тенге' : curSym(sc)) + ' отдал при обмене';
     $('mvHint').textContent = fx
-      ? 'Копилка в валюте «' + curName(jc) + '». Впиши, сколько ' + curSym(jc) + ' получил и сколько ' + curSym(sc) + ' за это отдал — курс запомнится.' + (rateOf(jc) ? ' Последний курс: 1 ' + curSym(jc) + ' = ' + fmtRate(rateOf(jc)) + ' ₸.' : '')
+      ? 'Копилка в валюте «' + curName(jc) + '». Впиши, сколько ' + curSym(jc) + ' получил и сколько ' + curSym(sc) + ' за это отдал — курс запомнится.' + rateHint(jc)
       : movePreset ? 'Деньги пришли — сколько отложить? Можно ничего: нажми «Отмена».' : 'Выбери, откуда откладываешь: зарплата, аванс, подработка или валюта на руках. Сумма уйдёт в копилку.';
   } else $('mvHint').textContent = jc === 'KZT'
     ? 'Снятое вернётся на руки отдельным кошельком «Из копилки». Чтобы сразу оплатить покупку из копилки — «+ Расход» и в «Откуда» выбери копилку.'
@@ -12100,7 +12208,7 @@ $('mvSrc').onchange = syncMove;
 $('mvAmount').oninput = () => {
   if($('mvPaidF').style.display === 'none') return;
   const jar = fin().jars.find(j => j.id === Number($('mvJar').value)), jc = (jar && jar.cur) || 'KZT', sc = srcCur(parseSrcKey($('mvSrc').value));
-  const a = num($('mvAmount').value), rj = rateOf(jc), rs = rateOf(sc);
+  const a = num($('mvAmount').value), rj = prefRate(jc), rs = prefRate(sc);
   if(a && rj && rs && !$('mvPaid').dataset.touched) $('mvPaid').value = Math.round(a * rj / rs * 100) / 100;
 };
 $('mvPaid').oninput = () => { $('mvPaid').dataset.touched = $('mvPaid').value ? '1' : ''; };
@@ -12155,14 +12263,12 @@ function syncFx(){
   const jars = f.jars.filter(j => (j.cur || 'KZT') === tc);
   $('fxJarF').style.display = tc === 'KZT' ? 'none' : '';
   $('fxJar').innerHTML = '<option value="">' + curName(tc) + ' на руки</option>' + jars.map(j => '<option value="' + j.id + '">Сразу в копилку 🐷 ' + escHtml(j.name) + '</option>').join('');
-  const rs = rateOf(sc), rt = rateOf(tc);
-  $('fxHint').textContent = sc === tc ? 'Выбери другую валюту.' : 'Впиши, сколько отдал и сколько получил на самом деле — курс посчитается и запомнится.' +
-    (rt && tc !== 'KZT' ? ' Последний курс: 1 ' + curSym(tc) + ' = ' + fmtRate(rt) + ' ₸.' : rs && sc !== 'KZT' ? ' Последний курс: 1 ' + curSym(sc) + ' = ' + fmtRate(rs) + ' ₸.' : '');
+  $('fxHint').textContent = sc === tc ? 'Выбери другую валюту.' : 'Впиши, сколько отдал и сколько получил на самом деле — курс посчитается и запомнится.' + rateHint(tc !== 'KZT' ? tc : sc);
   fxAuto();
 }
 function fxAuto(){
   if($('fxGet').dataset.touched) return;
-  const sc = srcCur(parseSrcKey($('fxFrom').value)), tc = $('fxTo').value, g = num($('fxGive').value), rs = rateOf(sc), rt = rateOf(tc);
+  const sc = srcCur(parseSrcKey($('fxFrom').value)), tc = $('fxTo').value, g = num($('fxGive').value), rs = prefRate(sc), rt = prefRate(tc);
   $('fxGet').value = g && rs && rt && sc !== tc ? Math.round(g * rs / rt * 100) / 100 : '';
 }
 $('fxFrom').onchange = syncFx; $('fxTo').onchange = syncFx;
@@ -12278,6 +12384,7 @@ function walletBannerHTML(){
     setTimeout(() => scheduleReminders().catch(() => {}), 1500);
     setTimeout(() => maybeShowWeekSummary().catch(() => {}), 2600);
     setTimeout(() => autoBackup().catch(() => {}), 5000);
+    setTimeout(() => { if(settings.fin) refreshMarket(false).catch(() => {}); }, 6000);
     upgradeLessonCourses().catch(() => 0).then(a => migrateHonestHours().then(b => { if(a || b) render(); })).catch(() => {});
     if(settings.statusNotify !== 'off'){
       requestStatusNotifPermission().then(updateStatusNotification);
