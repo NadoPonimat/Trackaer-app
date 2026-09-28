@@ -345,7 +345,8 @@
 
   /* план занятий на день */
   #studyPartBg,#resetBg,#goalBg,#woPickBg{z-index:30}
-  #vocabBg,#examBg,#diaryBg,#workoutBg{z-index:26}
+  #vocabBg,#examBg,#diaryBg,#workoutBg,#recBg{z-index:26}
+  #weekBg{z-index:30}
   #readerBg{z-index:27}
   #focusBg{z-index:28}
   .sp-day{font-size:14px;margin-bottom:6px}
@@ -423,6 +424,15 @@
   .wo-pick.done .sp-btns{margin-top:6px}
   .sp-banner.wo.off{border-style:dashed;color:var(--muted)}
   .sp-note.ok{color:var(--income)}
+  .bk-chk{display:flex;gap:8px;align-items:center;font-size:13px;margin:10px 0}
+  .rc-row{padding:10px 0;border-top:1px dashed var(--line)}
+  .rc-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .spark .sp-l{fill:none;stroke:var(--accent);stroke-width:2}
+  .spark .sp-t{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3}
+  .spark .sp-d{fill:var(--accent)}
+  .st-ath-l .far,.st-ath-l.far{color:var(--accent)}
+  .wo-rec{font-size:11px;color:var(--muted);margin-bottom:4px}
+  .wo-hint{font-size:12px;color:var(--income);margin:4px 0}
   .rd-lang{white-space:normal}
   .rd-line{white-space:pre-wrap;min-height:1em}
   .rd-say{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;margin:0 6px 0 0;padding:0;border-radius:50%;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:11px;vertical-align:middle;cursor:pointer;flex:none}
@@ -1448,6 +1458,19 @@
   </div>
 </div>
 
+<div class="graph-bg" id="recBg">
+  <div class="graph-top"><div><div class="graph-title" id="recTitle">Рекорды</div><div class="graph-sub">личные рекорды и прогрессия</div></div>
+    <button class="more" id="recClose" aria-label="Закрыть">✕</button></div>
+  <div class="st-body" id="recBody"></div>
+</div>
+<div class="sheet-bg" id="weekBg">
+  <div class="sheet">
+    <h2>Итог недели</h2>
+    <div id="weekBody"></div>
+    <div class="actions"><button id="weekClose">Закрыть</button><button id="weekStats" class="primary">Вся статистика</button></div>
+  </div>
+</div>
+
 <div class="sheet-bg" id="woPickBg">
   <div class="sheet">
     <h2>Тренировка вне плана</h2>
@@ -1952,6 +1975,26 @@
       <div class="hint">Модель SM-2: интервал умножается на лёгкость, «снова» сбрасывает счёт и снижает лёгкость.</div>
     </div>
 
+    <button class="sv-head" data-sec="secBackup">Резервная копия</button>
+    <div class="sv-sec" id="secBackup">
+      <div class="hint" id="backupInfo"></div>
+      <label>Автоматическая копия на телефон</label>
+      <div class="seg" id="backupEvery">
+        <button data-v="0">Выкл</button>
+        <button data-v="1">Каждый день</button>
+        <button data-v="3">Раз в 3 дня</button>
+        <button data-v="7">Раз в неделю</button>
+      </div>
+      <label class="bk-chk"><input type="checkbox" id="backupBooks"> Включать в копию файлы книг (копия станет намного больше)</label>
+      <div class="sv-actions">
+        <button id="backupNow">Сделать копию сейчас</button>
+        <button id="backupShare">Отправить копию (Telegram, Drive…)</button>
+        <button id="backupRestore">Восстановить из файла…</button>
+      </div>
+      <input type="file" id="backupFile" accept=".json,application/json" hidden>
+      <div class="hint">В копии всё: курсы, прогресс, тренировки, статистика, финансы, настройки. Дневник остаётся зашифрованным твоим паролем. Копии на телефоне лежат в «Документы/Trackaer», хранятся 5 последних.</div>
+    </div>
+
     <button class="sv-head" data-sec="secNotify">Уведомления</button>
     <div class="sv-sec" id="secNotify">
       <label>Напоминания</label>
@@ -2020,7 +2063,7 @@
       <button id="openReset">Сбросить настройки…</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 94 — озвучка без перехода в браузер (подсказка, если голоса нет); дневник с паролем; словарь; фокус-таймер; экзамен по модулю; серия дней, итог недели, цели месяца</div>
+    <div class="hint sv-version" id="version">Версия 95 — резервная копия (авто раз в N дней + отправка в Telegram/Drive + восстановление); личные рекорды и прогрессия нормы; итог недели отдельным окном; дневник, словарь, таймер, экзамены</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -2391,6 +2434,9 @@ async function openDatabase(){
   settings.examLog = parseJSON(s.examLog, []);
   settings.diaryEnc = parseJSON(s.diaryEnc, null);
   settings.diaryDays = parseJSON(s.diaryDays, []);
+  settings.backup = parseJSON(s.backup, null);
+  settings.normOverride = parseJSON(s.normOverride, {});
+  settings.weekShown = s.weekShown || '';
   settings.studyDays = parseJSON(s.studyDays, []);
   settings.remind = Object.assign({on: true, morning: '09:00', train: '18:00', evening: '21:00'}, parseJSON(s.remind, {}));
   settings.physStart = s.physStart || '';
@@ -3829,7 +3875,7 @@ $('menuDelete').onclick = async () => {
   render();
 };
 
-['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg','bookTocBg','lockBg','tmplBg','tmplEditBg','studyPartBg','resetBg','goalBg','woPickBg'].forEach(id => {
+['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg','bookTocBg','lockBg','tmplBg','tmplEditBg','studyPartBg','resetBg','goalBg','woPickBg','weekBg'].forEach(id => {
   const bg = $(id);
   bg.onclick = e => { if(e.target === bg) bg.classList.remove('open'); };
 });
@@ -3837,7 +3883,7 @@ $('menuDelete').onclick = async () => {
 if(window.Capacitor && window.Capacitor.Plugins.App){
   window.Capacitor.Plugins.App.addListener('backButton', () => {
     if($('diaryBg').classList.contains('open')){ flushDiary().finally(diaryLock); return; }
-    for(const id of ['goalBg','woPickBg','examBg','vocabBg','workoutBg','resetBg','studyPartBg','tmplEditBg','tmplBg','pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg','newsBg','lockBg','studyBg']){
+    for(const id of ['weekBg','recBg','goalBg','woPickBg','examBg','vocabBg','workoutBg','resetBg','studyPartBg','tmplEditBg','tmplBg','pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg','newsBg','lockBg','studyBg']){
       if($(id).classList.contains('open')){ $(id).classList.remove('open'); return; }
     }
     if(path.length){ path.pop(); render(); return; }
@@ -5188,7 +5234,9 @@ function physTrainPlan(name, date, kids, intensive){
   if(!p) return null;
   const m = p.ph.name.match(/недели (\d+)\s*[-–]\s*(\d+)/);
   const items = (kids.get(p.ph.id) || []).filter(n => n.kind === 'entry')
-    .map(n => { const base = Number(n.plan) || 0; return {id: n.id, name: n.name, base, sets: base + (intensive && base ? 1 : 0), note: n.note || '', target: physTarget(n.note)}; });
+    .map(n => { const base = Number(n.plan) || 0, prog = physTarget(n.note), ov = (settings.normOverride || {})[n.id];
+      const target = prog && ov ? {value: ov, unit: prog.unit} : prog;
+      return {id: n.id, name: n.name, base, sets: base + (intensive && base ? 1 : 0), note: n.note || '', target, custom: !!(prog && ov), progTarget: prog ? prog.value : null}; });
   const sets = items.reduce((x, i) => x + i.sets, 0);
   return {sub: 'train', intensive, athleteId: ath.id, athlete: ath.name, phaseId: p.ph.id, phase: p.ph.name, week: p.week,
           phaseWeek: m ? p.week - Number(m[1]) + 1 : null, phaseLen: m ? Number(m[2]) - Number(m[1]) + 1 : null, items,
@@ -5411,6 +5459,10 @@ function renderWorkout(){
          '<div class="tg">Норма: <b>' + escHtml(tg) + '</b>' + (cat ? ' · ' + escHtml(cat) : '') + (desc ? '<br>' + escHtml(desc) : '') + '</div>';
     const pv = woPrev[it.id];
     if(pv) h += '<div class="prev">В прошлый раз (' + escHtml(pv.date.slice(8) + '.' + pv.date.slice(5, 7)) + '): ' + pv.vals.map(fmt).join(' · ') + '</div>';
+    const rec = exRecord(b.athlete, it.name);
+    if(rec) h += '<div class="wo-rec">🏆 Рекорд: ' + fmt(rec.max) + (it.target ? ' ' + escHtml(it.target.unit) : '') + ' (' + studyDateLabel(rec.date) + ')' + (it.custom ? ' · норма твоя, в программе ' + fmt(it.progTarget) : '') + '</div>';
+    const hint = progressHint(b.athlete, it);
+    if(hint) h += '<div class="wo-hint">💡 3 тренировки подряд норма взята — можно поднять до ' + fmt(hint.next) + ' <button class="mini" data-act="woraise" data-id="' + it.id + '" data-v="' + hint.next + '">Поднять</button></div>';
     h += '<div class="wo-row hd"><span>Подход</span><span>Результат' + (it.target ? ', ' + escHtml(it.target.unit) : '') + '</span><span>До нормы</span></div>';
     for(let k = 0; k < it.sets; k++){
       const v = arr[k];
@@ -5485,11 +5537,20 @@ async function finishWorkout(){
     }
   }
   b.applied = applied; b.done = b.minutes; b.result = tot;
+  const recs = [];
+  for(const it of b.items){
+    const arr = (vals[it.id] || []).slice(0, it.sets).filter(v => v !== '' && v != null && !isNaN(v)).map(Number);
+    if(!arr.length) continue;
+    const prev = exHistory(b.athlete, it.name).filter(x => x.date !== todayISO());
+    const best = prev.length ? Math.max(...prev.map(x => x.max)) : null;
+    if(best != null && Math.max(...arr) > best) recs.push(it.name + ' ' + fmt(Math.max(...arr)) + ' (было ' + fmt(best) + ')');
+  }
   await saveWorkoutLog(b, vals, woSess);
   if(woSess.kind === 'plan') await savePhysToday(); else await savePhysOff();
   await repo.setSetting('workoutDraft', JSON.stringify(settings.workoutDraft));
   $('workoutBg').classList.remove('open');
-  toast((woSess.kind === 'plan' ? 'Тренировка записана' : 'Записано (' + WO_KIND[woSess.kind] + ')') + ': ' + tot.pct + '% нормы, подходов ' + tot.filled + ' из ' + tot.total);
+  toast((recs.length ? '🏆 Новые рекорды: ' + recs.slice(0, 3).join('; ') + '. ' : '') +
+        (woSess.kind === 'plan' ? 'Тренировка записана' : 'Записано (' + WO_KIND[woSess.kind] + ')') + ': ' + tot.pct + '% нормы, подходов ' + tot.filled + ' из ' + tot.total);
   if($('studyBg').classList.contains('open')) await renderStudy();
   await render();
   scheduleReminders().catch(() => {});
@@ -5498,6 +5559,14 @@ $('woBody').addEventListener('click', async e => {
   const el = e.target.closest('[data-act]');
   if(!el) return;
   if(el.dataset.act === 'wofinish') await finishWorkout();
+  else if(el.dataset.act === 'woraise'){
+    const id = Number(el.dataset.id), v = Number(el.dataset.v);
+    await setNorm(id, v);
+    const it = woBlock.items.find(x => x.id === id);
+    if(it && it.target){ it.target = {value: v, unit: it.target.unit}; it.custom = true; }
+    toast('Норма поднята до ' + fmt(v) + ' — с этой тренировки');
+    renderWorkout();
+  }
   else if(el.dataset.act === 'woclose') closeWorkout();
 });
 function closeWorkout(){
@@ -5518,7 +5587,8 @@ async function saveWorkoutLog(b, vals, sess){
     const arr = (vals[it.id] || []).slice(0, it.sets).filter(v => v !== '' && v != null && !isNaN(v)).map(Number);
     const need = it.target ? it.target.value * it.sets : it.sets;
     const got = it.target ? arr.reduce((x, v) => x + Math.min(v, it.target.value), 0) : arr.length;
-    return {name: it.name, sets: it.sets, filled: arr.length, pct: need ? Math.round(got / need * 100) : 0,
+    return {name: it.name, sets: it.sets, filled: arr.length, pct: need ? Math.round(got / need * 100) : 0, vals: arr,
+            allOk: !!it.target && arr.length >= it.sets && arr.every(v => v >= it.target.value),
             avg: arr.length ? Math.round(arr.reduce((x, y) => x + y, 0) / arr.length * 10) / 10 : 0,
             target: it.target ? it.target.value : null, unit: it.target ? it.target.unit : ''};
   });
@@ -5614,7 +5684,7 @@ function trainStatsHTML(){
                        (a.intDone ? ', с дополнительным подходом во всех упражнениях — ' + a.intOk : '') + '</div>';
     if(a.late || a.ahead || a.extra) h += '<div class="st-ath-l">' + [a.late ? 'отработано пропусков ↻ ' + a.late : '', a.ahead ? 'сделано заранее ⏩ ' + a.ahead : '',
                                          a.extra ? 'дополнительных + ' + a.extra : ''].filter(Boolean).join(' · ') + '</div>';
-    if(a.last) h += '<div class="st-ath-l">Сейчас: ' + escHtml(a.last.phase) + ', неделя ' + a.last.week + '</div>';
+    if(a.last) h += '<div class="st-ath-l">Сейчас: ' + escHtml(a.last.phase) + ', неделя ' + a.last.week + ' · <button class="mini" data-rec="' + escHtml(n) + '">🏆 Рекорды и прогресс</button></div>';
     if(a.recent.length)
       h += '<div class="st-ath-l">Последние: ' + a.recent.map(r => '<span class="st-chip' + (r.pct >= 95 ? ' ok' : r.pct >= 75 ? ' near' : ' far') + '">' +
            r.date.slice(8) + '.' + r.date.slice(5, 7) + ' · ' + r.pct + '%' + (r.intensive ? ' ⚡' : '') + (WO_MARK[r.kind] || '') + '</span>').join(' ') + '</div>';
@@ -10000,7 +10070,7 @@ $('seedAll').onclick = async () => {
 ==================================================================*/
 const RESET_PLAN_KEYS = ['studyActive','studyOrder','studySlots','studyMinutes','studyBlock','studyWeek','studyStart','studyToday','physSchedule','physStart','physToday','workoutDraft','physOff'];
 const RESET_ALL_KEYS = [...new Set([...RESET_PLAN_KEYS,
-  'workoutLog','studyDays','remind','vocab','vocabHist','goals','examLog','theme','splashAnim','splashPhoto','splashPhotoDim','splashShowTitle',
+  'workoutLog','studyDays','remind','vocab','vocabHist','goals','examLog','normOverride','weekShown','theme','splashAnim','splashPhoto','splashPhotoDim','splashShowTitle',
   'splashMusic','splashMusicName','splashMusicDuration','readerFont','readerTheme',
   'schedule','planUnit','budget','statusNotify','srsOrder', ...Object.keys(SRS_DEFAULTS)])];
 let resetScope = 'plan';
@@ -10683,6 +10753,10 @@ function goalsHTML(){
   return h;
 }
 async function saveGoals(){ await repo.setSetting('goals', JSON.stringify(settings.goals || [])); }
+$('statsBody').addEventListener('click', e => {
+  const r = e.target.closest('[data-rec]');
+  if(r) openRecords(r.dataset.rec);
+});
 $('statsBody').addEventListener('click', async e => {
   const el = e.target.closest('[data-goal]');
   if(!el) return;
@@ -10864,6 +10938,249 @@ $('openDiary').onclick = openDiary;
 if(window.Capacitor && window.Capacitor.Plugins.App)
   window.Capacitor.Plugins.App.addListener('pause', () => { if(diaryData){ flushDiary().finally(diaryLock); } });
 
+/* =====================================================================
+   РЕЗЕРВНАЯ КОПИЯ: всё содержимое базы в один JSON-файл.
+   Автоматически раз в N дней — в папку «Документы/Trackaer» на телефоне
+   (хранятся 5 последних). Кнопка «Отправить копию» — в Telegram, Google Drive
+   и т. п., чтобы копия была и вне телефона. Дневник в копии остаётся
+   зашифрованным. Восстановление — из файла, с подтверждением.
+   ===================================================================== */
+const BK_DIR = 'Trackaer';
+const fsPlugin = () => window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem;
+const sharePlugin = () => window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
+function backupCfg(){ return (settings.backup = Object.assign({every: 7, books: false, last: '', lastShared: '', lastFile: ''}, settings.backup || {})); }
+async function saveBackupCfg(){ await repo.setSetting('backup', JSON.stringify(backupCfg())); }
+async function dumpAll(){
+  let nodes, links, sets, st;
+  if(repo === MemoryRepo){
+    MemoryRepo.flush();
+    nodes = repo.d.node.slice(); links = repo.d.link.slice(); sets = (repo.d.sets || []).slice(); st = Object.assign({}, repo.d.settings);
+  } else {
+    nodes = await repo.q('SELECT * FROM node'); links = await repo.q('SELECT * FROM link');
+    sets = await repo.q('SELECT * FROM set_log'); st = {};
+    for(const r of await repo.q('SELECT * FROM setting')) st[r.key] = r.value;
+  }
+  const cfg = backupCfg();
+  if(!cfg.books) for(const k of Object.keys(st)) if(k.startsWith('book_data_')) delete st[k];
+  delete st.backup;   // настройки самой копии не переносим
+  return {app: 'trackaer', v: 1, created: new Date().toISOString(), books: !!cfg.books, node: nodes, link: links, sets, settings: st};
+}
+function backupName(){ const d = new Date(); return 'trackaer-' + todayISO() + '-' + String(d.getHours()).padStart(2, '0') + String(d.getMinutes()).padStart(2, '0') + '.json'; }
+async function writeBackup(auto){
+  const data = JSON.stringify(await dumpAll());
+  const name = backupName(), fs = fsPlugin(), cfg = backupCfg();
+  if(fs){
+    try{
+      await fs.writeFile({path: BK_DIR + '/' + name, data, directory: 'DOCUMENTS', encoding: 'utf8', recursive: true});
+      try{    // храним 5 последних
+        const r = await fs.readdir({path: BK_DIR, directory: 'DOCUMENTS'});
+        const files = (r.files || []).map(f => typeof f === 'string' ? f : f.name).filter(n => /^trackaer-.*\.json$/.test(n)).sort();
+        for(const old of files.slice(0, Math.max(0, files.length - 5))) await fs.deleteFile({path: BK_DIR + '/' + old, directory: 'DOCUMENTS'}).catch(() => {});
+      }catch(e){}
+      cfg.last = todayISO(); cfg.lastFile = name; await saveBackupCfg();
+      if(!auto) toast('Копия сохранена: Документы/' + BK_DIR + '/' + name);
+      return {name, size: data.length};
+    }catch(e){
+      if(!auto) toast('Не удалось записать файл: ' + (e.message || e) + '. Попробуй «Отправить копию».');
+      return null;
+    }
+  }
+  /* без плагина (браузер): скачивание файла */
+  if(auto) return null;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([data], {type: 'application/json'}));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  cfg.last = todayISO(); cfg.lastFile = name; await saveBackupCfg();
+  toast('Копия скачана: ' + name);
+  return {name, size: data.length};
+}
+async function shareBackup(){
+  const fs = fsPlugin(), sh = sharePlugin();
+  if(!fs || !sh){ await writeBackup(false); return; }
+  try{
+    const data = JSON.stringify(await dumpAll()), name = backupName();
+    await fs.writeFile({path: name, data, directory: 'CACHE', encoding: 'utf8'});
+    const {uri} = await fs.getUri({path: name, directory: 'CACHE'});
+    await sh.share({title: 'Резервная копия трекера', text: 'Копия трекера от ' + todayISO(), url: uri, dialogTitle: 'Куда сохранить копию'});
+    const cfg = backupCfg(); cfg.lastShared = todayISO(); await saveBackupCfg(); renderBackupUI();
+  }catch(e){ if(!/cancel/i.test(String(e && e.message))) toast('Не получилось отправить: ' + (e.message || e)); }
+}
+async function autoBackup(){
+  const cfg = backupCfg();
+  if(!cfg.every || !fsPlugin()) return false;
+  if(cfg.last && dayDiff(cfg.last, todayISO()) < cfg.every) return false;
+  const r = await writeBackup(true);
+  if(r){ toast('Автоматическая резервная копия сохранена'); renderBackupUI(); }
+  return !!r;
+}
+async function restoreFromText(text){
+  let d;
+  try{ d = JSON.parse(text); }catch(e){ toast('Это не файл копии трекера'); return; }
+  if(!d || d.app !== 'trackaer' || !Array.isArray(d.node)){ toast('Это не файл копии трекера'); return; }
+  const when = (d.created || '').slice(0, 16).replace('T', ' ');
+  if(!confirm('Восстановить копию от ' + when + '?\n\nТем и записей: ' + d.node.length + ', подходов: ' + (d.sets || []).length +
+              '.\nВСЁ текущее содержимое приложения будет заменено этой копией.')) return;
+  if(!confirm('Точно? Текущие данные будут стёрты. Перед этим я сохраню их отдельной копией.')) return;
+  await writeBackup(true).catch(() => null);          // страховка перед заменой
+  const keepBooks = {};
+  if(!d.books){   // книги в копию не входили — оставим текущие файлы книг
+    const cur = await repo.getSettings();
+    for(const k of Object.keys(cur)) if(k.startsWith('book_data_')) keepBooks[k] = cur[k];
+  }
+  const st = Object.assign({}, d.settings || {}, keepBooks, {backup: JSON.stringify(backupCfg())});
+  if(repo === MemoryRepo){
+    const seq = Math.max(0, ...d.node.map(n => n.id), ...(d.sets || []).map(s => s.id || 0), ...(d.link || []).map(l => l.id || 0));
+    repo.d = {node: d.node, link: d.link || [], sets: d.sets || [], settings: st, seq};
+    repo._pending = true; repo.flush();
+  } else {
+    const S = repo.S, run = async set => { for(let i = 0; i < set.length; i += 200) await S.executeSet({database: DB, set: set.slice(i, i + 200), transaction: true}); };
+    await run([{statement: 'DELETE FROM node', values: []}, {statement: 'DELETE FROM link', values: []}, {statement: 'DELETE FROM set_log', values: []}, {statement: 'DELETE FROM setting', values: []}]);
+    const cols = ['id', ...FIELDS];
+    await run(d.node.map(n => ({statement: 'INSERT INTO node (' + cols.join(',') + ') VALUES (' + cols.map(() => '?').join(',') + ')', values: cols.map(c => n[c] ?? (c === 'created_at' ? new Date().toISOString() : ['done', 'reps', 'lapses', 'locked', 'sort'].includes(c) ? 0 : null))})));
+    await run((d.link || []).map(l => ({statement: 'INSERT INTO link (id, from_id, to_id, kind) VALUES (?,?,?,?)', values: [l.id ?? null, l.from_id, l.to_id, l.kind || 'leads_to']})));
+    await run((d.sets || []).map(s => ({statement: 'INSERT INTO set_log (id, node_id, date, attempt, value, rpe, note) VALUES (?,?,?,?,?,?,?)', values: [s.id ?? null, s.node_id, s.date, s.attempt || 1, s.value ?? null, s.rpe ?? null, s.note ?? null]})));
+    await run(Object.entries(st).map(([k, v]) => ({statement: 'INSERT INTO setting (key, value) VALUES (?, ?)', values: [k, v == null ? '' : String(v)]})));
+  }
+  toast('Копия восстановлена. Перезапускаю…');
+  setTimeout(() => location.reload(), 800);
+}
+function renderBackupUI(){
+  const box = $('backupInfo');
+  if(!box) return;
+  const cfg = backupCfg(), fs = !!fsPlugin();
+  const ago = d => !d ? 'ни разу' : d === todayISO() ? 'сегодня' : dayDiff(d, todayISO()) + ' дн. назад';
+  box.innerHTML = 'Последняя копия на телефоне: <b>' + ago(cfg.last) + '</b>' + (cfg.lastFile ? '<br><span class="where">Документы/' + BK_DIR + '/' + escHtml(cfg.lastFile) + '</span>' : '') +
+    '<br>Последняя отправка вне телефона: <b>' + ago(cfg.lastShared) + '</b>' +
+    (cfg.lastShared && dayDiff(cfg.lastShared, todayISO()) <= 30 ? '' : '<br><span class="far">Отправь копию в Telegram «Избранное» или Google Drive — копия на самом телефоне не спасёт, если потеряешь телефон.</span>') +
+    (fs ? '' : '<br><span class="where">Автокопия заработает в новой сборке (плагин файлов). Пока «Сделать копию» скачивает файл.</span>');
+  [...$('backupEvery').children].forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.v) === Number(cfg.every))));
+  $('backupBooks').checked = !!cfg.books;
+}
+[...$('backupEvery').children].forEach(b => { b.onclick = async () => { backupCfg().every = Number(b.dataset.v); await saveBackupCfg(); renderBackupUI(); toast(Number(b.dataset.v) ? 'Автокопия раз в ' + b.dataset.v + ' дн.' : 'Автокопия выключена'); }; });
+$('backupBooks').onchange = async () => { backupCfg().books = $('backupBooks').checked; await saveBackupCfg(); };
+$('backupNow').onclick = async () => { const b = $('backupNow'); b.disabled = true; await writeBackup(false); b.disabled = false; renderBackupUI(); };
+$('backupShare').onclick = shareBackup;
+$('backupRestore').onclick = () => $('backupFile').click();
+$('backupFile').onchange = async () => {
+  const f = $('backupFile').files[0]; $('backupFile').value = '';
+  if(!f) return;
+  await restoreFromText(await f.text());
+};
+
+/* =====================================================================
+   ЛИЧНЫЕ РЕКОРДЫ И ПРОГРЕССИЯ
+   Рекорд — лучший подход в упражнении (по названию, у каждого атлета свой).
+   Если 3 тренировки подряд норма взята во всех подходах — предлагаем поднять
+   норму: повторы +1 (до 10), +2 (до 30) или +10%, секунды +5. Своя норма хранится отдельно
+   и заменяет норму программы, пока не вернёшь её.
+   ===================================================================== */
+function exHistory(athlete, name){
+  const out = [];
+  for(const r of (settings.workoutLog || [])){
+    if(r.athlete !== athlete) continue;
+    const e = (r.ex || []).find(x => x.name === name);
+    if(!e || !e.filled) continue;
+    const vals = Array.isArray(e.vals) ? e.vals : null;
+    out.push({date: r.date, max: vals && vals.length ? Math.max(...vals) : e.avg, vals, pct: e.pct, target: e.target, unit: e.unit, sets: e.sets, filled: e.filled, allOk: e.allOk});
+  }
+  return out;
+}
+function exRecord(athlete, name){
+  let best = null;
+  for(const h of exHistory(athlete, name)) if(!best || h.max > best.max) best = h;
+  return best;
+}
+function normStep(t){
+  if(!t) return null;
+  if(t.unit === 'сек') return t.value + 5;
+  if(t.unit === 'мин') return Math.round((t.value + 0.5) * 10) / 10;
+  return t.value + (t.value < 10 ? 1 : t.value < 30 ? 2 : Math.round(t.value * 0.1));   // повторы: +1 / +2 / +10%
+}
+/* 3 последние тренировки этого упражнения — норма взята во всех подходах при текущей норме */
+function progressHint(athlete, it){
+  if(!it.target) return null;
+  const h = exHistory(athlete, it.name).filter(x => x.target === it.target.value).slice(-3);
+  if(h.length < 3 || !h.every(x => x.allOk)) return null;
+  return {next: normStep(it.target)};
+}
+function normOverrides(){ return (settings.normOverride = settings.normOverride || {}); }
+async function setNorm(nodeId, value){
+  const o = normOverrides();
+  if(value == null) delete o[nodeId]; else o[nodeId] = value;
+  await repo.setSetting('normOverride', JSON.stringify(o));
+}
+function sparkSVG(vals, target){
+  if(vals.length < 2) return '';
+  const w = 120, h = 30, mx = Math.max(...vals, target || 0), mn = Math.min(...vals, target || Infinity);
+  const sx = i => Math.round(i / (vals.length - 1) * (w - 4) + 2), sy = v => Math.round(h - 3 - (mx === mn ? 0.5 : (v - mn) / (mx - mn)) * (h - 6));
+  const pts = vals.map((v, i) => sx(i) + ',' + sy(v)).join(' ');
+  return '<svg class="spark" viewBox="0 0 ' + w + ' ' + h + '" width="' + w + '" height="' + h + '">' +
+    (target ? '<line x1="0" x2="' + w + '" y1="' + sy(target) + '" y2="' + sy(target) + '" class="sp-t"/>' : '') +
+    '<polyline points="' + pts + '" class="sp-l"/><circle cx="' + sx(vals.length - 1) + '" cy="' + sy(vals[vals.length - 1]) + '" r="2.5" class="sp-d"/></svg>';
+}
+function openRecords(athlete){
+  const names = [];
+  for(const r of (settings.workoutLog || [])) if(r.athlete === athlete) for(const e of (r.ex || [])) if(!names.includes(e.name)) names.push(e.name);
+  const plan = physTrainPlan(athlete, todayISO(), studyKids(), false);
+  let h = '<div class="sp-note">Рекорд — лучший подход. Линия — лучший подход на каждой тренировке, пунктир — текущая норма.</div>';
+  if(!names.length) h += '<div class="sp-note">Тренировок этого атлета ещё не было.</div>';
+  for(const n of names){
+    const hist = exHistory(athlete, n), rec = exRecord(athlete, n), last = hist[hist.length - 1];
+    const it = plan && plan.items.find(x => x.name === n);
+    const hint = it ? progressHint(athlete, it) : null;
+    const unit = (last && last.unit) || '';
+    h += '<div class="rc-row"><div class="rc-h"><b>' + escHtml(n) + '</b>' + sparkSVG(hist.map(x => x.max), it && it.target ? it.target.value : null) + '</div>' +
+      '<div class="st-ath-l">🏆 Рекорд: <b>' + (rec ? fmt(rec.max) + ' ' + unit : '—') + '</b>' + (rec ? ' (' + studyDateLabel(rec.date) + ')' : '') +
+      (last ? ' · последний раз: ' + fmt(last.max) : '') + (it && it.target ? ' · норма ' + fmt(it.target.value) + (it.custom ? ' (твоя)' : '') : '') + ' · тренировок ' + hist.length + '</div>' +
+      (hint ? '<div class="st-ath-l ok">💡 3 тренировки подряд норма взята во всех подходах — пора поднять до ' + fmt(hint.next) + ' <button class="mini" data-rc="raise" data-id="' + it.id + '" data-v="' + hint.next + '">Поднять</button></div>' : '') +
+      (it && it.custom ? '<div class="st-ath-l"><button class="mini" data-rc="reset" data-id="' + it.id + '">Вернуть норму программы (' + fmt(it.progTarget) + ')</button></div>' : '') + '</div>';
+  }
+  $('recTitle').textContent = 'Рекорды · ' + athlete;
+  $('recBody').innerHTML = h;
+  $('recBody').dataset.ath = athlete;
+  $('recBg').classList.add('open');
+}
+$('recBody').addEventListener('click', async e => {
+  const el = e.target.closest('[data-rc]');
+  if(!el) return;
+  await setNorm(Number(el.dataset.id), el.dataset.rc === 'raise' ? Number(el.dataset.v) : null);
+  settings.physToday = null;
+  toast(el.dataset.rc === 'raise' ? 'Норма поднята до ' + el.dataset.v : 'Вернул норму программы');
+  openRecords($('recBody').dataset.ath);
+});
+$('recClose').onclick = () => $('recBg').classList.remove('open');
+
+/* =====================================================================
+   ИТОГ НЕДЕЛИ — отдельным окном в начале новой недели (один раз)
+   ===================================================================== */
+async function maybeShowWeekSummary(){
+  const ws = weekStart(todayISO()), prev = addDays(ws, -7);
+  if(settings.weekShown === ws) return false;
+  const w = weekStats(prev);
+  const any = w.studyMin > 0 || w.covered > 0 || w.words > 0 || w.planned > 0;
+  settings.weekShown = ws; await repo.setSetting('weekShown', ws);
+  if(!any) return false;
+  const p = weekStats(addDays(prev, -7));
+  const line = (label, a, b, f) => '<div class="wk-row"><span>' + label + '</span><b>' + f(a) + (b == null || a === b ? '' : a > b ? ' <span class="ok">▲</span>' : ' <span class="far">▼</span>') + '</b><span class="where">' + f(b) + '</span></div>';
+  const hrs = v => (v / 60).toFixed(1).replace('.', ',') + ' ч';
+  const s = streakInfo();
+  let h = '<div class="wk-row hd"><span>' + studyDateLabel(w.start) + ' — ' + studyDateLabel(w.end) + '</span><b>неделя</b><span class="where">до неё</span></div>' +
+    line('Учёба', w.studyMin, p.studyMin, hrs) + line('Дней учёбы без недоделок', w.full, p.full, String) +
+    line('Тренировки', w.covered, p.covered, String) + (w.norm != null ? line('Норма в тренировках', w.norm, p.norm, v => (v || 0) + '%') : '') +
+    line('Слов повторено', w.words, p.words, String);
+  if(w.planned) h += '<div class="st-ath-l">Тренировок по плану: ' + w.covered + ' из ' + w.planned + (w.ints ? ' · интенсив ' + (w.intsDone ? 'сделан ⚡' : 'пропущен') : '') + '</div>';
+  const good = [], bad = [];
+  if(w.planned && w.covered === w.planned) good.push('все тренировки по плану'); else if(w.planned) bad.push('пропущено тренировок: ' + (w.planned - w.covered));
+  if(w.studyMin > p.studyMin) good.push('учёбы больше, чем неделей раньше'); else if(p.studyMin && w.studyMin < p.studyMin) bad.push('учёбы меньше, чем неделей раньше');
+  if(s.cur >= 7) good.push('серия ' + s.cur + ' дней');
+  h += (good.length ? '<div class="st-ath-l ok">Хорошо: ' + good.join(', ') + '.</div>' : '') + (bad.length ? '<div class="st-ath-l far">Подтянуть: ' + bad.join(', ') + '.</div>' : '');
+  $('weekBody').innerHTML = h;
+  $('weekBg').classList.add('open');
+  return true;
+}
+$('weekClose').onclick = () => $('weekBg').classList.remove('open');
+$('weekStats').onclick = async () => { $('weekBg').classList.remove('open'); await openStats(); };
+
 /* ------------------------------ старт --------------------------- */
 
 (async () => {
@@ -10883,7 +11200,10 @@ if(window.Capacitor && window.Capacitor.Plugins.App)
     if(settings.splashMusic) playSplashMusic(settings.splashMusic, settings.splashMusicDuration);
     await render();
     syncRemindUI();
+    renderBackupUI();
     setTimeout(() => scheduleReminders().catch(() => {}), 1500);
+    setTimeout(() => maybeShowWeekSummary().catch(() => {}), 2600);
+    setTimeout(() => autoBackup().catch(() => {}), 5000);
     upgradeLessonCourses().catch(() => 0).then(a => migrateHonestHours().then(b => { if(a || b) render(); })).catch(() => {});
     if(settings.statusNotify !== 'off'){
       requestStatusNotifPermission().then(updateStatusNotification);
