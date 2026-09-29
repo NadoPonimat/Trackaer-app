@@ -347,7 +347,8 @@
   #studyPartBg,#resetBg,#goalBg,#woPickBg{z-index:30}
   #vocabBg,#examBg,#diaryBg,#workoutBg,#recBg{z-index:26}
   #weekBg,#schedBg,#moneyBg,#expBg,#jarBg,#moveBg,#fxBg,#debtBg,#payBg,#calBg{z-index:30}
-  #walletBg,#foodBg{z-index:26}
+  #walletBg,#foodBg,#habitsBg,#langStatBg,#sumBg{z-index:26}
+  #habitEdBg{z-index:30}
   #foodEntBg,#foodGoalBg{z-index:30}
   #finCatBg{z-index:27}
   #readerBg{z-index:27}
@@ -470,6 +471,17 @@
   .wo-quiet .mini{white-space:nowrap;font-size:12px;padding:4px 10px}
   .wo-quiet .mini.on{background:var(--accent);border-color:var(--accent);color:#fff}
   .wo-ex.quiet h4 small{display:block;font-size:11px;font-weight:400;color:var(--muted);margin-top:2px}
+  .hb{padding:10px 12px} .hb.rest{opacity:.55}
+  .hb-row{display:flex;align-items:center;gap:10px}
+  .hb-tick{flex:none;width:40px;height:40px;border-radius:50%;border:2px solid var(--line);background:var(--surface);color:var(--text);font:inherit;font-weight:700;font-size:15px}
+  .hb.done .hb-tick{background:#4caf50;border-color:#4caf50;color:#fff}
+  .hb-main{flex:1;min-width:0;cursor:pointer} .hb-main b{display:block} .hb-main small{color:var(--muted);font-size:12px}
+  .hb-dots{display:grid;grid-template-columns:repeat(30,1fr);gap:2px;margin-top:8px}
+  .hb-dots i{height:8px;border-radius:2px;background:var(--line)} .hb-dots i.ok{background:#4caf50} .hb-dots i.no{background:var(--accent);opacity:.55} .hb-dots i.off{opacity:.25} .hb-dots i.td{background:var(--muted)}
+  .he-days{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px} .he-days label{display:flex;gap:3px;align-items:center;font-size:13px;padding:4px 8px;border:1px solid var(--line);border-radius:10px}
+  .sm-mrow{display:grid;grid-template-columns:34px 1fr 90px;gap:4px 8px;align-items:center;font-size:12px;padding:4px 0;border-top:1px dashed var(--line)}
+  .sm-mrow small{color:var(--muted)} .sm-mrow .sm-money i{background:#e0a030}
+  .sm-mrow .sm-money{grid-column:2}
   .fd-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
   .fd-tabs button{font:inherit;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--text)}
   .fd-tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
@@ -1611,6 +1623,32 @@
     <div class="actions"><button id="fgCancel">Отмена</button><button id="fgSave" class="primary">Сохранить</button></div>
   </div>
 </div>
+<div class="graph-bg" id="habitsBg">
+  <div class="graph-top"><div><div class="graph-title">Привычки</div><div class="graph-sub" id="habitsSub"></div></div>
+    <button class="more" id="habitsClose" aria-label="Закрыть">✕</button></div>
+  <div class="st-body" id="habitsBody"></div>
+</div>
+<div class="sheet-bg" id="habitEdBg">
+  <div class="sheet">
+    <h2 id="heTitle">Привычка</h2>
+    <div class="fd-quick" id="hePresets"></div>
+    <div class="ex-grid" style="grid-template-columns:1fr 70px"><label>Что делаешь<input id="heName" placeholder="Например: вода, лечь до 00:30"></label><label>Значок<input id="heEmoji" maxlength="4" placeholder="💧"></label></div>
+    <div class="ex-grid"><label>Сколько раз в день<input id="heTarget" type="number" inputmode="numeric" min="1" value="1"></label><label>Чего (если больше 1)<input id="heUnit" placeholder="стаканов"></label></div>
+    <div class="hint">В какие дни:</div>
+    <div class="he-days" id="heDays"></div>
+    <div class="actions"><button id="heCancel">Отмена</button><button id="heDel">Убрать</button><button id="heSave" class="primary">Сохранить</button></div>
+  </div>
+</div>
+<div class="graph-bg" id="langStatBg">
+  <div class="graph-top"><div><div class="graph-title">Языки: часы и прогноз</div><div class="graph-sub" id="langStatSub"></div></div>
+    <button class="more" id="langStatClose" aria-label="Закрыть">✕</button></div>
+  <div class="st-body" id="langStatBody"></div>
+</div>
+<div class="graph-bg" id="sumBg">
+  <div class="graph-top"><div><div class="graph-title">Итоги</div><div class="graph-sub" id="sumSub"></div></div>
+    <button class="more" id="sumClose" aria-label="Закрыть">✕</button></div>
+  <div class="st-body" id="sumBody"></div>
+</div>
 <div class="graph-bg" id="finCatBg">
   <div class="graph-top"><div><div class="graph-title">Категории и продукты</div><div class="graph-sub">на что тратишь</div></div>
     <button class="more" id="finCatClose" aria-label="Закрыть">✕</button></div>
@@ -2115,6 +2153,9 @@
       <button id="openSchedule">Загрузить график смен (Excel)</button>
       <button id="openWallet">Кошелёк: зарплата, аванс, расходы</button>
       <button id="openFood">Дневник питания</button>
+      <button id="openHabits">Привычки</button>
+      <button id="openLangStat">Языки: часы по годовому плану</button>
+      <button id="openSummary">Итоги месяца и года</button>
     </div>
 
     <button class="sv-head" data-sec="secTheme">Оформление</button>
@@ -2335,7 +2376,7 @@
       <button id="openReset">Сбросить настройки…</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 107 — курс арабского (ступень 1, с нуля: 48 уроков по 2 части, озвучка ▶ и словарь); стойка на руках у стены заменена отжиманиями с ногами на возвышении (норма в повторах); тихий режим тренировки (без скакалки, берпи и прыжков); дневник питания (блюда с КБЖУ, цена → расход, статистика день/неделя/месяц); кошелёк: долги с графиком платежей и рассрочкой, календарь выплат (мне должны / я должен, сроки, валюта, напоминания), конвертер любых валют; курсы валют Нацбанка РК онлайн + калькулятор; валюты (обмен ₸↔₽/$/€…, копилки в валюте), копилки (откладывай из зарплаты, аванса или подработки), доход с подработок; остаток аванса плюсуется к зарплате, стартовые деньги (сверка); зарплата по графику, аванс, получение зарплаты, расходы по категориям и продуктам, КБЖУ для еды; график смен из Excel; резервная копия; рекорды</div>
+    <div class="hint sv-version" id="version">Версия 108 — привычки, итоги месяца и года, языки: часы по годовому плану и прогноз; курс арабского (ступень 1, с нуля: 48 уроков по 2 части, озвучка ▶ и словарь); стойка на руках у стены заменена отжиманиями с ногами на возвышении (норма в повторах); тихий режим тренировки (без скакалки, берпи и прыжков); дневник питания (блюда с КБЖУ, цена → расход, статистика день/неделя/месяц); кошелёк: долги с графиком платежей и рассрочкой, календарь выплат (мне должны / я должен, сроки, валюта, напоминания), конвертер любых валют; курсы валют Нацбанка РК онлайн + калькулятор; валюты (обмен ₸↔₽/$/€…, копилки в валюте), копилки (откладывай из зарплаты, аванса или подработки), доход с подработок; остаток аванса плюсуется к зарплате, стартовые деньги (сверка); зарплата по графику, аванс, получение зарплаты, расходы по категориям и продуктам, КБЖУ для еды; график смен из Excel; резервная копия; рекорды</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -2696,6 +2737,11 @@ async function openDatabase(){
   settings.studyStart = s.studyStart || '';
   settings.studyToday = parseJSON(s.studyToday, null);
   settings.studyHist = parseJSON(s.studyHist, {});
+  settings.habits = parseJSON(s.habits, []);
+  settings.habitLog = parseJSON(s.habitLog, {});
+  settings.langHist = parseJSON(s.langHist, {});
+  settings.langPlan = parseJSON(s.langPlan, null);
+  settings.monthShown = s.monthShown || null;
   settings.physSchedule = (() => { const d = parseJSON(s.physSchedule, null); return d && typeof d === 'object' && !Array.isArray(d) ? d : Object.assign({}, PHYS_DEFAULT_SCHEDULE); })();
   settings.workoutDraft = parseJSON(s.workoutDraft, null);
   settings.workoutLog = parseJSON(s.workoutLog, []);
@@ -3128,7 +3174,7 @@ async function render(){
         (a.plan ? ' · <b>' + fmt(a.fact) + '</b> из <b>' + fmt(a.plan) + '</b>' +
                   (unit ? ' ' + unit : '') : '');
   } else {
-    totalEl.innerHTML = studyBannerHTML() + await workoutBannerHTML().catch(() => '') + walletBannerHTML() + foodBannerHTML() + streakHTML();
+    totalEl.innerHTML = studyBannerHTML() + await workoutBannerHTML().catch(() => '') + habitsBannerHTML() + langBannerHTML() + walletBannerHTML() + foodBannerHTML() + streakHTML();
     const sb = $('spBanner');
     if(sb) sb.onclick = openStudy;
     const wb = $('woBanner');
@@ -3137,6 +3183,10 @@ async function render(){
     if(wo) wo.onclick = openOffPick;
     const wb2 = $('walletBanner');
     if(wb2) wb2.onclick = () => openWallet();
+    const hbn = $('habitBanner');
+    if(hbn) hbn.onclick = openHabits;
+    const lbn = $('langBanner');
+    if(lbn) lbn.onclick = openLangStat;
     const fb = $('foodBanner');
     if(fb) fb.onclick = () => openFood(todayISO());
   }
@@ -4155,7 +4205,7 @@ $('menuDelete').onclick = async () => {
   render();
 };
 
-['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg','bookTocBg','lockBg','tmplBg','tmplEditBg','studyPartBg','resetBg','goalBg','woPickBg','weekBg','schedBg','moneyBg','expBg','jarBg','moveBg','fxBg','debtBg','payBg','calBg','foodEntBg','foodGoalBg'].forEach(id => {
+['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg','bookTocBg','lockBg','tmplBg','tmplEditBg','studyPartBg','resetBg','goalBg','woPickBg','weekBg','schedBg','moneyBg','expBg','jarBg','moveBg','fxBg','debtBg','payBg','calBg','foodEntBg','foodGoalBg','habitEdBg'].forEach(id => {
   const bg = $(id);
   bg.onclick = e => { if(e.target === bg) bg.classList.remove('open'); };
 });
@@ -4163,7 +4213,7 @@ $('menuDelete').onclick = async () => {
 if(window.Capacitor && window.Capacitor.Plugins.App){
   window.Capacitor.Plugins.App.addListener('backButton', () => {
     if($('diaryBg').classList.contains('open')){ flushDiary().finally(diaryLock); return; }
-    for(const id of ['foodGoalBg','foodEntBg','foodBg','payBg','calBg','debtBg','fxBg','moveBg','jarBg','expBg','moneyBg','finCatBg','walletBg','schedBg','weekBg','recBg','goalBg','woPickBg','examBg','vocabBg','workoutBg','resetBg','studyPartBg','tmplEditBg','tmplBg','pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg','newsBg','lockBg','studyBg']){
+    for(const id of ['habitEdBg','habitsBg','langStatBg','sumBg','foodGoalBg','foodEntBg','foodBg','payBg','calBg','debtBg','fxBg','moveBg','jarBg','expBg','moneyBg','finCatBg','walletBg','schedBg','weekBg','recBg','goalBg','woPickBg','examBg','vocabBg','workoutBg','resetBg','studyPartBg','tmplEditBg','tmplBg','pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg','newsBg','lockBg','studyBg']){
       if($(id).classList.contains('open')){ $(id).classList.remove('open'); return; }
     }
     if(path.length){ path.pop(); render(); return; }
@@ -5381,6 +5431,7 @@ async function markStudyBlock(i, minutes){
   const newWords = b.kind === 'new' && minutes >= b.minutes * 0.8 ? await addVocabFromBlock(b).catch(() => 0) : 0;
   b.done = minutes;
   await addStudyMinutes(minutes);
+  if((b.kind === 'new' || b.kind === 'lang') && langKeyOf(b.courseName)) await addLangMinutes(langKeyOf(b.courseName), minutes, 'a');
   await saveStudyToday();
   const after = studyCfg();
   const finished = before.active.filter(id => after.finished.includes(id));
@@ -5412,6 +5463,7 @@ async function undoStudyBlock(i){
     if(s) await repo.removeSet(s.id);
   }
   await addStudyMinutes(-b.done);
+  if((b.kind === 'new' || b.kind === 'lang') && langKeyOf(b.courseName)) await addLangMinutes(langKeyOf(b.courseName), -b.done, 'a');
   b.done = 0;
   delete b.applied;
   await saveStudyToday();
@@ -13123,6 +13175,370 @@ function foodBannerHTML(){
   return '<button class="sp-banner" id="foodBanner">🍽 ' + (s.n ? 'сегодня ' + money(s.kcal) + (g.kcal ? ' из ' + money(g.kcal) : '') + ' ккал · Б ' + s.p + (g.p ? '/' + g.p : '') + ' г' : 'сегодня ещё ничего не записано') + '</button>';
 }
 
+/* =====================================================================
+   ПРИВЫЧКИ · ЯЗЫКИ ПО ГОДОВОМУ ПЛАНУ · ИТОГИ МЕСЯЦА И ГОДА
+   ===================================================================== */
+/* ---------- привычки ---------- */
+const HABIT_PRESETS = [
+  {name: 'Вода', target: 8, unit: 'стаканов', emoji: '💧'}, {name: 'Лечь до 00:30', target: 1, emoji: '😴'},
+  {name: 'Белок по норме', target: 1, emoji: '🥩'}, {name: 'Витамины', target: 1, emoji: '💊'},
+  {name: 'Растяжка 10 мин', target: 1, emoji: '🧘'}, {name: 'Прогулка', target: 1, emoji: '🚶'},
+  {name: 'Чтение 20 мин', target: 1, emoji: '📖'}, {name: 'Без сигарет', target: 1, emoji: '🚭'},
+  {name: 'Без сладкого', target: 1, emoji: '🍬'}, {name: 'Без соцсетей до обеда', target: 1, emoji: '📵'},
+];
+const WD_SHORT = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+const habitOn = (h, d) => !h.days || !h.days.length || h.days.includes(new Date(d + 'T00:00:00').getDay());
+const habitVal = (h, d) => Number(((settings.habitLog || {})[d] || {})[h.id]) || 0;
+const habitDone = (h, d) => habitVal(h, d) >= (h.target || 1);
+const habitsActive = () => (settings.habits || []).filter(h => !h.archived);
+async function saveHabits(){ await repo.setSetting('habits', JSON.stringify(settings.habits || [])); }
+async function saveHabitLog(){ await repo.setSetting('habitLog', JSON.stringify(settings.habitLog || {})); }
+/* серия: сколько запланированных дней подряд выполнено (сегодня не рвёт серию, пока день не кончился) */
+function habitStreak(h){
+  let d = todayISO(), n = 0, guard = 0;
+  if(!habitDone(h, d)) d = addDays(d, -1);
+  while(guard++ < 800){
+    if(h.created && d < h.created) break;
+    if(habitOn(h, d)){ if(habitDone(h, d)) n++; else break; }
+    d = addDays(d, -1);
+  }
+  return n;
+}
+function habitRate(h, from, to){
+  let on = 0, ok = 0;
+  const today = todayISO();
+  for(let d = from; d <= to && d <= today; d = addDays(d, 1)){
+    if(h.created && d < h.created) continue;
+    if(!habitOn(h, d)) continue;
+    if(d === today && !habitDone(h, d)) continue;   // сегодня ещё не вечер
+    on++; if(habitDone(h, d)) ok++;
+  }
+  return {on, ok, pct: on ? Math.round(ok / on * 100) : null};
+}
+function habitsBannerHTML(){
+  const hs = habitsActive().filter(h => habitOn(h, todayISO()));
+  if(!hs.length) return '';
+  const done = hs.filter(h => habitDone(h, todayISO())).length;
+  return '<button class="sp-banner" id="habitBanner">✅ привычки сегодня: ' + done + ' из ' + hs.length + (done === hs.length ? ' — всё 👍' : '') + '</button>';
+}
+let habitsDate = null;
+function openHabits(){ $('serviceBg').classList.remove('open'); habitsDate = todayISO(); renderHabits(); $('habitsBg').classList.add('open'); }
+function renderHabits(){
+  const d = habitsDate, today = todayISO(), hs = habitsActive();
+  $('habitsSub').textContent = d === today ? 'сегодня' : studyDateLabel(d);
+  let h = '<div class="wl-nav"><button data-h="prev">◀</button><b>' + (d === today ? 'Сегодня · ' : '') + studyDateLabel(d) + '</b><button data-h="next"' + (d >= today ? ' disabled' : '') + '>▶</button></div>';
+  if(!hs.length) h += '<div class="sp-note">Привычка — маленькое дело каждый день: вода, сон, витамины, без сигарет. Отмечай галочкой — видно серию и процент за месяц. Начни с 2–3, не больше.</div>';
+  const from30 = addDays(today, -29);
+  for(const x of hs){
+    const on = habitOn(x, d), v = habitVal(x, d), t = x.target || 1, ok = v >= t, st = habitStreak(x), r = habitRate(x, from30, today);
+    let dots = '';
+    for(let i = 29; i >= 0; i--){ const dd = addDays(today, -i); dots += '<i class="' + (!habitOn(x, dd) || (x.created && dd < x.created) ? 'off' : habitDone(x, dd) ? 'ok' : dd === today ? 'td' : 'no') + '"></i>'; }
+    h += '<div class="st-ath hb' + (ok ? ' done' : '') + (on ? '' : ' rest') + '"><div class="hb-row">' +
+      '<button class="hb-tick" data-h="tick" data-id="' + x.id + '"' + (on ? '' : ' disabled') + '>' + (ok ? '✓' : t > 1 ? v : '') + '</button>' +
+      '<div class="hb-main" data-h="edit" data-id="' + x.id + '"><b>' + escHtml((x.emoji ? x.emoji + ' ' : '') + x.name) + '</b><small>' +
+      (on ? (t > 1 ? v + ' из ' + t + ' ' + escHtml(x.unit || '') + ' · ' : '') : 'сегодня не по плану · ') +
+      'серия ' + st + ' дн.' + (r.pct != null ? ' · 30 дней: ' + r.pct + '%' : '') + '</small></div>' +
+      (t > 1 && on ? '<button class="mini" data-h="minus" data-id="' + x.id + '">−</button>' : '') + '</div><div class="hb-dots">' + dots + '</div></div>';
+  }
+  h += '<div class="sp-btns"><button class="go" data-h="add">+ Привычка</button></div>';
+  $('habitsBody').innerHTML = h;
+}
+$('habitsBody').addEventListener('click', async e => {
+  const el = e.target.closest('[data-h]'); if(!el) return;
+  const a = el.dataset.h, id = Number(el.dataset.id), today = todayISO();
+  if(a === 'prev'){ habitsDate = addDays(habitsDate, -1); renderHabits(); }
+  else if(a === 'next'){ if(habitsDate < today){ habitsDate = addDays(habitsDate, 1); renderHabits(); } }
+  else if(a === 'add') openHabitEdit(null);
+  else if(a === 'edit') openHabitEdit(id);
+  else if(a === 'tick' || a === 'minus'){
+    const x = (settings.habits || []).find(y => y.id === id); if(!x) return;
+    const log = settings.habitLog = settings.habitLog || {}, day = log[habitsDate] = log[habitsDate] || {};
+    const t = x.target || 1, v = Number(day[id]) || 0;
+    day[id] = a === 'minus' ? Math.max(0, v - 1) : t === 1 ? (v >= 1 ? 0 : 1) : v + 1;
+    if(!day[id]) delete day[id];
+    await saveHabitLog();
+    renderHabits();
+    if(a === 'tick' && habitDone(x, habitsDate) && v < t){ const st = habitStreak(x); toast('✓ ' + x.name + (st > 1 ? ' · серия ' + st + ' дн.' : '')); }
+  }
+});
+$('habitsClose').onclick = () => { $('habitsBg').classList.remove('open'); render(); };
+let habitEdit = null;
+function openHabitEdit(id){
+  habitEdit = id ? (settings.habits || []).find(h => h.id === id) : null;
+  const h = habitEdit || {target: 1, days: []};
+  $('heTitle').textContent = habitEdit ? 'Привычка' : 'Новая привычка';
+  $('heName').value = h.name || ''; $('heEmoji').value = h.emoji || ''; $('heTarget').value = h.target || 1; $('heUnit').value = h.unit || '';
+  $('heDays').innerHTML = [1, 2, 3, 4, 5, 6, 0].map(w => '<label><input type="checkbox" value="' + w + '"' + (!h.days || !h.days.length || h.days.includes(w) ? ' checked' : '') + '>' + WD_SHORT[w] + '</label>').join('');
+  $('hePresets').innerHTML = habitEdit ? '' : HABIT_PRESETS.filter(p => !habitsActive().some(x => x.name === p.name)).map((p, i) => '<button class="mini" data-p="' + HABIT_PRESETS.indexOf(p) + '">' + p.emoji + ' ' + escHtml(p.name) + '</button>').join('');
+  $('heDel').style.display = habitEdit ? '' : 'none';
+  $('habitEdBg').classList.add('open');
+}
+$('hePresets').addEventListener('click', e => {
+  const b = e.target.closest('[data-p]'); if(!b) return;
+  const p = HABIT_PRESETS[Number(b.dataset.p)];
+  $('heName').value = p.name; $('heEmoji').value = p.emoji; $('heTarget').value = p.target; $('heUnit').value = p.unit || '';
+});
+$('heSave').onclick = async () => {
+  const name = $('heName').value.trim();
+  if(!name){ toast('Напиши привычку'); return; }
+  const days = [...$('heDays').querySelectorAll('input:checked')].map(i => Number(i.value));
+  const hs = settings.habits = settings.habits || [];
+  const h = habitEdit || {id: Date.now(), created: todayISO()};
+  Object.assign(h, {name, emoji: $('heEmoji').value.trim() || null, target: Math.max(1, Math.round(num($('heTarget').value) || 1)),
+                    unit: $('heUnit').value.trim() || null, days: days.length === 7 ? [] : days});
+  if(!habitEdit) hs.push(h);
+  await saveHabits();
+  $('habitEdBg').classList.remove('open');
+  renderHabits();
+};
+$('heDel').onclick = async () => {
+  if(!habitEdit || !confirm('Убрать привычку? История останется в итогах.')) return;
+  habitEdit.archived = todayISO(); await saveHabits();
+  $('habitEdBg').classList.remove('open'); renderHabits();
+};
+$('heCancel').onclick = () => $('habitEdBg').classList.remove('open');
+$('openHabits').onclick = openHabits;
+
+/* ---------- языки: часы против годового плана ---------- */
+const LANGS = [['EN', 'Английский', /английск/i], ['AR', 'Арабский', /арабск/i], ['ES', 'Испанский', /испанск/i]];
+const langKeyOf = name => (LANGS.find(l => l[2].test(String(name || ''))) || [null])[0];
+/* минуты в день по месяцам плана (вариант Б); А = ×0,65, В = ×1,35 — как в документе «План языков на год» */
+const LANG_PLAN_B = {EN: [30, 45, 60, 65, 65, 65, 70, 70, 70, 75, 75, 75], AR: [0, 15, 25, 35, 35, 35, 40, 40, 40, 45, 45, 45]};
+const LANG_VARIANTS = {A: ['А · Минимум', 0.65], B: ['Б · Рабочий', 1], C: ['В · Интенсив', 1.35]};
+function langPlan(){ return Object.assign({variant: 'B', start: '2026-10-01'}, settings.langPlan || {}); }
+function planMinOn(lang, d){
+  const p = langPlan(), arr = LANG_PLAN_B[lang];
+  if(!arr || d < p.start) return 0;
+  const [y0, m0] = p.start.split('-').map(Number), [y, m] = d.split('-').map(Number);
+  const k = (y - y0) * 12 + (m - m0);
+  if(k < 0 || k > 11) return 0;
+  return arr[k] * LANG_VARIANTS[p.variant][1];
+}
+const planEnd = () => addDays(addMonthsISO(langPlan().start, 12), -1);
+async function addLangMinutes(lang, min, kind, date){
+  if(!lang || !min) return;
+  const d = date || todayISO(), hist = settings.langHist = settings.langHist || {};
+  const day = hist[d] = hist[d] || {}, r = day[lang] = day[lang] || {a: 0, p: 0};
+  r[kind === 'p' ? 'p' : 'a'] = Math.max(0, Math.round(((r[kind === 'p' ? 'p' : 'a'] || 0) + min) * 10) / 10);
+  await repo.setSetting('langHist', JSON.stringify(hist));
+}
+function langDone(lang, from, to){
+  let a = 0, p = 0;
+  for(const [d, day] of Object.entries(settings.langHist || {})) if(d >= from && d <= to && day[lang]){ a += day[lang].a || 0; p += day[lang].p || 0; }
+  return {a, p, t: a + p};
+}
+function langForecast(lang){
+  const p = langPlan(), today = todayISO(), end = planEnd();
+  let planYear = 0, planToDate = 0;
+  for(let d = p.start; d <= end; d = addDays(d, 1)){ const m = planMinOn(lang, d); planYear += m; if(d <= today) planToDate += m; }
+  const done = langDone(lang, p.start, today);
+  const started = today >= p.start;
+  const daysGone = started ? Math.round((new Date(today) - new Date(p.start)) / 864e5) + 1 : 0;
+  const win = Math.min(30, daysGone), recent = win ? langDone(lang, addDays(today, -win + 1), today).t / win : 0;
+  const daysLeft = started ? Math.max(0, Math.round((new Date(end) - new Date(today)) / 864e5)) : Math.round((new Date(end) - new Date(p.start)) / 864e5) + 1;
+  /* прогноз: сделанное + твой темп последних 30 дней, но не меньше, чем если держать сегодняшнюю норму плана */
+  const forecast = done.t + recent * daysLeft;
+  return {planYear, planToDate, done, recent, daysLeft, forecast, pct: planToDate ? Math.round(done.t / planToDate * 100) : null, todayPlan: planMinOn(lang, today)};
+}
+const hh = m => (m / 60).toFixed(m >= 600 ? 0 : 1).replace('.', ',') + ' ч';
+function langBannerHTML(){
+  const p = langPlan(), today = todayISO();
+  if(today < p.start || today > planEnd()) return '';
+  const parts = LANGS.filter(l => planMinOn(l[0], today) > 0).map(l => {
+    const d = langDone(l[0], today, today).t, need = planMinOn(l[0], today);
+    return l[1].slice(0, 3).toLowerCase() + '. ' + Math.round(d) + '/' + Math.round(need) + ' мин';
+  });
+  return parts.length ? '<button class="sp-banner" id="langBanner">🗣 языки сегодня: ' + parts.join(' · ') + '</button>' : '';
+}
+function openLangStat(){ $('serviceBg').classList.remove('open'); renderLangStat(); $('langStatBg').classList.add('open'); }
+function renderLangStat(){
+  const p = langPlan(), today = todayISO();
+  $('langStatSub').textContent = 'план ' + LANG_VARIANTS[p.variant][0] + ' · ' + p.start.split('-').reverse().join('.') + ' — ' + planEnd().split('-').reverse().join('.');
+  let h = '<div class="fd-tabs">' + Object.entries(LANG_VARIANTS).map(([k, v]) => '<button data-l="var" data-v="' + k + '"' + (p.variant === k ? ' class="on"' : '') + '>' + v[0] + '</button>').join('') + '</div>';
+  if(today < p.start) h += '<div class="sp-note">План стартует ' + studyDateLabel(p.start) + '. Время, записанное до старта, в план не идёт.</div>';
+  for(const [k, name] of LANGS){
+    const f = langForecast(k);
+    if(!f.planYear && !f.done.t) continue;
+    const ok = f.pct == null || f.pct >= 90, fcOk = f.forecast >= f.planYear * 0.9;
+    if(!f.planToDate && !f.done.t){   // язык по плану ещё не начался
+      let d0 = langPlan().start; while(d0 <= planEnd() && !planMinOn(k, d0)) d0 = addDays(d0, 1);
+      h += '<div class="st-ath"><div class="st-ath-h"><b>' + name + '</b><span class="st-ath-p">' + hh(f.planYear) + ' за год</span></div><div class="st-ath-l">По плану начинается ' + studyDateLabel(d0) + ' — с ' + Math.round(planMinOn(k, d0)) + ' мин в день. Можно начать и раньше: время запишется.</div>' +
+        '<div class="sp-btns"><button data-l="add" data-lang="' + k + '" data-k="a" data-m="15">+15 активно</button></div></div>';
+      continue;
+    }
+    const bar = f.planYear ? Math.min(100, Math.round(f.done.t / f.planYear * 100)) : 0;
+    h += '<div class="st-ath"><div class="st-ath-h"><b>' + name + '</b><span class="st-ath-p">' + hh(f.done.t) + ' из ' + hh(f.planYear) + '</span></div>' +
+      '<span class="pl-bar"><i style="width:' + bar + '%"></i></span>' +
+      '<div class="st-ath-l">Активно ' + hh(f.done.a) + ' · фон ' + hh(f.done.p) + '</div>' +
+      (f.planToDate ? '<div class="st-ath-l ' + (ok ? 'ok' : 'far') + '">По плану на сегодня нужно ' + hh(f.planToDate) + ' — у тебя ' + (f.pct || 0) + '%' + (ok ? '' : ' · отставание ' + hh(f.planToDate - f.done.t)) + '</div>' : '') +
+      (f.todayPlan ? '<div class="st-ath-l">Норма в этом месяце: ' + Math.round(f.todayPlan) + ' мин в день · сегодня сделано ' + Math.round(langDone(k, today, today).t) + '</div>' : '') +
+      '<div class="st-ath-l ' + (fcOk ? 'ok' : 'far') + '">Прогноз на ' + planEnd().split('-').reverse().join('.') + ': <b>≈ ' + hh(f.forecast) + '</b>' + (f.planYear ? ' (' + Math.round(f.forecast / f.planYear * 100) + '% годового плана)' : '') +
+      (f.recent ? ' · твой темп ' + Math.round(f.recent) + ' мин/день' : '') + '</div>' +
+      (!fcOk && f.daysLeft ? '<div class="st-ath-l">Чтобы выйти на план, нужно ' + Math.ceil((f.planYear - f.done.t) / f.daysLeft) + ' мин в день до конца года</div>' : '') +
+      '<div class="sp-btns"><button data-l="add" data-lang="' + k + '" data-k="p" data-m="15">+15 мин фон</button><button data-l="add" data-lang="' + k + '" data-k="p" data-m="45">+45 фон (серия)</button><button data-l="add" data-lang="' + k + '" data-k="a" data-m="15">+15 активно</button></div></div>';
+  }
+  /* по месяцам */
+  const months = []; for(let i = 0; i < 12; i++) months.push(addMonthsISO(p.start, i).slice(0, 7));
+  const rows = months.filter(ym => ym <= today.slice(0, 7)).map(ym => {
+    const [y, m] = ym.split('-').map(Number), last = ym + '-' + String(new Date(y, m, 0).getDate()).padStart(2, '0');
+    let plan = 0; for(let d = ym + '-01'; d <= last; d = addDays(d, 1)) plan += planMinOn('EN', d) + planMinOn('AR', d);
+    const done = langDone('EN', ym + '-01', last).t + langDone('AR', ym + '-01', last).t;
+    return '<div class="wk-row"><span>' + ymLabel(ym) + '</span><b class="' + (done >= plan * 0.9 ? 'ok' : 'far') + '">' + hh(done) + '</b><span class="where">план ' + hh(plan) + '</span></div>';
+  });
+  if(rows.length) h += '<h3>По месяцам (английский + арабский)</h3><div class="st-ath">' + rows.reverse().join('') + '</div>';
+  h += '<div class="sp-note">Уроки языков из плана занятий и «Языковая практика» записываются сюда сами (активно). Фон — подкасты, сериалы, видео на языке — добавляй кнопками. Начало плана можно сдвинуть: <button class="mini" data-l="start">изменить дату старта</button></div>';
+  $('langStatBody').innerHTML = h;
+}
+$('langStatBody').addEventListener('click', async e => {
+  const el = e.target.closest('[data-l]'); if(!el) return;
+  const a = el.dataset.l;
+  if(a === 'var'){ settings.langPlan = Object.assign(langPlan(), {variant: el.dataset.v}); await repo.setSetting('langPlan', JSON.stringify(settings.langPlan)); renderLangStat(); }
+  else if(a === 'add'){ const m = Number(el.dataset.m); await addLangMinutes(el.dataset.lang, m, el.dataset.k); toast('+' + m + ' мин · ' + (el.dataset.k === 'p' ? 'фон' : 'активно')); renderLangStat(); }
+  else if(a === 'start'){
+    const v = prompt('Дата старта годового плана (ДД.ММ.ГГГГ)', langPlan().start.split('-').reverse().join('.'));
+    const m = v && v.trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+    if(m){ settings.langPlan = Object.assign(langPlan(), {start: m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0')}); await repo.setSetting('langPlan', JSON.stringify(settings.langPlan)); renderLangStat(); }
+  }
+});
+$('langStatClose').onclick = () => { $('langStatBg').classList.remove('open'); render(); };
+$('openLangStat').onclick = openLangStat;
+
+/* ---------- итоги месяца и года ---------- */
+let sumMode = 'month', sumAnchor = null;
+function periodRange(mode, anchor){
+  if(mode === 'year'){ const y = anchor.slice(0, 4); return [y + '-01-01', y + '-12-31', y + ' год']; }
+  const ym = anchor.slice(0, 7), [y, m] = ym.split('-').map(Number);
+  return [ym + '-01', ym + '-' + String(new Date(y, m, 0).getDate()).padStart(2, '0'), ymLabel(ym)];
+}
+function periodStats(from, to){
+  const today = todayISO(), last = to < today ? to : today;
+  const out = {};
+  /* учёба */
+  let sm = 0, sd = 0; for(const [d, v] of Object.entries(settings.studyHist || {})) if(d >= from && d <= last && v > 0){ sm += v; sd++; }
+  out.study = {min: sm, days: sd};
+  /* языки */
+  out.lang = LANGS.map(([k, n]) => [n, langDone(k, from, last)]).filter(x => x[1].t > 0);
+  /* тренировки */
+  const log = (settings.workoutLog || []).filter(r => r.date >= from && r.date <= last);
+  const byAth = {}; for(const r of log) byAth[r.athlete] = (byAth[r.athlete] || 0) + 1;
+  const plan = log.filter(r => r.kind !== 'extra');
+  /* рекорды: упражнения, где максимум за период выше, чем всё, что было до */
+  const before = {}, inP = {};
+  for(const r of (settings.workoutLog || [])) for(const e of (r.ex || [])){
+    const mx = Math.max(0, ...(e.vals || []).map(Number)); if(!mx) continue;
+    const k = r.athlete + '|' + e.name;
+    if(r.date < from) before[k] = Math.max(before[k] || 0, mx); else if(r.date <= last) inP[k] = Math.max(inP[k] || 0, mx);
+  }
+  const recs = Object.entries(inP).filter(([k, v]) => before[k] != null && v > before[k]).map(([k, v]) => [k.split('|')[1], before[k], v]);
+  out.train = {n: log.length, extra: log.length - plan.length, norm: plan.length ? Math.round(plan.reduce((x, r) => x + r.pct, 0) / plan.length) : null, byAth, recs,
+               missed: (typeof trainMissedList === 'function' ? (trainMissedList(from) || []).filter(x => (x.date || x) <= last).length : 0)};
+  /* деньги */
+  const f = settings.fin || {}, kz = (v, c) => !c || c === 'KZT' ? v : (toKZT(v, c) || 0);
+  let income = 0;
+  for(const [ym, p] of Object.entries(f.periods || {})) if(p.salary && p.salary.date >= from && p.salary.date <= last) income += p.salary.amount;
+  if(typeof shiftCat === 'function' && shiftCat()){ const cat = shiftCat(); for(const n of index.all) if(n.entry_kind === 'advance' && n.op_date >= from && n.op_date <= last && isUnder(n, cat.id)) income += Number(n.amount) || 0; }
+  for(const p of Object.values(f.periods || {})) for(const a of (p.advances || [])) if(a.date >= from && a.date <= last) income += a.amount;
+  for(const x of (f.side || [])) if(!x.fromJar && !x.fromFx && !x.fromDebt && x.date >= from && x.date <= last) income += x.amount;
+  const ops = (f.ops || []).filter(o => o.date >= from && o.date <= last && !o.unaccounted);
+  const spent = ops.reduce((x, o) => x + kz(o.amount, o.cur), 0);
+  const byCat = {}; for(const o of ops){ const r = finRootOf(o.catId); const k = r ? r.name : 'Другое'; byCat[k] = (byCat[k] || 0) + kz(o.amount, o.cur); }
+  const saved = (f.moves || []).filter(m => m.amount > 0 && m.date >= from && m.date <= last).reduce((x, m) => { const j = (f.jars || []).find(y => y.id === m.jarId); return x + kz(m.amount, j && j.cur); }, 0);
+  const debtsClosed = (f.debts || []).map(debtInfo).filter(d => d.closed && d.pays && d.pays.length && d.pays[d.pays.length - 1].date >= from && d.pays[d.pays.length - 1].date <= last).length;
+  out.money = {income, spent, saved, top: Object.entries(byCat).sort((a, b) => b[1] - a[1]).slice(0, 4), debtsClosed};
+  /* питание */
+  const food = (f.food || []).filter(e => e.date >= from && e.date <= last);
+  const fdays = new Set(food.map(e => e.date)).size, fs = foodSum(food);
+  out.food = {days: fdays, kcal: fdays ? Math.round(fs.kcal / fdays) : 0, p: fdays ? Math.round(fs.p / fdays) : 0, money: fs.money};
+  /* привычки */
+  out.habits = (settings.habits || []).map(h => [h, habitRate(h, from, last)]).filter(x => x[1].on > 0);
+  /* словарь, экзамены */
+  let words = 0; for(const [d, v] of Object.entries(settings.vocabHist || {})) if(d >= from && d <= last) words += Number(v) || 0;
+  out.words = words; out.exams = (settings.examLog || []).filter(r => r.date >= from && r.date <= last).length;
+  return out;
+}
+function summaryHTML(mode, anchor, compact){
+  const [from, to, label] = periodRange(mode, anchor), s = periodStats(from, to);
+  const [pf, pt] = mode === 'year' ? periodRange('year', String(Number(anchor.slice(0, 4)) - 1) + '-01-01') : periodRange('month', addMonthsISO(anchor.slice(0, 7) + '-01', -1));
+  const p = periodStats(pf, pt);
+  const arrow = (a, b, inv) => !b || a === b ? '' : (a > b) !== !!inv ? ' <span class="ok">' + (a > b ? '▲' : '▼') + '</span>' : ' <span class="far">' + (a > b ? '▲' : '▼') + '</span>';
+  const row = (l, a, b, fm, inv) => '<div class="wk-row"><span>' + l + '</span><b>' + fm(a) + arrow(a, b, inv) + '</b><span class="where">' + (b ? fm(b) : '—') + '</span></div>';
+  let h = '<div class="st-ath"><div class="wk-row hd"><span>' + label + '</span><b>' + (mode === 'year' ? 'год' : 'месяц') + '</b><span class="where">' + (mode === 'year' ? 'прошлый' : 'прошлый') + '</span></div>';
+  h += row('Учёба', s.study.min, p.study.min, hh) + row('Дней с учёбой', s.study.days, p.study.days, String);
+  for(const [n, d] of s.lang) h += row(n + ' (актив + фон)', d.t, (p.lang.find(x => x[0] === n) || [0, {t: 0}])[1].t, hh);
+  h += row('Тренировки', s.train.n, p.train.n, String);
+  if(s.train.norm != null) h += row('Средняя норма', s.train.norm, p.train.norm, v => (v || 0) + '%');
+  if(s.words || p.words) h += row('Слов повторено', s.words, p.words, v => money(v));
+  h += row('Потрачено', Math.round(s.money.spent), Math.round(p.money.spent), v => money(v) + ' ₸', true);
+  if(s.money.income || p.money.income) h += row('Получено денег', s.money.income, p.money.income, v => money(v) + ' ₸');
+  if(s.money.saved || p.money.saved) h += row('Отложено в копилки', Math.round(s.money.saved), Math.round(p.money.saved), v => money(v) + ' ₸');
+  if(s.food.days) h += row('Питание: ккал в день', s.food.kcal, p.food.kcal, v => money(v));
+  h += '</div>';
+  if(compact) return h;
+  /* подробности */
+  const ath = Object.entries(s.train.byAth);
+  if(ath.length || s.train.recs.length) h += '<h3>Тренировки</h3><div class="st-ath">' + (ath.length ? '<div class="st-ath-l">' + ath.map(([a, n]) => escHtml(a) + ': ' + n).join(' · ') + (s.train.extra ? ' · дополнительных ' + s.train.extra : '') + '</div>' : '') +
+    (s.train.recs.length ? '<div class="st-ath-l ok">🏆 Рекорды: ' + s.train.recs.slice(0, 8).map(([n, a, b]) => escHtml(n) + ' ' + fmt(a) + ' → ' + fmt(b)).join('; ') + (s.train.recs.length > 8 ? ' и ещё ' + (s.train.recs.length - 8) : '') + '</div>' : '') + '</div>';
+  if(s.money.top.length || s.money.debtsClosed) h += '<h3>Деньги</h3><div class="st-ath">' + s.money.top.map(([k, v]) => '<div class="wl-cat"><span>' + escHtml(k) + '</span><span class="pl-bar"><i style="width:' + Math.round(v / s.money.top[0][1] * 100) + '%"></i></span><b>' + money(v) + '</b></div>').join('') +
+    (s.money.income ? '<div class="st-ath-l">Получено ' + money(s.money.income) + ' ₸ · потрачено ' + money(Math.round(s.money.spent)) + ' ₸ · ' + (s.money.income >= s.money.spent ? '<span class="ok">в плюсе ' + money(Math.round(s.money.income - s.money.spent)) + '</span>' : '<span class="far">в минусе ' + money(Math.round(s.money.spent - s.money.income)) + '</span>') + '</div>' : '') +
+    (s.money.debtsClosed ? '<div class="st-ath-l">Закрыто долгов: ' + s.money.debtsClosed + '</div>' : '') + '</div>';
+  if(s.food.days) h += '<h3>Питание</h3><div class="st-ath"><div class="st-ath-l">Дней с записями: ' + s.food.days + ' · в среднем ' + money(s.food.kcal) + ' ккал и ' + s.food.p + ' г белка в день · на еду ' + money(s.food.money) + ' ₸</div></div>';
+  if(s.habits.length){
+    const avg = Math.round(s.habits.reduce((x, [, r]) => x + (r.pct || 0), 0) / s.habits.length);
+    h += '<h3>Привычки · ' + avg + '%</h3><div class="st-ath">' + s.habits.sort((a, b) => (b[1].pct || 0) - (a[1].pct || 0)).map(([hb, r]) => '<div class="wl-cat"><span>' + escHtml((hb.emoji ? hb.emoji + ' ' : '') + hb.name) + '</span><span class="pl-bar"><i style="width:' + (r.pct || 0) + '%"></i></span><b>' + r.pct + '%</b></div>').join('') + '</div>';
+  }
+  if(mode === 'year'){
+    /* по месяцам: учёба и расходы */
+    const y = anchor.slice(0, 4), ms = [];
+    for(let m = 1; m <= 12; m++){ const ym = y + '-' + String(m).padStart(2, '0'); if(ym > todayISO().slice(0, 7)) break; const [a, b] = periodRange('month', ym + '-01'); const st = periodStats(a, b); ms.push([ym, st.study.min, st.money.spent, st.train.n]); }
+    if(ms.length){
+      const mxS = Math.max(1, ...ms.map(x => x[1])), mxM = Math.max(1, ...ms.map(x => x[2]));
+      h += '<h3>По месяцам</h3><div class="st-ath">' + ms.map(([ym, st, sp, tr]) => '<div class="sm-mrow"><span>' + MONTHS[Number(ym.slice(5)) - 1].slice(0, 3) + '</span>' +
+        '<span class="pl-bar" title="учёба"><i style="width:' + Math.round(st / mxS * 100) + '%"></i></span><small>' + hh(st) + ' · ' + tr + ' трен.</small>' +
+        '<span class="pl-bar sm-money"><i style="width:' + Math.round(sp / mxM * 100) + '%"></i></span><small>' + money(Math.round(sp)) + ' ₸</small></div>').join('') + '</div>';
+    }
+  }
+  const good = [], bad = [];
+  if(s.study.min > p.study.min && p.study.min) good.push('учёбы больше'); else if(p.study.min && s.study.min < p.study.min) bad.push('учёбы меньше');
+  if(s.train.n > p.train.n && p.train.n) good.push('тренировок больше'); else if(p.train.n && s.train.n < p.train.n) bad.push('тренировок меньше');
+  if(s.train.recs.length) good.push('рекордов: ' + s.train.recs.length);
+  if(p.money.spent && s.money.spent < p.money.spent * 0.95) good.push('тратил меньше'); else if(p.money.spent && s.money.spent > p.money.spent * 1.1) bad.push('расходы выросли');
+  if(good.length || bad.length) h += '<div class="st-ath">' + (good.length ? '<div class="st-ath-l ok">Хорошо: ' + good.join(', ') + '.</div>' : '') + (bad.length ? '<div class="st-ath-l far">Подтянуть: ' + bad.join(', ') + '.</div>' : '') + '</div>';
+  return h;
+}
+function openSummary(mode, anchor){
+  $('serviceBg').classList.remove('open');
+  sumMode = mode || sumMode; sumAnchor = anchor || sumAnchor || todayISO();
+  renderSummary(); $('sumBg').classList.add('open');
+}
+function renderSummary(){
+  const [, , label] = periodRange(sumMode, sumAnchor);
+  $('sumSub').textContent = label;
+  $('sumBody').innerHTML = '<div class="fd-tabs" style="grid-template-columns:1fr 1fr"><button data-s="mode" data-v="month"' + (sumMode === 'month' ? ' class="on"' : '') + '>Месяц</button><button data-s="mode" data-v="year"' + (sumMode === 'year' ? ' class="on"' : '') + '>Год</button></div>' +
+    '<div class="wl-nav"><button data-s="prev">◀</button><b>' + label + '</b><button data-s="next">▶</button></div>' + summaryHTML(sumMode, sumAnchor);
+}
+$('sumBody').addEventListener('click', e => {
+  const el = e.target.closest('[data-s]'); if(!el) return;
+  const a = el.dataset.s;
+  if(a === 'mode') sumMode = el.dataset.v;
+  else if(a === 'prev' || a === 'next'){ const k = a === 'prev' ? -1 : 1; sumAnchor = sumMode === 'year' ? String(Number(sumAnchor.slice(0, 4)) + k) + '-01-01' : addMonthsISO(sumAnchor.slice(0, 7) + '-01', k); }
+  renderSummary();
+});
+$('sumClose').onclick = () => $('sumBg').classList.remove('open');
+$('openSummary').onclick = () => openSummary('month', todayISO());
+/* 1-го числа — итоги прошлого месяца (один раз), 1 января — итоги года */
+async function maybeShowMonthSummary(){
+  const ym = todayISO().slice(0, 7);
+  if(settings.monthShown === ym) return false;
+  const first = !settings.monthShown;
+  settings.monthShown = ym; await repo.setSetting('monthShown', ym);
+  if(first) return false;   // первый запуск функции — ничего не показываем задним числом
+  const prev = addMonthsISO(ym + '-01', -1), [a, b] = periodRange('month', prev), s = periodStats(a, b);
+  if(!s.study.min && !s.train.n && !s.money.spent) return false;
+  openSummary(ym.slice(5) === '01' ? 'year' : 'month', ym.slice(5) === '01' ? prev : prev);
+  toast(ym.slice(5) === '01' ? 'Итоги года 🎉' : 'Итоги ' + MONTHS[Number(prev.slice(5, 7)) - 1]);
+  return true;
+}
+
 /* строка на главном экране */
 function walletBannerHTML(){
   if(!settings.fin && !shiftCat()) return '';
@@ -13163,7 +13579,7 @@ function walletBannerHTML(){
     syncRemindUI();
     renderBackupUI();
     setTimeout(() => scheduleReminders().catch(() => {}), 1500);
-    setTimeout(() => maybeShowWeekSummary().catch(() => {}), 2600);
+    setTimeout(() => maybeShowWeekSummary().then(shown => shown ? false : maybeShowMonthSummary()).catch(() => {}), 2600);
     setTimeout(() => autoBackup().catch(() => {}), 5000);
     setTimeout(() => { if(settings.fin) refreshMarket(false).catch(() => {}); }, 6000);
     upgradeLessonCourses().catch(() => 0).then(a => migrateHonestHours().then(b => { if(a || b) render(); })).catch(() => {});
