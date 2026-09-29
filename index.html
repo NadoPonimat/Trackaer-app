@@ -525,7 +525,8 @@
   .wo-rec{font-size:11px;color:var(--muted);margin-bottom:4px}
   .wo-hint{font-size:12px;color:var(--income);margin:4px 0}
   .rd-lang{white-space:normal}
-  .rd-line{white-space:pre-wrap;min-height:1em}
+  .rd-line{white-space:pre-wrap;min-height:1em;unicode-bidi:plaintext}
+  .rd-line .ar{font-size:1.35em;line-height:1.9;unicode-bidi:isolate}
   .rd-say{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;margin:0 6px 0 0;padding:0;border-radius:50%;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:11px;vertical-align:middle;cursor:pointer;flex:none}
   .rd-chips{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 6px}
   .rd-chips button{font-size:12px;padding:3px 8px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--text)}
@@ -2334,7 +2335,7 @@
       <button id="openReset">Сбросить настройки…</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 106 — стойка на руках у стены заменена отжиманиями с ногами на возвышении (норма в повторах); тихий режим тренировки (без скакалки, берпи и прыжков); дневник питания (блюда с КБЖУ, цена → расход, статистика день/неделя/месяц); кошелёк: долги с графиком платежей и рассрочкой, календарь выплат (мне должны / я должен, сроки, валюта, напоминания), конвертер любых валют; курсы валют Нацбанка РК онлайн + калькулятор; валюты (обмен ₸↔₽/$/€…, копилки в валюте), копилки (откладывай из зарплаты, аванса или подработки), доход с подработок; остаток аванса плюсуется к зарплате, стартовые деньги (сверка); зарплата по графику, аванс, получение зарплаты, расходы по категориям и продуктам, КБЖУ для еды; график смен из Excel; резервная копия; рекорды</div>
+    <div class="hint sv-version" id="version">Версия 107 — курс арабского (ступень 1, с нуля: 48 уроков по 2 части, озвучка ▶ и словарь); стойка на руках у стены заменена отжиманиями с ногами на возвышении (норма в повторах); тихий режим тренировки (без скакалки, берпи и прыжков); дневник питания (блюда с КБЖУ, цена → расход, статистика день/неделя/месяц); кошелёк: долги с графиком платежей и рассрочкой, календарь выплат (мне должны / я должен, сроки, валюта, напоминания), конвертер любых валют; курсы валют Нацбанка РК онлайн + калькулятор; валюты (обмен ₸↔₽/$/€…, копилки в валюте), копилки (откладывай из зарплаты, аванса или подработки), доход с подработок; остаток аванса плюсуется к зарплате, стартовые деньги (сверка); зарплата по графику, аванс, получение зарплаты, расходы по категориям и продуктам, КБЖУ для еды; график смен из Excel; резервная копия; рекорды</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -10113,6 +10114,7 @@ const LESSON_COURSES = [
   ['Ориентирование на местности', () => NAVIGATION_COURSE, 'NAVIGATION_THEORY', 'fillNavigationTheory', 'Ориентирование на местности: залить теорию', 'Курс: ориентирование на местности'],
   ['Слежка и контрнаблюдение', () => SURVEILLANCE_COURSE, 'SURVEILLANCE_THEORY', 'fillSurveillanceTheory', 'Слежка и контрнаблюдение: залить теорию', 'Курс: слежка и контрнаблюдение'],
   ['Английский язык', () => ENG_COURSE, 'ENG_THEORY', 'fillEngTheory', 'Английский: залить теорию', 'Курс: английский', true],
+  ['Арабский язык', () => ARA_COURSE, 'ARA_THEORY', 'fillAraTheory', 'Арабский: залить теорию', 'Курс: арабский', true],
 ];
 function lessonSig(course, th){
   let chars = 0, hrs = 0;
@@ -10623,7 +10625,13 @@ async function speakText(text, lang){
 }
 /* что в строке урока можно озвучить */
 const hasCyr = s => /[А-Яа-яЁё]/.test(s);
+const AR_RUN = /[\u0600-\u06FF\u0750-\u077F\uFE70-\uFEFF][\u0600-\u06FF\u0750-\u077F\uFE70-\uFEFF\s\u200c]*/g;
 function speakableOf(line, lang){
+  if(lang === 'ar-SA'){   // озвучиваем только арабские буквы; транскрипция в скобках и русский текст — нет
+    const side = line.includes('→') ? line.split('→').pop() : line;
+    const runs = (side.match(AR_RUN) || []).map(x => x.trim()).filter(Boolean);
+    return runs.length ? runs.join(' ... ') : null;
+  }
   const latin = lang === 'ar-SA' ? /[؀-ۿ]/ : /[A-Za-zÁÉÍÓÚÑÜáéíóúñü¿¡]/;
   if(line.includes('→')){
     const right = line.split('→').pop().trim().replace(/^[•\-\s]+/, '');
@@ -10637,8 +10645,18 @@ function speakableOf(line, lang){
   return plain.replace(/^[\s•\-\d.]+/, '');
 }
 /* слова вида «word [IPA] — перевод» */
+const AR_VOCAB = /(?:^|[;:\n•]\s*)([\u0600-\u06FF\u0750-\u077F][\u0600-\u06FF\u0750-\u077F \u200c]{0,40}?)\s*\[([^\]\n]{1,40})\]\s*[—–-]\s*([^;\n]{1,70})/g;
 function parseVocab(text){
   const out = [], seen = new Set();
+  if(/[\u0600-\u06FF]/.test(String(text || ''))){
+    let m; AR_VOCAB.lastIndex = 0;
+    while((m = AR_VOCAB.exec(String(text || '')))){
+      const en = m[1].trim(), ipa = m[2].trim(), ru = m[3].trim().replace(/[.。]+$/, '');
+      if(!hasCyr(ru) || seen.has(en)) continue;
+      seen.add(en); out.push({en, ipa, ru});
+    }
+    return out;
+  }
   const re = /(?:^|[;:\n•]\s*)([A-Za-zÁÉÍÓÚÑÜáéíóúñü¿¡][A-Za-zÁÉÍÓÚÑÜáéíóúñü' \-]{0,40}?)\s*\[([^\]\n]{1,40})\]\s*[—–-]\s*([^;\n]{1,70})/g;
   let m;
   while((m = re.exec(String(text || '')))){
@@ -10659,7 +10677,9 @@ function enhanceLangReader(body, text, node, lang){
   for(const line of text.split('\n')){
     const row = document.createElement('div');
     row.className = 'rd-line';
-    row.textContent = line || ' ';
+    if(lang === 'ar-SA' && /[\u0600-\u06FF]/.test(line))   // арабские слова крупнее, чтобы читались огласовки
+      row.innerHTML = escHtml(line).replace(AR_RUN, m => '<span class="ar" dir="rtl">' + m + '</span>');
+    else row.textContent = line || ' ';
     const sp = line.length < 400 ? speakableOf(line, lang) : null;
     if(sp){
       const b = document.createElement('button');
