@@ -348,7 +348,8 @@
   #vocabBg,#examBg,#diaryBg,#workoutBg,#recBg{z-index:26}
   #weekBg,#schedBg,#moneyBg,#expBg,#jarBg,#moveBg,#fxBg,#debtBg,#payBg,#calBg{z-index:30}
   #walletBg,#foodBg,#habitsBg,#langStatBg,#sumBg,#pbBg{z-index:26}
-  #pbSitBg,#pbLineBg{z-index:30}
+  #pbSitBg,#pbLineBg,#songBg{z-index:30}
+  #grBg{z-index:31}
   #habitEdBg{z-index:30}
   #foodEntBg,#foodGoalBg,#hrEdBg,#hrFinBg{z-index:30}
   #finCatBg{z-index:27}
@@ -473,6 +474,14 @@
   .wo-quiet .mini.on{background:var(--accent);border-color:var(--accent);color:#fff}
   .wo-ex.quiet h4 small{display:block;font-size:11px;font-weight:400;color:var(--muted);margin-top:2px}
   .pb-sit{cursor:pointer}
+  .pb-line .pb-gr,.pb-train .pb-gr{font:inherit;font-size:11px;font-weight:700;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);padding:2px 6px}
+  .pb-line .pb-gr{position:absolute;right:6px;bottom:4px} .pb-line .rd-say{top:12px;transform:none}
+  .gr-en{font-size:19px;font-weight:700;margin-bottom:4px} .gr-ru{color:var(--muted);margin-bottom:8px}
+  .gr-sec{border-top:1px solid var(--line);padding:8px 0} .gr-sec>b{display:block;margin-bottom:4px;color:var(--accent)}
+  .gr-ex{font-size:12px;color:var(--muted);margin-bottom:4px} .gr-row{font-size:13px;line-height:1.5;margin:3px 0} .gr-row small{color:var(--muted)}
+  .sg-line{padding:8px 10px;margin:4px 0;border-radius:10px;border:1px solid var(--line);cursor:pointer} .sg-line.ok{border-color:#4caf5088}
+  .sg-en{font-size:16px} .sg-ru{font-size:13px;color:var(--muted);margin-top:2px}
+  .sg-btns{display:flex;gap:6px;justify-content:flex-end;margin-top:4px} .sg-gap{height:12px}
   .pb-line{position:relative;max-width:86%;margin:8px 0;padding:8px 42px 8px 12px;border-radius:14px;border:1px solid var(--line);background:var(--surface);cursor:pointer}
   .pb-line.me{margin-left:auto;border-color:var(--accent)} .pb-line.them{margin-right:auto}
   .pb-line.playing{box-shadow:0 0 0 2px var(--accent)}
@@ -1682,9 +1691,28 @@
     <div class="field"><label for="plWho">Кто говорит</label><select id="plWho"></select></div>
     <div class="field"><label for="plRu">По-русски</label><textarea id="plRu" rows="2" placeholder="Здравствуйте, какой абонемент вас интересует?"></textarea></div>
     <div class="field"><label for="plTr">По-английски</label><textarea id="plTr" rows="2"></textarea></div>
-    <div class="sp-btns"><button id="plTrBtn">Перевести</button><button id="plSay">▶ Послушать</button></div>
+    <div class="sp-btns"><button id="plTrBtn">Перевести</button><button id="plSay">▶ Послушать</button><button id="plGram">Разбор</button></div>
     <div class="hint" id="plHint"></div>
     <div class="actions"><button id="plCancel">Отмена</button><button id="plDel">Удалить</button><button id="plSave" class="primary">Сохранить</button></div>
+  </div>
+</div>
+<div class="sheet-bg" id="grBg">
+  <div class="sheet">
+    <div class="gr-en" id="grEn"></div>
+    <div class="gr-ru" id="grRu"></div>
+    <div class="sp-btns"><button id="grSay">▶ Послушать</button><button id="grVocab">В словарь</button></div>
+    <div class="exp-body" id="grBody"></div>
+    <div class="actions"><button id="grClose" class="primary">Понятно</button></div>
+  </div>
+</div>
+<div class="sheet-bg" id="songBg">
+  <div class="sheet">
+    <h2>Песня</h2>
+    <div class="exp-body">
+      <div class="ex-grid"><label>Название<input id="sgTitle"></label><label>Исполнитель<input id="sgArtist"></label></div>
+      <div class="field"><label for="sgText">Текст песни (вставь сам)</label><textarea id="sgText" rows="10" placeholder="Скопируй текст с любого сайта и вставь сюда. Каждая строка станет отдельной фразой."></textarea></div>
+    </div>
+    <div class="actions"><button id="sgCancel">Отмена</button><button id="sgDel">Удалить</button><button id="sgSave" class="primary">Сохранить</button></div>
   </div>
 </div>
 <div class="graph-bg" id="finCatBg">
@@ -2441,7 +2469,7 @@
       <button id="openReset">Сбросить настройки…</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 111 — разговорник: ситуации и диалоги, перевод с русского, озвучка и заучивание; «Через не хочу»: книги с нормой в день, прогрессом, серией и выводом после прочтения; курсы «Политология» и «Экономика» (по 32 урока); привычки, итоги месяца и года, языки: часы по годовому плану и прогноз; курс арабского (ступень 1, с нуля: 48 уроков по 2 части, озвучка ▶ и словарь); стойка на руках у стены заменена отжиманиями с ногами на возвышении (норма в повторах); тихий режим тренировки (без скакалки, берпи и прыжков); дневник питания (блюда с КБЖУ, цена → расход, статистика день/неделя/месяц); кошелёк: долги с графиком платежей и рассрочкой, календарь выплат (мне должны / я должен, сроки, валюта, напоминания), конвертер любых валют; курсы валют Нацбанка РК онлайн + калькулятор; валюты (обмен ₸↔₽/$/€…, копилки в валюте), копилки (откладывай из зарплаты, аванса или подработки), доход с подработок; остаток аванса плюсуется к зарплате, стартовые деньги (сверка); зарплата по графику, аванс, получение зарплаты, расходы по категориям и продуктам, КБЖУ для еды; график смен из Excel; резервная копия; рекорды</div>
+    <div class="hint sv-version" id="version">Версия 112 — английский по песням и разбор грамматики фраз (время, глаголы, местоимения, сленг); разговорник: ситуации и диалоги, перевод с русского, озвучка и заучивание; «Через не хочу»: книги с нормой в день, прогрессом, серией и выводом после прочтения; курсы «Политология» и «Экономика» (по 32 урока); привычки, итоги месяца и года, языки: часы по годовому плану и прогноз; курс арабского (ступень 1, с нуля: 48 уроков по 2 части, озвучка ▶ и словарь); стойка на руках у стены заменена отжиманиями с ногами на возвышении (норма в повторах); тихий режим тренировки (без скакалки, берпи и прыжков); дневник питания (блюда с КБЖУ, цена → расход, статистика день/неделя/месяц); кошелёк: долги с графиком платежей и рассрочкой, календарь выплат (мне должны / я должен, сроки, валюта, напоминания), конвертер любых валют; курсы валют Нацбанка РК онлайн + калькулятор; валюты (обмен ₸↔₽/$/€…, копилки в валюте), копилки (откладывай из зарплаты, аванса или подработки), доход с подработок; остаток аванса плюсуется к зарплате, стартовые деньги (сверка); зарплата по графику, аванс, получение зарплаты, расходы по категориям и продуктам, КБЖУ для еды; график смен из Excel; резервная копия; рекорды</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -4277,7 +4305,7 @@ $('menuDelete').onclick = async () => {
   render();
 };
 
-['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg','bookTocBg','lockBg','tmplBg','tmplEditBg','studyPartBg','resetBg','goalBg','woPickBg','weekBg','schedBg','moneyBg','expBg','jarBg','moveBg','fxBg','debtBg','payBg','calBg','foodEntBg','foodGoalBg','habitEdBg','hrEdBg','hrFinBg','pbSitBg','pbLineBg'].forEach(id => {
+['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg','bookTocBg','lockBg','tmplBg','tmplEditBg','studyPartBg','resetBg','goalBg','woPickBg','weekBg','schedBg','moneyBg','expBg','jarBg','moveBg','fxBg','debtBg','payBg','calBg','foodEntBg','foodGoalBg','habitEdBg','hrEdBg','hrFinBg','pbSitBg','pbLineBg','grBg','songBg'].forEach(id => {
   const bg = $(id);
   bg.onclick = e => { if(e.target === bg) bg.classList.remove('open'); };
 });
@@ -4285,7 +4313,7 @@ $('menuDelete').onclick = async () => {
 if(window.Capacitor && window.Capacitor.Plugins.App){
   window.Capacitor.Plugins.App.addListener('backButton', () => {
     if($('diaryBg').classList.contains('open')){ flushDiary().finally(diaryLock); return; }
-    for(const id of ['pbLineBg','pbSitBg','pbBg','hrFinBg','hrEdBg','habitEdBg','habitsBg','langStatBg','sumBg','foodGoalBg','foodEntBg','foodBg','payBg','calBg','debtBg','fxBg','moveBg','jarBg','expBg','moneyBg','finCatBg','walletBg','schedBg','weekBg','recBg','goalBg','woPickBg','examBg','vocabBg','workoutBg','resetBg','studyPartBg','tmplEditBg','tmplBg','pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg','newsBg','lockBg','studyBg']){
+    for(const id of ['grBg','songBg','pbLineBg','pbSitBg','pbBg','hrFinBg','hrEdBg','habitEdBg','habitsBg','langStatBg','sumBg','foodGoalBg','foodEntBg','foodBg','payBg','calBg','debtBg','fxBg','moveBg','jarBg','expBg','moneyBg','finCatBg','walletBg','schedBg','weekBg','recBg','goalBg','woPickBg','examBg','vocabBg','workoutBg','resetBg','studyPartBg','tmplEditBg','tmplBg','pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg','newsBg','lockBg','studyBg']){
       if($(id).classList.contains('open')){ $(id).classList.remove('open'); return; }
     }
     if(path.length){ path.pop(); render(); return; }
@@ -13951,9 +13979,14 @@ function openPhrasebook(){ $('serviceBg').classList.remove('open'); pbCur = null
 function pbLearned(s){ const n = s.lines.length; return n ? Math.round(s.lines.filter(l => (l.box || 0) >= 3).length / n * 100) : 0; }
 function renderPb(){
   const d = pbData();
+  const tabs = '<div class="fd-tabs" style="grid-template-columns:1fr 1fr"><button data-tab="sit"' + (pbTab === 'sit' ? ' class="on"' : '') + '>Ситуации</button><button data-tab="song"' + (pbTab === 'song' ? ' class="on"' : '') + '>Песни</button></div>';
+  if(pbTab === 'song'){
+    if(!pbSong){ $('pbTitle').textContent = 'Разговорник'; $('pbSub').textContent = 'английский по песням'; }
+    $('pbBody').innerHTML = (pbSong ? '' : tabs) + renderSongs(); return;
+  }
   if(!pbCur){
     $('pbTitle').textContent = 'Разговорник'; $('pbSub').textContent = 'ситуации и диалоги · английский';
-    let h = '<div class="sp-note">Ситуация → кто говорит → фразы. Пиши по-русски — английский подставится сам (поправь, если нужно). ▶ — послушать, «Заучивание» — тренировка: видишь русский, говоришь вслух, проверяешь.</div>';
+    let h = tabs + '<div class="sp-note">Ситуация → кто говорит → фразы. Пиши по-русски — английский подставится сам (поправь, если нужно). ▶ — послушать, «Заучивание» — тренировка: видишь русский, говоришь вслух, проверяешь.</div>';
     for(const s of d.sits) h += '<div class="st-ath pb-sit" data-pb="open" data-id="' + s.id + '"><div class="st-ath-h"><b>' + escHtml(s.name) + '</b><span class="st-ath-p">' + pbLearned(s) + '%</span></div>' +
       '<span class="pl-bar"><i style="width:' + pbLearned(s) + '%"></i></span><div class="st-ath-l">' + escHtml(s.roles.join(' и ')) + ' · фраз: ' + s.lines.length + '</div></div>';
     h += '<div class="sp-btns"><button class="go" data-pb="newsit">+ Ситуация</button><button data-pb="presets">Готовые ситуации</button></div>';
@@ -13972,7 +14005,7 @@ function renderPb(){
       const l = s.lines.find(x => x.id === q);
       h += '<div class="pb-train"><div class="pb-count">' + (pbTrain.i + 1) + ' из ' + pbTrain.queue.length + ' · говорит: ' + escHtml(s.roles[l.who] || '') + '</div>' +
         '<div class="pb-ru">' + escHtml(l.ru) + '</div>' +
-        (pbTrain.shown ? '<div class="pb-tr">' + escHtml(l.tr) + ' <button class="rd-say" data-pb="say" data-id="' + l.id + '">▶</button></div><div class="sp-btns"><button data-pb="no">Ещё учу</button><button class="go" data-pb="yes">Знаю ✓</button></div>'
+        (pbTrain.shown ? '<div class="pb-tr">' + escHtml(l.tr) + ' <button class="rd-say" data-pb="say" data-id="' + l.id + '">▶</button> <button class="pb-gr" data-pb="gram" data-id="' + l.id + '">Aa</button></div><div class="sp-btns"><button data-pb="no">Ещё учу</button><button class="go" data-pb="yes">Знаю ✓</button></div>'
           : '<div class="sp-note">Скажи вслух по-английски, потом проверь.</div><div class="sp-btns"><button class="go" data-pb="show">Показать перевод</button></div>') + '</div>';
     }
     $('pbBody').innerHTML = h; return;
@@ -13981,7 +14014,7 @@ function renderPb(){
   if(!s.lines.length) h += '<div class="sp-note">Пока пусто. Добавь фразы: свои и собеседника.</div>';
   for(const l of s.lines) h += '<div class="pb-line ' + (l.who === 0 ? 'me' : 'them') + '" data-pb="edit" data-id="' + l.id + '"><small>' + escHtml(s.roles[l.who] || '') + ((l.box || 0) >= 3 ? ' · ✓ выучено' : '') + '</small>' +
     '<div class="pb-tr">' + escHtml(l.tr || '…') + '</div><div class="pb-ru">' + escHtml(l.ru) + '</div>' +
-    '<button class="rd-say" data-pb="say" data-id="' + l.id + '">▶</button></div>';
+    '<button class="rd-say" data-pb="say" data-id="' + l.id + '">▶</button><button class="pb-gr" data-pb="gram" data-id="' + l.id + '" title="Разбор грамматики">Aa</button></div>';
   h += '<div class="sp-btns"><button data-pb="add" data-who="0">+ ' + escHtml(s.roles[0]) + '</button><button data-pb="add" data-who="1">+ ' + escHtml(s.roles[1]) + '</button></div>' +
        '<div class="sp-btns"><button data-pb="vocab">Все фразы → в словарь</button></div>';
   $('pbBody').innerHTML = h;
@@ -14013,6 +14046,7 @@ $('pbBody').addEventListener('click', async e => {
   else if(a === 'add') openPbLine(null, Number(el.dataset.who));
   else if(a === 'edit') openPbLine(Number(el.dataset.id));
   else if(a === 'say'){ const l = s.lines.find(x => x.id === Number(el.dataset.id)); if(l) pbSay(s, l); }
+  else if(a === 'gram'){ const l = s.lines.find(x => x.id === Number(el.dataset.id)); if(l && l.tr) openGrammar(l.tr, l.ru); }
   else if(a === 'playall'){
     if(pbPlaying){ pbPlaying = false; renderPb(); return; }
     pbPlaying = true; renderPb();
@@ -14107,6 +14141,235 @@ $('plDel').onclick = async () => {
   s.lines = s.lines.filter(l => l !== pbLineEdit); await savePb(); $('pbLineBg').classList.remove('open'); renderPb();
 };
 $('plCancel').onclick = () => $('pbLineBg').classList.remove('open');
+$('plGram').onclick = () => { const t = $('plTr').value.trim(); if(t) openGrammar(t, $('plRu').value.trim()); else toast('Сначала нужен английский вариант'); };
+
+/* =====================================================================
+   РАЗБОР АНГЛИЙСКОЙ ФРАЗЫ (офлайн, по правилам): время, конструкции,
+   правильные/неправильные глаголы, местоимения, песенный сленг.
+   ===================================================================== */
+const EN_IRR = ('be was/were been быть|become became become становиться|begin began begun начинать|bite bit bitten кусать|blow blew blown дуть|break broke broken ломать|bring brought brought приносить|build built built строить|burn burnt/burned burnt/burned гореть|buy bought bought покупать|catch caught caught ловить|choose chose chosen выбирать|come came come приходить|cost cost cost стоить|cut cut cut резать|deal dealt dealt иметь дело|dig dug dug копать|do did done делать|draw drew drawn рисовать|dream dreamt/dreamed dreamt/dreamed мечтать|drink drank drunk пить|drive drove driven водить машину|eat ate eaten есть|fall fell fallen падать|feed fed fed кормить|feel felt felt чувствовать|fight fought fought драться, бороться|find found found находить|fly flew flown летать|forget forgot forgotten забывать|forgive forgave forgiven прощать|freeze froze frozen замерзать|get got got/gotten получать, становиться|give gave given давать|go went gone идти, ехать|grow grew grown расти|hang hung hung висеть|have had had иметь|hear heard heard слышать|hide hid hidden прятать|hit hit hit ударять|hold held held держать|hurt hurt hurt ранить, болеть|keep kept kept хранить, продолжать|know knew known знать|lay laid laid класть|lead led led вести|learn learnt/learned learnt/learned учить|leave left left уходить, оставлять|lend lent lent одалживать|let let let позволять|lie lay lain лежать|light lit lit зажигать|lose lost lost терять|make made made делать, создавать|mean meant meant значить|meet met met встречать|pay paid paid платить|put put put класть|quit quit quit бросать|read read read читать|ride rode ridden ехать верхом|ring rang rung звонить|rise rose risen подниматься|run ran run бежать|say said said сказать|see saw seen видеть|seek sought sought искать|sell sold sold продавать|send sent sent отправлять|set set set устанавливать|shake shook shaken трясти|shine shone shone сиять|shoot shot shot стрелять|show showed shown показывать|shut shut shut закрывать|sing sang sung петь|sink sank sunk тонуть|sit sat sat сидеть|sleep slept slept спать|slide slid slid скользить|speak spoke spoken говорить|spend spent spent тратить, проводить|spin spun spun кружить|stand stood stood стоять|steal stole stolen красть|stick stuck stuck прилипать|strike struck struck ударять|swear swore sworn клясться|swim swam swum плавать|swing swung swung качаться|take took taken брать|teach taught taught учить (кого-то)|tear tore torn рвать|tell told told рассказывать|think thought thought думать|throw threw thrown бросать|understand understood understood понимать|wake woke woken просыпаться|wear wore worn носить (одежду)|win won won побеждать|write wrote written писать|bleed bled bled кровоточить|bend bent bent сгибать|beat beat beaten бить, побеждать|feed fed fed кормить|spread spread spread распространять|upset upset upset расстраивать')
+  .split('|').map(x => { const [b, p, pp, ...ru] = x.split(' '); return {b, p: p.split('/'), pp: pp.split('/'), ru: ru.join(' ')}; });
+const EN_REG = ('want хотеть|need нуждаться|like нравиться|love любить|hate ненавидеть|work работать|play играть|live жить|look смотреть, выглядеть|watch смотреть|call звонить, звать|try пытаться|ask спрашивать|help помогать|start начинать|stop останавливать|open открывать|close закрывать|walk гулять, идти пешком|talk разговаривать|dance танцевать|cry плакать|smile улыбаться|laugh смеяться|kiss целовать|touch трогать|turn поворачивать|move двигаться|stay оставаться|wait ждать|hope надеяться|believe верить|remember помнить|change менять|miss скучать, пропускать|cook готовить|clean убирать|finish заканчивать|use использовать|study учиться|travel путешествовать|visit посещать|carry нести|pull тянуть|push толкать|jump прыгать|save спасать, копить|die умирать|kill убивать|fade угасать|breathe дышать|pray молиться|pretend притворяться|promise обещать|realize осознавать|decide решать|follow следовать|happen случаться|listen слушать|answer отвечать|order заказывать|include включать|recommend рекомендовать|prefer предпочитать|enjoy наслаждаться|return возвращаться|arrive прибывать|seem казаться|share делиться|count считать|trust доверять|worry волноваться|marry жениться|hurry спешить|rain идти (о дожде)|shout кричать|scream кричать|wish желать|fix чинить|check проверять|exchange обмениваться|train тренироваться|exercise заниматься спортом|lift поднимать|drop ронять|hug обнимать|kick пинать|climb лезть|cross пересекать|fill наполнять|join присоединяться|last длиться|learn учить|pass проходить|pick выбирать|plan планировать|reach достигать|rest отдыхать|rush торопиться|serve обслуживать|shop делать покупки|sign подписывать|suffer страдать|thank благодаришь|touch трогать|wonder интересоваться|agree соглашаться|allow позволять|belong принадлежать|borrow занимать|compare сравнивать|continue продолжать|cover покрывать|explain объяснять|fail проваливаться|hunt охотиться|imagine представлять|improve улучшать|invite приглашать|mention упоминать|notice замечать|offer предлагать|own владеть|prepare готовить|protect защищать|prove доказывать|receive получать|refuse отказываться|remain оставаться|repeat повторять|reply отвечать|report сообщать|rescue спасать|shine сиять|solve решать|spell писать по буквам|suppose предполагать|surprise удивлять|taste пробовать|tease дразнить|treat угощать|wash мыть|waste тратить впустую|welcome приветствовать|whisper шептать|yell орать|close закрывать|feel чувствовать')
+  .split('|').map(x => { const i = x.indexOf(' '); return {b: x.slice(0, i), ru: x.slice(i + 1)}; });
+const EN_BASE = new Map(); EN_IRR.forEach(v => EN_BASE.set(v.b, v)); EN_REG.forEach(v => { if(!EN_BASE.has(v.b)) EN_BASE.set(v.b, v); });
+const EN_PAST = new Map(), EN_PP = new Map();
+EN_IRR.forEach(v => { v.p.forEach(f => EN_PAST.set(f, v)); v.pp.forEach(f => EN_PP.set(f, v)); });
+const SUBJ = {i: 'I', you: 'you', he: 'he', she: 'she', it: 'it', we: 'we', they: 'they'};
+const THIRD = new Set(['he', 'she', 'it', 'this', 'that', 'everyone', 'everybody', 'nobody', 'somebody', 'someone', 'something', 'everything', 'nothing']);
+const ADV = new Set(['not', 'never', 'always', 'just', 'really', 'still', 'so', 'also', 'even', 'ever', 'only', 'already', 'finally', 'often', 'usually', 'sometimes', 'truly', 'all', 'both', 'totally', 'actually', 'probably', 'maybe', 'n\'t', 'no', 'nt']);
+const MODALS = {can: 'can — могу, умею', could: 'could — мог бы / мог (в прошлом), вежливая просьба', should: 'should — следует, стоит (совет)', must: 'must — должен (обязанность, уверенность)', may: 'may — можно, может быть', might: 'might — может быть (меньше уверенности)', would: 'would — бы (условие, вежливость). Would you like…? — Не хотите ли…? · I would like = I\'d like — я хотел бы', shall: 'shall — предложение: «Shall we…?» — «Давай…?»'};
+function enStem(w){   // словоформа → начальная форма (по правилам + словарь)
+  if(EN_BASE.has(w)) return w;
+  if(EN_PAST.has(w)) return EN_PAST.get(w).b;
+  if(EN_PP.has(w)) return EN_PP.get(w).b;
+  const tries = [];
+  if(/ing$/.test(w)){ const s = w.slice(0, -3); tries.push(s, s + 'e', s.replace(/(.)\1$/, '$1'), s.replace(/y$/, 'ie')); }
+  if(/ied$/.test(w)) tries.push(w.slice(0, -3) + 'y');
+  if(/ed$/.test(w)){ const s = w.slice(0, -2); tries.push(s, w.slice(0, -1), s.replace(/(.)\1$/, '$1')); }
+  if(/ies$/.test(w)) tries.push(w.slice(0, -3) + 'y');
+  if(/es$/.test(w)) tries.push(w.slice(0, -2));
+  if(/s$/.test(w)) tries.push(w.slice(0, -1));
+  return tries.find(t => EN_BASE.has(t)) || null;
+}
+const isIng = w => /[a-z]{2,}ing$/.test(w) && !['thing', 'nothing', 'something', 'anything', 'everything', 'king', 'ring', 'sing', 'bring', 'morning', 'evening', 'during', 'ceiling', 'wedding', 'building', 'feeling', 'sibling', 'darling', 'spring', 'string', 'swing', 'wing', 'sting', 'cling', 'fling', 'sling'].includes(w);
+const isV3 = w => EN_PP.has(w) || (/[a-z]{2,}(ed|en)$/.test(w) && !['need', 'feed', 'seed', 'speed', 'bleed', 'breed', 'bed', 'red', 'bread', 'dead', 'head', 'indeed', 'hundred', 'ten', 'then', 'when', 'men', 'women', 'even', 'open', 'seven', 'eleven', 'heaven', 'garden', 'kitchen', 'chicken', 'children', 'often', 'listen', 'happen', 'sudden', 'golden', 'hidden'].includes(w)) || (w === 'been');
+const isPast = w => EN_PAST.has(w) || (/[a-z]{2,}ed$/.test(w) && !!enStem(w) && !EN_IRR.some(v => v.b === enStem(w)));
+const isBaseVerb = w => EN_BASE.has(w);
+/* сокращения и песенный сленг → полные формы */
+function enExpand(text){
+  const slang = [];
+  const note = (a, b) => { if(!slang.some(x => x[0] === a)) slang.push([a, b]); };
+  let t = ' ' + String(text).replace(/[’‘`]/g, "'").toLowerCase() + ' ';
+  const R = [
+    [/\bgonna\b/g, 'going to', 'gonna = going to (собираюсь). Разговорное, в письме не пишут'],
+    [/\bwanna\b/g, 'want to', 'wanna = want to (хочу)'],
+    [/\bgotta\b/g, 'have got to', 'gotta = have got to (должен, надо)'],
+    [/\blemme\b/g, 'let me', 'lemme = let me (дай мне)'],
+    [/\bgimme\b/g, 'give me', 'gimme = give me (дай мне)'],
+    [/\bkinda\b/g, 'kind of', 'kinda = kind of (вроде, как бы)'],
+    [/\bain't\s+got\b/g, 'have not got', "ain't got = haven't got (нет, не имею) — разговорное"],
+    [/\bain't\b/g, 'am not', "ain't — разговорное «не»: am/is/are not или have/has not. В правильной речи не используют"],
+    [/\by'all\b/g, 'you all', "y'all = you all (вы все), американский юг"],
+    [/\b'cause\b|\bcuz\b|\bcos\b/g, 'because', "'cause / cuz = because (потому что)"],
+    [/\bcan't\b/g, 'can not', "can't = cannot (не могу)"], [/\bwon't\b/g, 'will not', "won't = will not (не буду / не станет)"],
+    [/\bshan't\b/g, 'shall not', null], [/\b(\w+)n't\b/g, '$1 not', null],
+    [/\bi'm\b/g, 'i am', null], [/\b(\w+)'re\b/g, '$1 are', null], [/\b(\w+)'ve\b/g, '$1 have', null], [/\b(\w+)'ll\b/g, '$1 will', null],
+    [/\b(\w+)in'(?=\s)/g, '$1ing', "-in' = -ing в песнях: lovin' = loving, nothin' = nothing"],
+    [/\bya\b/g, 'you', 'ya = you (разговорное)'], [/\b'em\b/g, 'them', "'em = them (их, им)"], [/\btil\b|\b'til\b|\btill\b/g, 'until', null],
+  ];
+  for(const [re, to, n] of R){ if(re.test(t)){ if(n) note(t.match(re)[0].trim(), n); t = t.replace(re, to); } re.lastIndex = 0; }
+  /* 's / 'd: is/has, would/had — по следующему слову */
+  t = t.replace(/\b(\w+)'s\s+(\w+)/g, (m, a, b) => (['he', 'she', 'it', 'that', 'what', 'there', 'here', 'who', 'where', 'how', 'let'].includes(a) ? a + (a === 'let' ? ' us ' : (isV3(b) && b !== 'been' || b === 'got' ? ' has ' : ' is ')) + b : m));
+  t = t.replace(/\b(\w+)'d\s+(\w+)/g, (m, a, b) => a + (isV3(b) && !isBaseVerb(b) ? ' had ' : ' would ') + b);
+  const toks = t.replace(/[^a-z'\-\s]/g, ' ').split(/\s+/).filter(Boolean);
+  return {toks, slang};
+}
+const EN_TENSES = {
+  PS: ['Present Simple — настоящее простое', 'Обычно, регулярно, факты, чувства и состояния.\nI / you / we / they + глагол: I work, they love.\nhe / she / it + глагол + s: she works, he loves (-es после s, sh, ch, x, o: goes, watches; -y → -ies: tries).\nОтрицание: don\'t (I/you/we/they) · doesn\'t (he/she/it) + глагол без -s.\nВопрос: Do / Does + подлежащее + глагол: Do you know? Does she know?'],
+  PC: ['Present Continuous — настоящее длительное', 'Происходит прямо сейчас или временно.\nam (I) · is (he/she/it) · are (you/we/they) + глагол-ing: I am waiting, she is dancing, they are running.\nОтрицание: am/is/are + not. Вопрос: Are you coming?'],
+  PastS: ['Past Simple — прошедшее простое', 'Было и закончилось.\nПравильные глаголы + ed: work → worked; неправильные — 2-я форма: go → went, see → saw.\nДля всех лиц одинаково: I went, she went, they went.\nОтрицание и вопрос через did + 1-я форма: I didn\'t go · Did you see?'],
+  PastC: ['Past Continuous — прошедшее длительное', 'Процесс в какой-то момент прошлого.\nwas (I/he/she/it) · were (you/we/they) + глагол-ing: I was sleeping, they were talking.'],
+  PP: ['Present Perfect — настоящее совершённое', 'Результат или опыт к настоящему моменту: «уже сделал», «когда-нибудь делал».\nhave (I/you/we/they) · has (he/she/it) + 3-я форма: I have seen, she has gone.\nНеправильные глаголы — 3-я форма (seen, gone, done), правильные — +ed.'],
+  PPC: ['Present Perfect Continuous', 'Действие длится до сих пор: «уже 2 часа жду».\nhave/has been + глагол-ing: I have been waiting, she has been crying.'],
+  PastP: ['Past Perfect — предпрошедшее', 'Случилось раньше другого события в прошлом.\nhad + 3-я форма — для всех лиц: I had left before she came.'],
+  FS: ['Future Simple — будущее', 'Решение прямо сейчас, обещание, прогноз.\nwill + глагол — для всех лиц одинаково: I will call, it will rain.\nОтрицание: won\'t (will not). Вопрос: Will you…?'],
+  GT: ['be going to — план, намерение', 'Собираюсь сделать (уже решил).\nam/is/are going to + глагол: I am going to leave. В песнях — gonna.'],
+  PASS: ['Пассивный залог', 'Действие совершается над подлежащим: «меня оставили», «это сделано».\nbe (в нужном времени) + 3-я форма: I was left, it is made, it has been done.'],
+  IMP: ['Повелительное наклонение', 'Просьба, приказ, совет: начинается с глагола без подлежащего.\nStay! · Don\'t go! (не делай) · Let\'s go! (давай)'],
+  BE: ['Глагол to be — «быть, являться, находиться»', 'В русском часто пропускается, в английском — обязателен.\nНастоящее: I am · he/she/it is · you/we/they are. Прошедшее: I/he/she/it was · you/we/they were.\nЯ дома → I am at home. Она устала → She is tired.'],
+  IF1: ['Условие с if', 'Реальное условие: if + Present Simple → will: If you call, I will come.\nНереальное (мечта): if + Past Simple → would: If I were rich, I would travel.'],
+  HAVEGOT: ['have got — иметь, «у меня есть»', 'Разговорный вариант have: I have got (I\'ve got) a car = I have a car. he/she/it — has got. Отрицание: haven\'t got / hasn\'t got.'],
+  GER: ['Герундий: глагол + -ing', 'После некоторых глаголов второй глагол идёт с -ing: stop (перестать), keep (продолжать), start, like, love, enjoy, finish, mind: stop believing, keep going, I love dancing.'],
+  NEG2: ['Двойное отрицание (песенное)', 'В песнях и разговорной речи: I don\'t need no… Правильно — одно отрицание: I don\'t need any… / I need no…'],
+  HAVETO: ['have to — должен (обстоятельства)', 'have to (I/you/we/they) · has to (he/she/it) + глагол. Прошедшее: had to. «Надо» — не по своей воле, а так сложилось.'],
+  Q: ['Вопрос', 'В английском вопрос строится порядком слов: вспомогательный глагол перед подлежащим: Are you…? Do you…? Can I…? What do you want?'],
+};
+function analyzeEn(text){
+  const {toks, slang} = enExpand(text);
+  const found = new Map(), verbs = new Map(), pron = new Set();
+  const add = (k, ex) => { if(!found.has(k)) found.set(k, ex); };
+  const addVerb = (w, kind) => { const b = enStem(w) || w; const v = EN_BASE.get(b); if(!v) return; if(!verbs.has(b)) verbs.set(b, {b, irr: !!v.p, forms: v.p ? b + ' — ' + v.p.join('/') + ' — ' + v.pp.join('/') : b + ' — ' + b + (b.endsWith('e') ? 'd' : 'ed') + ' — ' + b + (b.endsWith('e') ? 'd' : 'ed'), ru: v.ru, kind}); };
+  const skip = i => { while(i < toks.length && ADV.has(toks[i])) i++; return i; };
+  const BEp = {am: 'P', is: 'P', are: 'P', was: 'Past', were: 'Past', be: 'Inf', been: 'Perf', being: 'Ing'};
+  const used = new Set();
+  for(let i = 0; i < toks.length; i++){
+    const w = toks[i], prev = toks[i - 1];
+    if(SUBJ[w] || ['me', 'him', 'her', 'us', 'them', 'my', 'your', 'his', 'our', 'their', 'mine', 'yours'].includes(w)) pron.add(w);
+    if(w === 'if') add('IF1', 'if');
+    if(w === 'will'){ const j = skip(i + 1); if(toks[j] && (isBaseVerb(toks[j]) || toks[j] === 'be')){ add('FS', 'will ' + toks[j]); addVerb(toks[j], 'will + глагол'); used.add(j); if(toks[j] === 'be'){ const k = skip(j + 1); if(toks[k] && isIng(toks[k])) used.add(k); } } continue; }
+    if(MODALS[w]){ let j = skip(i + 1); if(SUBJ[toks[j]] || THIRD.has(toks[j])){ j = skip(j + 1); if(i === 0) add('Q', w); } if(toks[j] && (isBaseVerb(toks[j]) || toks[j] === 'be' || toks[j] === 'have')){ add('M:' + w, w + ' ' + toks[j]); if(isBaseVerb(toks[j])){ addVerb(toks[j], w + ' + глагол'); used.add(j); } } continue; }
+    if(w === 'going' && toks[i + 1] === 'to' && toks[i + 2] && isBaseVerb(toks[i + 2]) && BEp[prev] !== undefined || (w === 'going' && toks[i + 1] === 'to' && toks[i + 2] && isBaseVerb(toks[i + 2]) && ['am', 'is', 'are'].includes(toks[i - 2]))){ add('GT', 'going to ' + toks[i + 2]); addVerb(toks[i + 2], 'going to + глагол'); used.add(i); used.add(i + 2); continue; }
+    if((w === 'have' || w === 'has' || w === 'had') && toks[i + 1] === 'to' && toks[i + 2] && isBaseVerb(toks[i + 2])){ add('HAVETO', w + ' to ' + toks[i + 2]); addVerb(toks[i + 2], w + ' to + глагол'); used.add(i + 2); continue; }
+    if((w === 'have' || w === 'has' || w === 'had') && !used.has(i)){
+      let j = skip(i + 1);
+      if((SUBJ[toks[j]] || THIRD.has(toks[j])) && toks[j] !== 'it' || (SUBJ[toks[j]] && i === 0)){ const j2 = skip(j + 1); if(toks[j2] && (toks[j2] === 'been' || isV3(toks[j2]) || toks[j2] === 'got')){ j = j2; if(i === 0) add('Q', w); } }
+      const n = toks[j];
+      if(n === 'been'){ used.add(j); const k = skip(j + 1); if(toks[k] && isIng(toks[k])){ add('PPC', w + ' been ' + toks[k]); addVerb(toks[k], 'have been + -ing'); used.add(k); continue; } if(toks[k] && isV3(toks[k])){ add('PASS', w + ' been ' + toks[k]); addVerb(toks[k], 'пассив'); used.add(k); } add(w === 'had' ? 'PastP' : 'PP', w + ' been'); continue; }
+      if(n === 'got'){ add('HAVEGOT', w + ' got'); used.add(j); continue; }
+      if(n && isV3(n) && enStem(n) && !isBaseVerb(n) || (n && EN_PP.has(n) && (w !== 'had' || !isBaseVerb(n)))){ add(w === 'had' ? 'PastP' : 'PP', w + ' ' + n); addVerb(n, '3-я форма'); used.add(j); continue; }
+      if(n && EN_PP.has(n)){ add(w === 'had' ? 'PastP' : 'PP', w + ' ' + n); addVerb(n, '3-я форма'); used.add(j); continue; }
+    }
+    if(BEp[w] !== undefined && !used.has(i)){
+      const j = skip(i + 1), n = toks[j];
+      if(n && isIng(n) && n !== 'going'){ add(BEp[w] === 'Past' ? 'PastC' : 'PC', w + ' ' + n); addVerb(n, 'be + -ing'); used.add(j); continue; }
+      if(n && isV3(n) && enStem(n) && (EN_PP.has(n) || /ed$/.test(n))){ add('PASS', w + ' ' + n); addVerb(n, 'пассив'); used.add(j); continue; }
+      if(!(w === 'am' || w === 'is' || w === 'are') || n !== 'going') add('BE', w);
+      continue;
+    }
+    if((w === 'do' || w === 'does' || w === 'did') && !used.has(i)){
+      if(i === 0 && w === 'do' && toks[1] === 'not'){ const j0 = skip(1); if(toks[j0] && isBaseVerb(toks[j0])){ add('IMP', "don't " + toks[j0]); addVerb(toks[j0], "don't + глагол"); used.add(j0); continue; } }
+      const j = skip(i + 1);
+      let k = j; if(SUBJ[toks[k]] || THIRD.has(toks[k])) k = skip(k + 1);
+      if(toks[k] === 'have' && toks[k + 1] === 'to') continue;
+      if(toks[k] && isBaseVerb(toks[k])){ add(w === 'did' ? 'PastS' : 'PS', w + (toks[j] === 'not' ? ' not ' : ' … ') + toks[k]); addVerb(toks[k], w + ' + глагол'); used.add(k); if(i === 0 && k !== j) add('Q', w); continue; }
+      if(i === 0 && toks[j] === 'not' && toks[k] && isBaseVerb(toks[k])){ add('IMP', "don't " + toks[k]); continue; }
+    }
+    if(i === 0 && w === 'let' && toks[1] === 'us'){ add('IMP', "let's " + (toks[2] || '')); if(toks[2]) addVerb(toks[2], "let's + глагол"); used.add(2); continue; }
+    if(used.has(i)) continue;
+    const subj = prev && (SUBJ[prev] || THIRD.has(prev));
+    if(i === 0 && isBaseVerb(w) && !/\?\s*$/.test(text)){ add('IMP', w); addVerb(w, 'повелительное'); continue; }
+    if(subj && (EN_PAST.has(w) || (isPast(w) && !isBaseVerb(w)))){ add('PastS', prev + ' ' + w); addVerb(w, '2-я форма'); continue; }
+    if(subj && isBaseVerb(w) && !THIRD.has(prev)){ add('PS', prev + ' ' + w); addVerb(w, 'настоящее'); continue; }
+    if(subj && THIRD.has(prev) && /s$/.test(w) && enStem(w) && !isBaseVerb(w)){ add('PS', prev + ' ' + w + ' (+s)'); addVerb(w, 'he/she/it + s'); continue; }
+    if(prev === 'to' && isBaseVerb(w)) addVerb(w, 'to + глагол (инфинитив)');
+  }
+  for(let i = 1; i < toks.length; i++) if(isIng(toks[i]) && ['stop', 'keep', 'start', 'like', 'love', 'enjoy', 'finish', 'mind', 'hate', 'stopped', 'kept', 'started', 'loves', 'likes', 'keeps', 'stops'].includes(toks[i - 1])){ add('GER', toks[i - 1] + ' ' + toks[i]); addVerb(toks[i], 'герундий'); }
+  const ni = toks.indexOf('not');
+  if(ni >= 0 && toks.slice(ni + 1).some(x => ['no', 'nobody', 'nothing', 'nowhere', 'never', 'none'].includes(x))) add('NEG2', 'not … ' + toks.slice(ni + 1).find(x => ['no', 'nobody', 'nothing', 'nowhere', 'never', 'none'].includes(x)));
+  if(/\?\s*$/.test(text) && !found.has('Q')) add('Q', '?');
+  const PR = {i: 'I — я', you: 'you — ты / вы', he: 'he — он', she: 'she — она', it: 'it — оно, это', we: 'we — мы', they: 'they — они', me: 'me — меня, мне', him: 'him — его, ему', her: 'her — её, ей', us: 'us — нас, нам', them: 'them — их, им', my: 'my — мой', your: 'your — твой, ваш', his: 'his — его', our: 'our — наш', their: 'their — их', mine: 'mine — мой (без существительного)', yours: 'yours — твой (без существительного)'};
+  return {
+    items: [...found.entries()].map(([k, ex]) => k.startsWith('M:') ? {k, title: 'Модальный глагол ' + k.slice(2), text: MODALS[k.slice(2)] + '\nПосле модального — глагол без to и без окончаний, для всех лиц одинаково: I can swim, she can swim.', ex} : {k, title: EN_TENSES[k][0], text: EN_TENSES[k][1], ex}),
+    verbs: [...verbs.values()], pron: [...pron].map(p => PR[p]).filter(Boolean), slang};
+}
+function grammarHTML(text){
+  const a = analyzeEn(text);
+  let h = '';
+  if(a.slang.length) h += '<div class="gr-sec"><b>Разговорное / песенное</b>' + a.slang.map(([w, n]) => '<div class="gr-row">' + escHtml(n) + '</div>').join('') + '</div>';
+  for(const it of a.items) h += '<div class="gr-sec"><b>' + escHtml(it.title) + '</b><div class="gr-ex">в этой фразе: ' + escHtml(it.ex) + '</div><div class="gr-row">' + escHtml(it.text).replace(/\n/g, '<br>') + '</div></div>';
+  if(a.verbs.length) h += '<div class="gr-sec"><b>Глаголы</b>' + a.verbs.map(v => '<div class="gr-row"><b>' + escHtml(v.b) + '</b> — ' + escHtml(v.ru) + ' · ' + (v.irr ? '<span class="far">неправильный</span>' : '<span class="ok">правильный</span>') + '<br><small>' + escHtml(v.forms) + '</small></div>').join('') + '</div>';
+  if(a.pron.length) h += '<div class="gr-sec"><b>Местоимения</b><div class="gr-row">' + a.pron.map(escHtml).join(' · ') + '</div></div>';
+  if(!h) h = '<div class="sp-note">Здесь простая фраза без глагольных конструкций — просто запомни её целиком.</div>';
+  return h + '<div class="sp-note">Разбор автоматический, по правилам: в песнях грамматику часто нарушают ради рифмы. Если что-то непонятно — пришли строку мне в чат.</div>';
+}
+let grText = '';
+async function openGrammar(en, ru){
+  grText = en;
+  $('grEn').textContent = en;
+  $('grRu').textContent = ru || 'перевожу…';
+  $('grBody').innerHTML = grammarHTML(en);
+  $('grBg').classList.add('open');
+  if(!ru){ try{ const t = await translateText(en, 'en', 'ru'); if(grText === en) $('grRu').textContent = t; }catch(e){ if(grText === en) $('grRu').textContent = 'перевод недоступен (нет интернета)'; } }
+}
+$('grSay').onclick = () => speakText(grText, 'en-US');
+$('grVocab').onclick = async () => { const ru = $('grRu').textContent; const n = await addVocab([{en: grText, ipa: '', ru: /перевожу|недоступен/.test(ru) ? '' : ru}], 'Английский язык', null); toast(n ? 'Добавлено в словарь' : 'Уже в словаре'); };
+$('grClose').onclick = () => $('grBg').classList.remove('open');
+
+/* ---------- английский по песням ---------- */
+let pbTab = 'sit', pbSong = null;
+const pbSongs = () => pbData().songs = pbData().songs || [];
+function songLines(sg){ return String(sg.text || '').split('\n'); }
+function renderSongs(){
+  if(!pbSong){
+    let h = '<div class="sp-note">Вставь текст любимой песни — каждая строка получит перевод, ▶ озвучку и разбор грамматики: время, глаголы (правильный / неправильный, три формы), местоимения, песенный сленг. Текст берёшь сам: песни защищены авторским правом, приложение их не скачивает.</div>';
+    for(const sg of pbSongs()){
+      const n = songLines(sg).filter(x => x.trim()).length, lr = Object.keys(sg.learned || {}).length;
+      h += '<div class="st-ath pb-sit" data-sg="open" data-id="' + sg.id + '"><div class="st-ath-h"><b>🎵 ' + escHtml(sg.title) + '</b><span class="st-ath-p">' + (n ? Math.round(lr / n * 100) : 0) + '%</span></div><div class="st-ath-l">' + escHtml(sg.artist || '') + ' · строк: ' + n + '</div></div>';
+    }
+    h += '<div class="sp-btns"><button class="go" data-sg="new">+ Песня</button></div>';
+    return h;
+  }
+  const sg = pbSongs().find(x => x.id === pbSong); if(!sg){ pbSong = null; return renderSongs(); }
+  $('pbTitle').textContent = '🎵 ' + sg.title; $('pbSub').textContent = (sg.artist || '') + ' · нажми строку — разбор';
+  let h = '<div class="wl-nav"><button data-sg="back">◀ Песни</button><b></b><button data-sg="edit">✎</button></div>';
+  const lines = songLines(sg), tr = sg.tr || {}, missing = lines.filter((l, i) => l.trim() && !tr[i]).length;
+  h += '<div class="sp-btns">' + (missing ? '<button class="go" data-sg="trall">Перевести строки (' + missing + ')</button>' : '') + '<button data-sg="toggleRu">' + (sg.hideRu ? 'Показать перевод' : 'Скрыть перевод') + '</button></div>';
+  lines.forEach((l, i) => {
+    if(!l.trim()){ h += '<div class="sg-gap"></div>'; return; }
+    const ok = sg.learned && sg.learned[i];
+    h += '<div class="sg-line' + (ok ? ' ok' : '') + '" data-sg="gram" data-i="' + i + '"><div class="sg-en">' + escHtml(l) + '</div>' + (tr[i] && !sg.hideRu ? '<div class="sg-ru">' + escHtml(tr[i]) + '</div>' : '') +
+      '<div class="sg-btns"><button class="rd-say" data-sg="say" data-i="' + i + '">▶</button><button class="mini" data-sg="learn" data-i="' + i + '">' + (ok ? '✓ знаю' : 'знаю?') + '</button></div></div>';
+  });
+  return h;
+}
+$('pbBody').addEventListener('click', async e => {
+  const el = e.target.closest('[data-sg],[data-tab]'); if(!el) return;
+  e.stopPropagation();
+  if(el.dataset.tab){ pbTab = el.dataset.tab; pbCur = null; pbSong = null; pbTrain = null; renderPb(); return; }
+  const a = el.dataset.sg, sg = pbSong ? pbSongs().find(x => x.id === pbSong) : null, i = Number(el.dataset.i);
+  if(a === 'open'){ pbSong = Number(el.dataset.id); renderPb(); }
+  else if(a === 'back'){ pbSong = null; renderPb(); }
+  else if(a === 'new' || a === 'edit') openSongEdit(a === 'edit' ? sg : null);
+  else if(a === 'say') speakText(songLines(sg)[i], 'en-US');
+  else if(a === 'learn'){ sg.learned = sg.learned || {}; if(sg.learned[i]) delete sg.learned[i]; else sg.learned[i] = 1; await savePb(); renderPb(); }
+  else if(a === 'toggleRu'){ sg.hideRu = !sg.hideRu; await savePb(); renderPb(); }
+  else if(a === 'gram') openGrammar(songLines(sg)[i].trim(), (sg.tr || {})[i]);
+  else if(a === 'trall'){
+    sg.tr = sg.tr || {}; const lines = songLines(sg); let n = 0, fail = 0;
+    for(let k = 0; k < lines.length; k++){
+      if(!lines[k].trim() || sg.tr[k]) continue;
+      el.textContent = 'Перевожу… ' + (++n);
+      try{ sg.tr[k] = await translateText(lines[k].trim(), 'en', 'ru'); }catch(err){ fail++; if(fail > 2) break; }
+    }
+    await savePb(); renderPb(); if(fail > 2) toast('Не удалось перевести — проверь интернет');
+  }
+}, true);
+let songEdit = null;
+function openSongEdit(sg){
+  songEdit = sg;
+  $('sgTitle').value = sg ? sg.title : ''; $('sgArtist').value = sg ? sg.artist || '' : ''; $('sgText').value = sg ? sg.text : '';
+  $('sgDel').style.display = sg ? '' : 'none';
+  $('songBg').classList.add('open');
+}
+$('sgSave').onclick = async () => {
+  const title = $('sgTitle').value.trim(), text = $('sgText').value.replace(/\r/g, '').replace(/\n{3,}/g, '\n\n').trim();
+  if(!title || !text){ toast('Нужны название и текст'); return; }
+  if(songEdit){ if(songEdit.text !== text){ songEdit.tr = {}; songEdit.learned = {}; } Object.assign(songEdit, {title, artist: $('sgArtist').value.trim(), text}); }
+  else { const sg = {id: Date.now(), title, artist: $('sgArtist').value.trim(), text, tr: {}, learned: {}}; pbSongs().push(sg); pbSong = sg.id; }
+  await savePb(); $('songBg').classList.remove('open'); renderPb();
+};
+$('sgDel').onclick = async () => { if(!songEdit || !confirm('Удалить песню?')) return; pbData().songs = pbSongs().filter(x => x !== songEdit); pbSong = null; await savePb(); $('songBg').classList.remove('open'); renderPb(); };
+$('sgCancel').onclick = () => $('songBg').classList.remove('open');
 
 /* строка на главном экране */
 function walletBannerHTML(){
