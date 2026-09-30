@@ -2469,7 +2469,7 @@
       <button id="openReset">Сбросить настройки…</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 112 — английский по песням и разбор грамматики фраз (время, глаголы, местоимения, сленг); разговорник: ситуации и диалоги, перевод с русского, озвучка и заучивание; «Через не хочу»: книги с нормой в день, прогрессом, серией и выводом после прочтения; курсы «Политология» и «Экономика» (по 32 урока); привычки, итоги месяца и года, языки: часы по годовому плану и прогноз; курс арабского (ступень 1, с нуля: 48 уроков по 2 части, озвучка ▶ и словарь); стойка на руках у стены заменена отжиманиями с ногами на возвышении (норма в повторах); тихий режим тренировки (без скакалки, берпи и прыжков); дневник питания (блюда с КБЖУ, цена → расход, статистика день/неделя/месяц); кошелёк: долги с графиком платежей и рассрочкой, календарь выплат (мне должны / я должен, сроки, валюта, напоминания), конвертер любых валют; курсы валют Нацбанка РК онлайн + калькулятор; валюты (обмен ₸↔₽/$/€…, копилки в валюте), копилки (откладывай из зарплаты, аванса или подработки), доход с подработок; остаток аванса плюсуется к зарплате, стартовые деньги (сверка); зарплата по графику, аванс, получение зарплаты, расходы по категориям и продуктам, КБЖУ для еды; график смен из Excel; резервная копия; рекорды</div>
+    <div class="hint sv-version" id="version">Версия 113 — график смен: месяц по датам таблицы, выбор листа и месяца вручную; английский по песням и разбор грамматики фраз (время, глаголы, местоимения, сленг); разговорник: ситуации и диалоги, перевод с русского, озвучка и заучивание; «Через не хочу»: книги с нормой в день, прогрессом, серией и выводом после прочтения; курсы «Политология» и «Экономика» (по 32 урока); привычки, итоги месяца и года, языки: часы по годовому плану и прогноз; курс арабского (ступень 1, с нуля: 48 уроков по 2 части, озвучка ▶ и словарь); стойка на руках у стены заменена отжиманиями с ногами на возвышении (норма в повторах); тихий режим тренировки (без скакалки, берпи и прыжков); дневник питания (блюда с КБЖУ, цена → расход, статистика день/неделя/месяц); кошелёк: долги с графиком платежей и рассрочкой, календарь выплат (мне должны / я должен, сроки, валюта, напоминания), конвертер любых валют; курсы валют Нацбанка РК онлайн + калькулятор; валюты (обмен ₸↔₽/$/€…, копилки в валюте), копилки (откладывай из зарплаты, аванса или подработки), доход с подработок; остаток аванса плюсуется к зарплате, стартовые деньги (сверка); зарплата по графику, аванс, получение зарплаты, расходы по категориям и продуктам, КБЖУ для еды; график смен из Excel; резервная копия; рекорды</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -11943,52 +11943,98 @@ function monthFromText(s){
   if(r && Number(r[1]) >= 1 && Number(r[1]) <= 12) return r[2] + '-' + r[1].padStart(2, '0');
   return null;
 }
+/* название месяца без года («График на октябрь») — берём ближайший к сегодняшнему такой месяц */
+function monthNameOnly(s){
+  const m = String(s || '').toLowerCase().match(/(январ|феврал|март|апрел|ма[йя]|июн|июл|август|сентябр|октябр|ноябр|декабр)/);
+  if(!m) return null;
+  const i = RU_MONTHS.findIndex(x => m[1].startsWith(x)), t = todayISO(), y = Number(t.slice(0, 4)), cm = Number(t.slice(5, 7)) - 1;
+  const yy = i - cm > 6 ? y - 1 : cm - i > 6 ? y + 1 : y;
+  return yy + '-' + String(i + 1).padStart(2, '0');
+}
 /* разбор листа: {ym, shifts:[{date, no, name}], names:[...]} */
-function parseSchedule(sheets, fileName){
-  for(const sh of sheets){
-    const g = sh.grid;
-    let hdr = -1, cols = [], dayCol = 0;
-    for(let r = 0; r < Math.min(g.length, 30) && hdr < 0; r++){
-      const row = g[r] || [];
-      const found = [];
-      row.forEach((v, c) => { const m = String(v || '').match(/смена\s*№?\s*(\d)/i); if(m) found.push({c, no: Number(m[1])}); });
-      if(found.length){
-        hdr = r; cols = found;
-        row.forEach((v, c) => { if(/^(число|дата|день)$/i.test(String(v || '').trim())) dayCol = c; });
-      }
+function parseSheetSchedule(sh, fileName){
+  const g = sh.grid;
+  let hdr = -1, cols = [], dayCol = 0, wdCol = -1;
+  for(let r = 0; r < Math.min(g.length, 30) && hdr < 0; r++){
+    const row = g[r] || [];
+    const found = [];
+    row.forEach((v, c) => { const m = String(v || '').match(/смена\s*№?\s*(\d)/i); if(m) found.push({c, no: Number(m[1])}); });
+    if(found.length){
+      hdr = r; cols = found;
+      row.forEach((v, c) => { if(/^(число|дата|день)$/i.test(String(v || '').trim())) dayCol = c; });
+      row.forEach((v, c) => { if(/день\s*недели/i.test(String(v || ''))) wdCol = c; });
     }
-    if(hdr < 0) continue;
-    let ym = null;
-    for(let r = 0; r < hdr && !ym; r++) for(const v of (g[r] || [])) if(!ym && typeof v === 'string') ym = monthFromText(v);
-    ym = ym || monthFromText(sh.name) || monthFromText(fileName);
-    const shifts = [], names = new Set();
-    for(let r = hdr + 1; r < g.length; r++){
-      const row = g[r] || [];
-      const dv = row[dayCol];
-      let date = null;
-      if(typeof dv === 'number' && dv > 20000) date = excelSerialToISO(dv);
-      else if(typeof dv === 'number' && dv >= 1 && dv <= 31 && ym) date = ym + '-' + String(Math.round(dv)).padStart(2, '0');
-      else if(typeof dv === 'string'){
-        const m = dv.match(/(\d{1,2})[./](\d{1,2})[./](\d{4})/);
-        if(m) date = m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0');
-        else if(/^\d{1,2}$/.test(dv.trim()) && ym) date = ym + '-' + dv.trim().padStart(2, '0');
-      }
-      if(!date){ if(shifts.length && !row.some(v => v != null)) continue; if(shifts.length) break; else continue; }
-      if(!ym) ym = date.slice(0, 7);
-      for(const {c, no} of cols){
-        const who = row[c];
-        if(who == null || String(who).trim() === '') continue;
-        for(const part of String(who).split(/[\/,;+]|\s+и\s+/)){
-          const nm = part.trim();
-          if(!nm) continue;
-          names.add(nm);
-          shifts.push({date, no, name: nm});
-        }
-      }
-    }
-    if(shifts.length) return {ym, shifts, names: [...names], sheet: sh.name};
   }
-  return null;
+  if(hdr < 0) return null;
+  const WD = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
+  /* месяц: заголовок над таблицей → имя листа → имя файла (с годом); без года — ближайший такой месяц */
+  let ym = null, src = null;
+  for(let r = 0; r < hdr && !ym; r++) for(const v of (g[r] || [])) if(!ym && typeof v === 'string'){ ym = monthFromText(v); if(ym) src = 'заголовок'; }
+  if(!ym){ ym = monthFromText(sh.name); if(ym) src = 'лист'; }
+  if(!ym){ ym = monthFromText(fileName); if(ym) src = 'файл'; }
+  if(!ym){ for(let r = 0; r < hdr && !ym; r++) for(const v of (g[r] || [])) if(!ym && typeof v === 'string'){ ym = monthNameOnly(v); if(ym) src = 'заголовок'; } }
+  if(!ym){ ym = monthNameOnly(sh.name) || monthNameOnly(fileName); if(ym) src = 'название'; }
+  const rows = [], names = new Set(), wdays = [];
+  for(let r = hdr + 1; r < g.length; r++){
+    const row = g[r] || [];
+    const dv = row[dayCol];
+    let date = null, day = null;
+    if(typeof dv === 'number' && dv > 20000){ date = excelSerialToISO(dv); day = Number(date.slice(8)); }
+    else if(typeof dv === 'number' && dv >= 1 && dv <= 31) day = Math.round(dv);
+    else if(typeof dv === 'string'){
+      const m = dv.match(/(\d{1,2})[./](\d{1,2})[./](\d{4})/);
+      if(m){ date = m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0'); day = Number(m[1]); }
+      else if(/^\d{1,2}$/.test(dv.trim())) day = Number(dv.trim());
+    }
+    if(!day){ if(rows.length && !row.some(v => v != null)) continue; if(rows.length) break; else continue; }
+    const wdv = wdCol >= 0 ? String(row[wdCol] || '').trim().toLowerCase().slice(0, 2) : '';
+    if(WD.includes(wdv)) wdays.push([day, WD.indexOf(wdv)]);
+    for(const {c, no} of cols){
+      const who = row[c];
+      if(who == null || String(who).trim() === '') continue;
+      for(const part of String(who).split(/[\/,;+]|\s+и\s+/)){
+        const nm = part.trim();
+        if(!nm) continue;
+        names.add(nm);
+        rows.push({date, day, no, name: nm});
+      }
+    }
+  }
+  if(!rows.length) return null;
+  /* настоящие даты в столбце важнее надписи в заголовке (шаблон могли скопировать с прошлого месяца) */
+  const real = rows.filter(x => x.date).map(x => x.date.slice(0, 7));
+  if(real.length >= rows.length / 2){
+    const cnt = {}; real.forEach(k => cnt[k] = (cnt[k] || 0) + 1);
+    const top = Object.entries(cnt).sort((a, b) => b[1] - a[1])[0][0];
+    if(top !== ym){ ym = top; src = 'даты в таблице'; }
+  } else if(wdays.length >= 5){
+    /* дни недели в таблице: у каждого месяца свой порядок — находим месяц, где всё совпадает */
+    const fits = m => wdays.every(([d, w]) => new Date(Number(m.slice(0, 4)), Number(m.slice(5, 7)) - 1, d).getDay() === w);
+    if(!ym || !fits(ym)){
+      const t = todayISO().slice(0, 7), cand = [];
+      for(let k = -6; k <= 6; k++){ const m = ymShift(t, k); if(fits(m)) cand.push(m); }
+      const done = settings.lastSchedule && settings.lastSchedule.ym;
+      cand.sort((a, b) => (a === done) - (b === done) || Math.abs(Number(a.replace('-', '')) - Number(t.replace('-', ''))) - Math.abs(Number(b.replace('-', '')) - Number(t.replace('-', ''))));
+      if(cand.length){ ym = cand[0]; src = 'дни недели в таблице'; }
+    }
+  }
+  return {ym, src, rows, names: [...names], sheet: sh.name};
+}
+function schedApplyMonth(p, ym){
+  p.ym = ym;
+  p.shifts = ym ? p.rows.map(x => ({date: ym + '-' + String(x.day).padStart(2, '0'), no: x.no, name: x.name}))
+    .filter(x => Number(x.date.slice(8)) <= new Date(Number(ym.slice(0, 4)), Number(ym.slice(5, 7)), 0).getDate()) : [];
+  return p;
+}
+function parseSchedule(sheets, fileName){
+  const all = sheets.map(sh => parseSheetSchedule(sh, fileName)).filter(Boolean);
+  if(!all.length) return null;
+  /* несколько листов (например «Сентябрь» и «Октябрь») — по умолчанию месяц, который ещё не загружали, самый поздний */
+  const done = settings.lastSchedule && settings.lastSchedule.ym;
+  const pick = all.slice().sort((a, b) => ((b.ym !== done) - (a.ym !== done)) || String(b.ym).localeCompare(String(a.ym)))[0];
+  const p = schedApplyMonth(Object.assign({}, pick), pick.ym);
+  p.options = all;
+  return p;
 }
 let schedParsed = null;
 function inMoneyTree(n){ while(n){ if(n.mode === 'money') return true; n = n.parent_id != null ? index.byId.get(n.parent_id) : null; } return false; }
@@ -12019,8 +12065,14 @@ function renderSchedPreview(){
   const nos = [...new Set(p.shifts.map(s => s.no))].sort();
   const tm = schedTemplates(cat);
   const [y, mo] = (p.ym || '').split('-');
+  const monthOpts = []; { const t = todayISO().slice(0, 7); for(let k = -3; k <= 3; k++) monthOpts.push(ymShift(t, k)); if(p.ym && !monthOpts.includes(p.ym)) monthOpts.push(p.ym); monthOpts.sort(); }
+  const done = settings.lastSchedule && settings.lastSchedule.ym;
   let h = '<div class="st-ath"><b>' + (p.ym ? MONTHS[Number(mo) - 1][0].toUpperCase() + MONTHS[Number(mo) - 1].slice(1) + ' ' + y : 'Месяц не найден') + '</b>' +
-          '<div class="st-ath-l">В графике смен: ' + p.shifts.length + ' · сотрудники: ' + escHtml(p.names.join(', ')) + '</div></div>';
+          (p.src ? '<span class="where"> · определён по: ' + escHtml(p.src) + '</span>' : '') +
+          '<div class="st-ath-l">В графике смен: ' + p.shifts.length + ' · сотрудники: ' + escHtml(p.names.join(', ')) + '</div>' +
+          (p.ym && p.ym === done ? '<div class="st-ath-l far">Этот месяц уже загружен. Если в файле другой месяц — выбери его ниже.</div>' : '') + '</div>';
+  if(p.options && p.options.length > 1) h += '<label>Лист в файле</label><select id="schedSheet">' + p.options.map((o, i) => '<option value="' + i + '"' + (o.sheet === p.sheet ? ' selected' : '') + '>' + escHtml(o.sheet) + (o.ym ? ' · ' + ymLabel(o.ym) : '') + '</option>').join('') + '</select>';
+  h += '<label>Месяц графика</label><select id="schedMonth">' + (p.ym ? '' : '<option value="">— выбери —</option>') + monthOpts.map(m => '<option value="' + m + '"' + (m === p.ym ? ' selected' : '') + '>' + ymLabel(m) + (m === done ? ' (уже загружен)' : '') + '</option>').join('') + '</select>';
   h += '<label>Кто ты в графике</label><div class="sp-chips">' + p.names.map(n => '<button data-sn="' + escHtml(n) + '" aria-pressed="' + (name === n) + '">' + escHtml(n) + '</button>').join('') + '</div>';
   h += '<label>Куда ставить смены (категория в финансах)</label>';
   if(!cats.length) h += '<div class="sp-note">Нет денежной категории. Создай в «Финансах» категорию «Работа» (тип — деньги), потом загрузи график снова. Или нажми кнопку ниже — создам сам.</div><div class="sp-btns"><button data-sact="mkcat">Создать категорию «Работа»</button></div>';
@@ -12036,6 +12088,8 @@ function renderSchedPreview(){
   $('schedGo').disabled = !(name && p.ym && cats.length);
   if($('schedRate')) $('schedRate').oninput = updateSchedSum;
   if($('schedCat')) $('schedCat').onchange = renderSchedPreview;
+  if($('schedMonth')) $('schedMonth').onchange = () => { schedApplyMonth(schedParsed, $('schedMonth').value || null); schedParsed.src = 'выбран вручную'; renderSchedPreview(); };
+  if($('schedSheet')) $('schedSheet').onchange = () => { const o = schedParsed.options[Number($('schedSheet').value)], opts = schedParsed.options, file = schedParsed.file; schedParsed = schedApplyMonth(Object.assign({}, o), o.ym); schedParsed.options = opts; schedParsed.file = file; renderSchedPreview(); };
   updateSchedSum();
 }
 function updateSchedSum(){
