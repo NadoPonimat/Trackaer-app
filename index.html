@@ -474,6 +474,10 @@
   .wo-quiet .mini.on{background:var(--accent);border-color:var(--accent);color:#fff}
   .wo-ex.quiet h4 small{display:block;font-size:11px;font-weight:400;color:var(--muted);margin-top:2px}
   .pb-sit{cursor:pointer}
+  .pb-alts{margin-top:4px;display:flex;flex-direction:column;gap:2px} .pb-alts span{font-size:12px;color:var(--text);opacity:.8;cursor:pointer} .pb-alts i{font-style:normal;color:var(--muted);font-size:11px}
+  .pb-voice{font-size:13px;color:var(--muted);margin:4px 0 8px;display:flex;gap:8px;align-items:center} .pb-voice select{font:inherit;padding:4px 8px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--text)}
+  .pl-alts{margin:6px 0} .pl-h{font-size:12px;color:var(--muted);margin:8px 0 4px;text-transform:uppercase}
+  .pl-alt{display:flex;gap:6px;align-items:center;padding:5px 0;border-top:1px dashed var(--line)} .pl-alt span{flex:1;font-size:14px} .pl-alt small{display:block;font-size:11px;color:var(--muted)}
   .pb-line .pb-gr,.pb-train .pb-gr{font:inherit;font-size:11px;font-weight:700;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);padding:2px 6px}
   .pb-line .pb-gr{position:absolute;right:6px;bottom:4px} .pb-line .rd-say{top:12px;transform:none}
   .gr-en{font-size:19px;font-weight:700;margin-bottom:4px} .gr-ru{color:var(--muted);margin-bottom:8px}
@@ -1692,6 +1696,8 @@
     <div class="field"><label for="plRu">По-русски</label><textarea id="plRu" rows="2" placeholder="Здравствуйте, какой абонемент вас интересует?"></textarea></div>
     <div class="field"><label for="plTr">По-английски</label><textarea id="plTr" rows="2"></textarea></div>
     <div class="sp-btns"><button id="plTrBtn">Перевести</button><button id="plSay">▶ Послушать</button><button id="plGram">Разбор</button></div>
+    <div class="sp-btns"><button id="plVarBtn">Варианты перевода</button></div>
+    <div id="plAlts" class="pl-alts"></div>
     <div class="hint" id="plHint"></div>
     <div class="actions"><button id="plCancel">Отмена</button><button id="plDel">Удалить</button><button id="plSave" class="primary">Сохранить</button></div>
   </div>
@@ -2469,7 +2475,7 @@
       <button id="openReset">Сбросить настройки…</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 113 — график смен: месяц по датам таблицы, выбор листа и месяца вручную; английский по песням и разбор грамматики фраз (время, глаголы, местоимения, сленг); разговорник: ситуации и диалоги, перевод с русского, озвучка и заучивание; «Через не хочу»: книги с нормой в день, прогрессом, серией и выводом после прочтения; курсы «Политология» и «Экономика» (по 32 урока); привычки, итоги месяца и года, языки: часы по годовому плану и прогноз; курс арабского (ступень 1, с нуля: 48 уроков по 2 части, озвучка ▶ и словарь); стойка на руках у стены заменена отжиманиями с ногами на возвышении (норма в повторах); тихий режим тренировки (без скакалки, берпи и прыжков); дневник питания (блюда с КБЖУ, цена → расход, статистика день/неделя/месяц); кошелёк: долги с графиком платежей и рассрочкой, календарь выплат (мне должны / я должен, сроки, валюта, напоминания), конвертер любых валют; курсы валют Нацбанка РК онлайн + калькулятор; валюты (обмен ₸↔₽/$/€…, копилки в валюте), копилки (откладывай из зарплаты, аванса или подработки), доход с подработок; остаток аванса плюсуется к зарплате, стартовые деньги (сверка); зарплата по графику, аванс, получение зарплаты, расходы по категориям и продуктам, КБЖУ для еды; график смен из Excel; резервная копия; рекорды</div>
+    <div class="hint sv-version" id="version">Версия 114 — разговорник: варианты перевода (стиль, UK/US), выбор голоса (американский, британский, австралийский); график смен: месяц по датам таблицы, выбор листа и месяца вручную; английский по песням и разбор грамматики фраз (время, глаголы, местоимения, сленг); разговорник: ситуации и диалоги, перевод с русского, озвучка и заучивание; «Через не хочу»: книги с нормой в день, прогрессом, серией и выводом после прочтения; курсы «Политология» и «Экономика» (по 32 урока); привычки, итоги месяца и года, языки: часы по годовому плану и прогноз; курс арабского (ступень 1, с нуля: 48 уроков по 2 части, озвучка ▶ и словарь); стойка на руках у стены заменена отжиманиями с ногами на возвышении (норма в повторах); тихий режим тренировки (без скакалки, берпи и прыжков); дневник питания (блюда с КБЖУ, цена → расход, статистика день/неделя/месяц); кошелёк: долги с графиком платежей и рассрочкой, календарь выплат (мне должны / я должен, сроки, валюта, напоминания), конвертер любых валют; курсы валют Нацбанка РК онлайн + калькулятор; валюты (обмен ₸↔₽/$/€…, копилки в валюте), копилки (откладывай из зарплаты, аванса или подработки), доход с подработок; остаток аванса плюсуется к зарплате, стартовые деньги (сверка); зарплата по графику, аванс, получение зарплаты, расходы по категориям и продуктам, КБЖУ для еды; график смен из Excel; резервная копия; рекорды</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -14014,6 +14020,85 @@ const PB_PRESETS = [
   [1, 'По одной таблетке три раза в день после еды.', 'One tablet three times a day after meals.'],
   [0, 'Есть что-нибудь подешевле?', 'Do you have anything cheaper?']]},
 ];
+/* варианты перевода для готовых ситуаций: другой стиль, британский / американский */
+const PB_ALTS = {
+ 'Hi! How can I help you?': [['Hello! Can I help you?', 'нейтрально'], ['Hi there! What can I do for you?', 'разговорно'], ['Good morning! How may I help you?', 'вежливо, официально']],
+ 'Hi, how much is a membership?': [['How much does a membership cost?', 'нейтрально'], ['What’s the price for a membership?', 'разговорно']],
+ 'Which membership are you interested in: one month, three months, or a year?': [['Are you looking for a monthly, three-month, or annual membership?', 'нейтрально']],
+ 'One month. What does it include?': [['Just one month. What’s included?', 'разговорно']],
+ 'The gym, group classes, and the sauna.': [['You get the gym, group classes, and the sauna.', 'разговорно']],
+ 'Would you like a trial session?': [['Do you want to try a session first?', 'разговорно'], ['Would you like a trial class?', 'вариант']],
+ 'What time do you open and close?': [['What are your opening hours?', 'нейтрально'], ['When are you open?', 'коротко']],
+ 'We’re open from 7 a.m. to 11 p.m.': [['Our opening hours are from 7 a.m. to 11 p.m.', 'официально'], ['We open at seven and close at eleven.', 'разговорно']],
+ 'Is the water in the cooler free, or do I have to pay for it?': [['Is the cooler water free?', 'коротко'], ['Do I have to pay for the water?', 'разговорно']],
+ 'The water in the cooler is free. Bottled water is sold at the bar.': [['The cooler water’s free, and you can buy bottled water at the bar.', 'разговорно']],
+ 'Where is the locker room?': [['Where are the changing rooms?', 'UK'], ['Where’s the locker room?', 'разговорно, US']],
+ 'Straight ahead and to the right. Here’s your locker key.': [['Go straight and turn right. Here’s the key to your locker.', 'вариант']],
+ 'Can I help you with anything else?': [['Anything else I can help with?', 'разговорно'], ['Is there anything else I can do for you?', 'вежливо']],
+ 'No, thank you.': [['No, I’m good, thanks.', 'разговорно, US'], ['No, I’m fine, thanks.', 'UK']],
+ 'Have a great workout!': [['Enjoy your workout!', 'нейтрально'], ['Have a good session!', 'UK']],
+ 'Good evening! What can I get you?': [['Hi! What would you like?', 'нейтрально'], ['Evening! What’ll it be?', 'разговорно']],
+ 'Can I get a protein shake with banana?': [['I’d like a banana protein shake, please.', 'вежливо'], ['Could I have a protein shake with banana, please?', 'UK, вежливо']],
+ 'Sure. Large or small?': [['Of course. What size: large or small?', 'нейтрально']],
+ 'Large. Is it made with milk or water?': [['A large one. Do you make it with milk or water?', 'вариант']],
+ 'How much protein is in it?': [['How much protein does it have?', 'вариант']],
+ 'About thirty grams.': [['Around thirty grams.', 'вариант']],
+ 'That’ll be fifteen hundred tenge. Card or cash?': [['That’s one thousand five hundred tenge. Will you pay by card or in cash?', 'вежливо'], ['Fifteen hundred, please. Card or cash?', 'коротко']],
+ 'Card, please.': [['I’ll pay by card.', 'вариант']],
+ 'Please tap your card.': [['Please tap or insert your card.', 'вариант']],
+ 'Your shake will be ready in a couple of minutes.': [['It’ll be ready in a couple of minutes.', 'разговорно']],
+ 'You’re welcome. Come again!': [['No problem! See you next time!', 'разговорно'], ['My pleasure. Hope to see you again!', 'вежливо']],
+ 'Hi! Can I help you?': [['Are you looking for anything in particular?', 'вежливо'], ['Can I help you find something?', 'US']],
+ 'Yes, I’m looking for running shoes.': [['Yes, I need a pair of running shoes.', 'вариант'], ['Yes, I’m looking for running trainers.', 'UK: trainers = кроссовки']],
+ 'What size are you?': [['What size do you wear?', 'нейтрально'], ['What size do you take?', 'UK']],
+ 'Can I try them on?': [['Could I try these on?', 'вежливо']],
+ 'Of course. The fitting room is over there.': [['Sure. The changing room is over there.', 'UK']],
+ 'Let me check in the back.': [['Let me check the stockroom.', 'вариант']],
+ 'How much are they?': [['How much do they cost?', 'нейтрально']],
+ 'Is there a discount?': [['Are they on sale?', 'разговорно']],
+ 'OK, I’ll take them.': [['Great, I’ll get them.', 'разговорно']],
+ 'Do you need a bag?': [['Would you like a bag?', 'вежливо']],
+ 'No, thanks. Can I have the receipt?': [['No, thank you. Could I get the receipt, please?', 'вежливо']],
+ 'A table for two, please.': [['Could we get a table for two?', 'разговорно']],
+ 'What would you recommend?': [['What’s good here?', 'разговорно']],
+ 'I’ll have the steak, medium, and a salad.': [['Can I get the steak, medium, with a salad?', 'US, разговорно'], ['I’d like the steak, medium, and a salad, please.', 'вежливо']],
+ 'Still water, please.': [['Just water, please. No gas.', 'разговорно']],
+ 'Could I have the bill, please?': [['Could I get the check, please?', 'US: check = счёт'], ['Can we have the bill, please?', 'UK']],
+ 'Can I pay by card?': [['Do you take cards?', 'разговорно']],
+ 'Hi! Where to?': [['Where are you headed?', 'US']],
+ 'To the airport, please.': [['Airport, please.', 'коротко']],
+ 'About how long will it take?': [['How long does it take to get there?', 'вариант']],
+ 'Please stop here.': [['You can drop me off here.', 'разговорно'], ['Could you pull over here, please?', 'вежливо']],
+ 'Keep the change.': [['Keep the change, thanks.', 'вариант']],
+ 'Could I have a window seat?': [['Can I get a window seat?', 'разговорно']],
+ 'I have a reservation under the name Bektas.': [['I’ve got a booking under Bektas.', 'UK, разговорно']],
+ 'Is breakfast included?': [['Does the price include breakfast?', 'вариант']],
+ 'What time is check-out?': [['When do I have to check out?', 'разговорно']],
+ 'Hi! What’s your name?': [['Hey! I’m Bektas. What’s your name?', 'разговорно']],
+ 'Where are you from?': [['Where are you originally from?', 'вариант']],
+ 'What do you do?': [['What do you do for a living?', 'нейтрально'], ['What line of work are you in?', 'вежливо']],
+ 'Nice to meet you!': [['Pleased to meet you.', 'вежливо, UK'], ['Great to meet you!', 'разговорно']],
+ 'My English isn’t very good yet. Could you speak a little slower, please?': [['Sorry, my English isn’t great. Could you slow down a bit?', 'разговорно']],
+ 'Hello, I have a sore throat.': [['Hi, my throat hurts.', 'разговорно']],
+ 'Do I need a prescription?': [['Is this available without a prescription?', 'вариант']],
+};
+const PB_VOICES = [['en-US', '🇺🇸 американский'], ['en-GB', '🇬🇧 британский'], ['en-AU', '🇦🇺 австралийский']];
+const pbVoice = s => s.voice || pbLang(s)[1];
+/* варианты перевода из интернета: база переводов MyMemory (несколько совпадений) + Google */
+async function translateVariants(text, from, to){
+  const out = [], add = (t, tag) => { t = String(t || '').trim(); if(t && !/MYMEMORY WARNING|INVALID/i.test(t) && !out.some(x => x.t.toLowerCase() === t.toLowerCase())) out.push({t, tag}); };
+  try{
+    const j = JSON.parse(await httpText('https://api.mymemory.translated.net/get?langpair=' + from + '|' + to + '&q=' + encodeURIComponent(text)));
+    if(j && j.responseData) add(j.responseData.translatedText, 'машинный перевод');
+    for(const m of (j && j.matches || []).slice(0, 6)) add(m.translation, m['created-by'] === 'MT!' || /MT/.test(m['created-by'] || '') ? 'машинный перевод' : 'из базы переводов' + (m.match ? ' · совпадение ' + Math.round(m.match * 100) + '%' : ''));
+  }catch(e){}
+  try{
+    const j = JSON.parse(await httpText('https://translate.googleapis.com/translate_a/single?client=gtx&dt=t&sl=' + from + '&tl=' + to + '&q=' + encodeURIComponent(text)));
+    add((j[0] || []).map(x => x[0]).join(''), 'Google');
+  }catch(e){}
+  return out;
+}
+
 const pbData = () => settings.phrasebook = settings.phrasebook || {sits: []};
 async function savePb(){ await repo.setSetting('phrasebook', JSON.stringify(settings.phrasebook || {sits: []})); }
 const pbSit = id => pbData().sits.find(s => s.id === id);
@@ -14029,7 +14114,8 @@ async function translateText(text, from, to){
   return (j[0] || []).map(x => x[0]).join('').trim();
 }
 let pbCur = null, pbTrain = null, pbPlaying = false;
-function openPhrasebook(){ $('serviceBg').classList.remove('open'); pbCur = null; pbTrain = null; renderPb(); $('pbBg').classList.add('open'); }
+function openPhrasebook(){ $('serviceBg').classList.remove('open');
+  for(const s of pbData().sits) for(const l of s.lines) if(!l.alts && PB_ALTS[l.tr]) l.alts = PB_ALTS[l.tr].map(([t, tag]) => ({t, tag})); pbCur = null; pbTrain = null; renderPb(); $('pbBg').classList.add('open'); }
 function pbLearned(s){ const n = s.lines.length; return n ? Math.round(s.lines.filter(l => (l.box || 0) >= 3).length / n * 100) : 0; }
 function renderPb(){
   const d = pbData();
@@ -14064,17 +14150,19 @@ function renderPb(){
     }
     $('pbBody').innerHTML = h; return;
   }
+  h += '<div class="pb-voice">Голос: <select id="pbVoiceSel">' + PB_VOICES.map(([v, n]) => '<option value="' + v + '"' + (pbVoice(s) === v ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></div>';
   h += '<div class="sp-btns"><button class="go" data-pb="playall">' + (pbPlaying ? '■ Стоп' : '▶ Прослушать диалог') + '</button><button data-pb="train"' + (s.lines.length ? '' : ' disabled') + '>Заучивание</button></div>';
   if(!s.lines.length) h += '<div class="sp-note">Пока пусто. Добавь фразы: свои и собеседника.</div>';
   for(const l of s.lines) h += '<div class="pb-line ' + (l.who === 0 ? 'me' : 'them') + '" data-pb="edit" data-id="' + l.id + '"><small>' + escHtml(s.roles[l.who] || '') + ((l.box || 0) >= 3 ? ' · ✓ выучено' : '') + '</small>' +
     '<div class="pb-tr">' + escHtml(l.tr || '…') + '</div><div class="pb-ru">' + escHtml(l.ru) + '</div>' +
+    ((l.alts || []).length ? '<div class="pb-alts">' + l.alts.slice(0, 3).map((a, k) => '<span data-pb="sayalt" data-id="' + l.id + '" data-k="' + k + '">▶ ' + escHtml(a.t) + (a.tag ? ' <i>' + escHtml(a.tag) + '</i>' : '') + '</span>').join('') + '</div>' : '') +
     '<button class="rd-say" data-pb="say" data-id="' + l.id + '">▶</button><button class="pb-gr" data-pb="gram" data-id="' + l.id + '" title="Разбор грамматики">Aa</button></div>';
   h += '<div class="sp-btns"><button data-pb="add" data-who="0">+ ' + escHtml(s.roles[0]) + '</button><button data-pb="add" data-who="1">+ ' + escHtml(s.roles[1]) + '</button></div>' +
        '<div class="sp-btns"><button data-pb="vocab">Все фразы → в словарь</button></div>';
   $('pbBody').innerHTML = h;
 }
 const pbLang = s => (PB_LANGS[s.lang || 'en'] || PB_LANGS.en);
-async function pbSay(s, l){ await speakText(l.tr, pbLang(s)[1], {pitch: l.who === 0 ? 1 : 0.8}); }
+async function pbSay(s, l, text){ await speakText(text || l.tr, pbVoice(s), {pitch: l.who === 0 ? 1 : 0.8}); }
 function pbTrainStart(s){
   /* сначала невыученные и «ещё учу», выученные — в конец */
   const q = s.lines.slice().sort((a, b) => (a.box || 0) - (b.box || 0)).map(l => l.id);
@@ -14094,12 +14182,13 @@ $('pbBody').addEventListener('click', async e => {
     if(pick == null) return;
     const add = pick.trim() === '0' ? list : [list[Number(pick) - 1]].filter(Boolean);
     let seq = Date.now();
-    for(const p of add) d.sits.push({id: seq++, name: p.name, roles: p.roles.slice(), lang: 'en', lines: p.lines.map(([who, ru, tr]) => ({id: seq++, who, ru, tr}))});
+    for(const p of add) d.sits.push({id: seq++, name: p.name, roles: p.roles.slice(), lang: 'en', lines: p.lines.map(([who, ru, tr]) => ({id: seq++, who, ru, tr, alts: (PB_ALTS[tr] || []).map(([t, tag]) => ({t, tag}))}))});
     await savePb(); renderPb(); if(add.length) toast('Добавлено ситуаций: ' + add.length);
   }
   else if(a === 'add') openPbLine(null, Number(el.dataset.who));
   else if(a === 'edit') openPbLine(Number(el.dataset.id));
   else if(a === 'say'){ const l = s.lines.find(x => x.id === Number(el.dataset.id)); if(l) pbSay(s, l); }
+  else if(a === 'sayalt'){ const l = s.lines.find(x => x.id === Number(el.dataset.id)); const al = l && (l.alts || [])[Number(el.dataset.k)]; if(al) pbSay(s, l, al.t); }
   else if(a === 'gram'){ const l = s.lines.find(x => x.id === Number(el.dataset.id)); if(l && l.tr) openGrammar(l.tr, l.ru); }
   else if(a === 'playall'){
     if(pbPlaying){ pbPlaying = false; renderPb(); return; }
@@ -14128,6 +14217,12 @@ $('pbBody').addEventListener('click', async e => {
     const n = await addVocab(s.lines.filter(l => l.tr).map(l => ({en: l.tr, ipa: '', ru: l.ru})), pbLang(s)[2], null);
     toast(n ? 'В словарь добавлено: ' + n : 'Уже в словаре');
   }
+});
+$('pbBody').addEventListener('change', async e => {
+  if(e.target.id !== 'pbVoiceSel') return;
+  const s = pbSit(pbCur); if(!s) return;
+  s.voice = e.target.value; await savePb();
+  toast('Голос: ' + (PB_VOICES.find(v => v[0] === s.voice) || ['', ''])[1] + '. Если звучит так же — установи этот голос в настройках синтеза речи Google.');
 });
 $('pbClose').onclick = () => { pbPlaying = false; $('pbBg').classList.remove('open'); render(); };
 $('openPhrasebook').onclick = openPhrasebook;
@@ -14166,6 +14261,8 @@ function openPbLine(id, who){
   pbTrManual = !!pbLineEdit;
   $('plHint').textContent = 'Пиши по-русски — перевод подставится сам через пару секунд (нужен интернет). Машинный перевод иногда ошибается: если сомневаешься, пришли фразу мне в чат.';
   $('plDel').style.display = pbLineEdit ? '' : 'none';
+  pbEditAlts = pbLineEdit ? (pbLineEdit.alts || []).map(a => Object.assign({}, a)) : [];
+  renderPlAlts();
   $('pbLineBg').classList.add('open');
   setTimeout(() => $('plRu').focus(), 50);
 }
@@ -14179,13 +14276,13 @@ async function pbDoTranslate(force){
 $('plRu').oninput = () => { clearTimeout(pbTrTimer); pbTrTimer = setTimeout(() => pbDoTranslate(false), 900); };
 $('plTr').oninput = () => { pbTrManual = !!$('plTr').value.trim(); };
 $('plTrBtn').onclick = () => { pbTrManual = false; pbDoTranslate(true); };
-$('plSay').onclick = () => { const s = pbSit(pbCur); speakText($('plTr').value, pbLang(s)[1], {pitch: Number($('plWho').value) === 0 ? 1 : 0.8}); };
+$('plSay').onclick = () => { const s = pbSit(pbCur); speakText($('plTr').value, pbVoice(s), {pitch: Number($('plWho').value) === 0 ? 1 : 0.8}); };
 $('plSave').onclick = async () => {
   const s = pbSit(pbCur), ru = $('plRu').value.trim(), tr = $('plTr').value.trim();
   if(!ru && !tr){ toast('Впиши фразу'); return; }
   const l = pbLineEdit || {id: Date.now()};
   const changed = !pbLineEdit || pbLineEdit.tr !== tr;
-  Object.assign(l, {who: Number($('plWho').value) || 0, ru, tr});
+  Object.assign(l, {who: Number($('plWho').value) || 0, ru, tr, alts: pbEditAlts.filter(a => a.t && a.t !== tr)});
   if(changed) l.box = 0;
   if(!pbLineEdit) s.lines.push(l);
   await savePb(); $('pbLineBg').classList.remove('open'); renderPb();
@@ -14195,6 +14292,33 @@ $('plDel').onclick = async () => {
   s.lines = s.lines.filter(l => l !== pbLineEdit); await savePb(); $('pbLineBg').classList.remove('open'); renderPb();
 };
 $('plCancel').onclick = () => $('pbLineBg').classList.remove('open');
+let pbEditAlts = [], pbFound = [];
+function renderPlAlts(){
+  const main = $('plTr').value.trim().toLowerCase();
+  let h = '';
+  if(pbEditAlts.length) h += '<div class="pl-h">Сохранённые варианты</div>' + pbEditAlts.map((a, k) => '<div class="pl-alt"><span>' + escHtml(a.t) + (a.tag ? '<small>' + escHtml(a.tag) + '</small>' : '') + '</span><button class="mini" data-pa="say" data-k="' + k + '">▶</button><button class="mini" data-pa="main" data-k="' + k + '">основной</button><button class="mini" data-pa="del" data-k="' + k + '">✕</button></div>').join('');
+  const found = pbFound.filter(f => f.t.toLowerCase() !== main && !pbEditAlts.some(a => a.t.toLowerCase() === f.t.toLowerCase()));
+  if(found.length) h += '<div class="pl-h">Найдено в интернете</div>' + found.map(f => '<div class="pl-alt"><span>' + escHtml(f.t) + '<small>' + escHtml(f.tag) + '</small></span><button class="mini" data-pa="sayf" data-t="' + escHtml(f.t) + '">▶</button><button class="mini" data-pa="addf" data-t="' + escHtml(f.t) + '" data-tag="' + escHtml(f.tag) + '">+ вариант</button><button class="mini" data-pa="mainf" data-t="' + escHtml(f.t) + '">основной</button></div>').join('');
+  $('plAlts').innerHTML = h;
+}
+$('plVarBtn').onclick = async () => {
+  const ru = $('plRu').value.trim(); if(!ru){ toast('Сначала впиши фразу по-русски'); return; }
+  $('plHint').textContent = 'Ищу варианты…';
+  pbFound = await translateVariants(ru, 'ru', 'en');
+  $('plHint').textContent = pbFound.length ? 'Выбери основной вариант или добавь дополнительные. Стиль отмечай сам: вежливо, разговорно, UK/US.' : 'Не нашёл вариантов (нет интернета?)';
+  renderPlAlts();
+};
+$('plAlts').addEventListener('click', e => {
+  const b = e.target.closest('[data-pa]'); if(!b) return;
+  const a = b.dataset.pa, k = Number(b.dataset.k), s = pbSit(pbCur), pitch = Number($('plWho').value) === 0 ? 1 : 0.8;
+  if(a === 'say') speakText(pbEditAlts[k].t, pbVoice(s), {pitch});
+  else if(a === 'sayf') speakText(b.dataset.t, pbVoice(s), {pitch});
+  else if(a === 'del') pbEditAlts.splice(k, 1);
+  else if(a === 'main'){ const old = $('plTr').value.trim(); const al = pbEditAlts.splice(k, 1)[0]; $('plTr').value = al.t; pbTrManual = true; if(old) pbEditAlts.unshift({t: old, tag: 'прежний вариант'}); }
+  else if(a === 'addf'){ if(pbEditAlts.length < 6) pbEditAlts.push({t: b.dataset.t, tag: b.dataset.tag}); }
+  else if(a === 'mainf'){ const old = $('plTr').value.trim(); $('plTr').value = b.dataset.t; pbTrManual = true; if(old && !pbEditAlts.some(x => x.t === old)) pbEditAlts.unshift({t: old, tag: 'прежний вариант'}); }
+  renderPlAlts();
+});
 $('plGram').onclick = () => { const t = $('plTr').value.trim(); if(t) openGrammar(t, $('plRu').value.trim()); else toast('Сначала нужен английский вариант'); };
 
 /* =====================================================================
