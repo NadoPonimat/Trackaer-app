@@ -347,7 +347,8 @@
   #studyPartBg,#resetBg,#goalBg,#woPickBg{z-index:30}
   #vocabBg,#examBg,#diaryBg,#workoutBg,#recBg{z-index:26}
   #weekBg,#schedBg,#moneyBg,#expBg,#jarBg,#moveBg,#fxBg,#debtBg,#payBg,#calBg{z-index:30}
-  #walletBg,#foodBg,#habitsBg,#langStatBg,#sumBg{z-index:26}
+  #walletBg,#foodBg,#habitsBg,#langStatBg,#sumBg,#pbBg{z-index:26}
+  #pbSitBg,#pbLineBg{z-index:30}
   #habitEdBg{z-index:30}
   #foodEntBg,#foodGoalBg,#hrEdBg,#hrFinBg{z-index:30}
   #finCatBg{z-index:27}
@@ -471,6 +472,14 @@
   .wo-quiet .mini{white-space:nowrap;font-size:12px;padding:4px 10px}
   .wo-quiet .mini.on{background:var(--accent);border-color:var(--accent);color:#fff}
   .wo-ex.quiet h4 small{display:block;font-size:11px;font-weight:400;color:var(--muted);margin-top:2px}
+  .pb-sit{cursor:pointer}
+  .pb-line{position:relative;max-width:86%;margin:8px 0;padding:8px 42px 8px 12px;border-radius:14px;border:1px solid var(--line);background:var(--surface);cursor:pointer}
+  .pb-line.me{margin-left:auto;border-color:var(--accent)} .pb-line.them{margin-right:auto}
+  .pb-line.playing{box-shadow:0 0 0 2px var(--accent)}
+  .pb-line small{display:block;font-size:11px;color:var(--muted)} .pb-line .pb-tr{font-size:16px;font-weight:600;margin:2px 0} .pb-line .pb-ru{font-size:13px;color:var(--muted)}
+  .pb-line .rd-say{position:absolute;right:6px;top:50%;transform:translateY(-50%)}
+  .pb-train{text-align:center;padding:10px 0} .pb-count{font-size:12px;color:var(--muted);margin-bottom:12px}
+  .pb-train .pb-ru{font-size:20px;margin:10px 0 16px} .pb-train .pb-tr{font-size:20px;font-weight:700;color:var(--accent);margin-bottom:12px}
   .hr-wrap{padding:4px 0 8px} .hr-head{display:flex;flex-direction:column;margin:4px 0 8px} .hr-head b{font-size:16px} .hr-head span{font-size:12px;color:var(--muted)}
   .hr-q{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-top:1px dashed var(--line);font-size:14px} .hr-q span{cursor:pointer} .hr-q small{display:block;font-size:11px;color:var(--muted)}
   .hr.today-ok{border-color:#4caf5088} .hr-why{font-size:12px;color:var(--muted);font-style:italic;margin:4px 0}
@@ -1654,6 +1663,30 @@
     <button class="more" id="sumClose" aria-label="Закрыть">✕</button></div>
   <div class="st-body" id="sumBody"></div>
 </div>
+<div class="graph-bg" id="pbBg">
+  <div class="graph-top"><div><div class="graph-title" id="pbTitle">Разговорник</div><div class="graph-sub" id="pbSub"></div></div>
+    <button class="more" id="pbClose" aria-label="Закрыть">✕</button></div>
+  <div class="st-body" id="pbBody"></div>
+</div>
+<div class="sheet-bg" id="pbSitBg">
+  <div class="sheet">
+    <h2>Ситуация</h2>
+    <div class="field"><label for="psName">Где / что происходит</label><input id="psName" placeholder="Например: в спортзале, в магазине"></div>
+    <div class="ex-grid"><label>Роль 1<input id="psR1" value="Я"></label><label>Роль 2<input id="psR2" placeholder="Клиент, продавец…"></label></div>
+    <div class="actions"><button id="psCancel">Отмена</button><button id="psDel">Удалить</button><button id="psSave" class="primary">Сохранить</button></div>
+  </div>
+</div>
+<div class="sheet-bg" id="pbLineBg">
+  <div class="sheet">
+    <h2 id="plTitle">Фраза</h2>
+    <div class="field"><label for="plWho">Кто говорит</label><select id="plWho"></select></div>
+    <div class="field"><label for="plRu">По-русски</label><textarea id="plRu" rows="2" placeholder="Здравствуйте, какой абонемент вас интересует?"></textarea></div>
+    <div class="field"><label for="plTr">По-английски</label><textarea id="plTr" rows="2"></textarea></div>
+    <div class="sp-btns"><button id="plTrBtn">Перевести</button><button id="plSay">▶ Послушать</button></div>
+    <div class="hint" id="plHint"></div>
+    <div class="actions"><button id="plCancel">Отмена</button><button id="plDel">Удалить</button><button id="plSave" class="primary">Сохранить</button></div>
+  </div>
+</div>
 <div class="graph-bg" id="finCatBg">
   <div class="graph-top"><div><div class="graph-title">Категории и продукты</div><div class="graph-sub">на что тратишь</div></div>
     <button class="more" id="finCatClose" aria-label="Закрыть">✕</button></div>
@@ -2172,6 +2205,7 @@
       <button id="openStats">Статистика учёбы</button>
       <button id="openDiary">Дневник 🔒</button>
       <button id="openVocab">Словарь</button>
+      <button id="openPhrasebook">Разговорник: ситуации и диалоги</button>
       <button id="openGraph">Карта связей</button>
       <button id="openPeople">Люди</button>
       <button id="openBooks">Книги</button>
@@ -2407,7 +2441,7 @@
       <button id="openReset">Сбросить настройки…</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 110 — «Через не хочу»: книги с нормой в день, прогрессом, серией и выводом после прочтения; курсы «Политология» и «Экономика» (по 32 урока); привычки, итоги месяца и года, языки: часы по годовому плану и прогноз; курс арабского (ступень 1, с нуля: 48 уроков по 2 части, озвучка ▶ и словарь); стойка на руках у стены заменена отжиманиями с ногами на возвышении (норма в повторах); тихий режим тренировки (без скакалки, берпи и прыжков); дневник питания (блюда с КБЖУ, цена → расход, статистика день/неделя/месяц); кошелёк: долги с графиком платежей и рассрочкой, календарь выплат (мне должны / я должен, сроки, валюта, напоминания), конвертер любых валют; курсы валют Нацбанка РК онлайн + калькулятор; валюты (обмен ₸↔₽/$/€…, копилки в валюте), копилки (откладывай из зарплаты, аванса или подработки), доход с подработок; остаток аванса плюсуется к зарплате, стартовые деньги (сверка); зарплата по графику, аванс, получение зарплаты, расходы по категориям и продуктам, КБЖУ для еды; график смен из Excel; резервная копия; рекорды</div>
+    <div class="hint sv-version" id="version">Версия 111 — разговорник: ситуации и диалоги, перевод с русского, озвучка и заучивание; «Через не хочу»: книги с нормой в день, прогрессом, серией и выводом после прочтения; курсы «Политология» и «Экономика» (по 32 урока); привычки, итоги месяца и года, языки: часы по годовому плану и прогноз; курс арабского (ступень 1, с нуля: 48 уроков по 2 части, озвучка ▶ и словарь); стойка на руках у стены заменена отжиманиями с ногами на возвышении (норма в повторах); тихий режим тренировки (без скакалки, берпи и прыжков); дневник питания (блюда с КБЖУ, цена → расход, статистика день/неделя/месяц); кошелёк: долги с графиком платежей и рассрочкой, календарь выплат (мне должны / я должен, сроки, валюта, напоминания), конвертер любых валют; курсы валют Нацбанка РК онлайн + калькулятор; валюты (обмен ₸↔₽/$/€…, копилки в валюте), копилки (откладывай из зарплаты, аванса или подработки), доход с подработок; остаток аванса плюсуется к зарплате, стартовые деньги (сверка); зарплата по графику, аванс, получение зарплаты, расходы по категориям и продуктам, КБЖУ для еды; график смен из Excel; резервная копия; рекорды</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -2771,6 +2805,7 @@ async function openDatabase(){
   settings.studyToday = parseJSON(s.studyToday, null);
   settings.studyHist = parseJSON(s.studyHist, {});
   settings.habits = parseJSON(s.habits, []);
+  settings.phrasebook = parseJSON(s.phrasebook, null);
   settings.hardReads = parseJSON(s.hardReads, []);
   settings.readLog = parseJSON(s.readLog, {});
   settings.habitLog = parseJSON(s.habitLog, {});
@@ -4242,7 +4277,7 @@ $('menuDelete').onclick = async () => {
   render();
 };
 
-['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg','bookTocBg','lockBg','tmplBg','tmplEditBg','studyPartBg','resetBg','goalBg','woPickBg','weekBg','schedBg','moneyBg','expBg','jarBg','moveBg','fxBg','debtBg','payBg','calBg','foodEntBg','foodGoalBg','habitEdBg','hrEdBg','hrFinBg'].forEach(id => {
+['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg','bookTocBg','lockBg','tmplBg','tmplEditBg','studyPartBg','resetBg','goalBg','woPickBg','weekBg','schedBg','moneyBg','expBg','jarBg','moveBg','fxBg','debtBg','payBg','calBg','foodEntBg','foodGoalBg','habitEdBg','hrEdBg','hrFinBg','pbSitBg','pbLineBg'].forEach(id => {
   const bg = $(id);
   bg.onclick = e => { if(e.target === bg) bg.classList.remove('open'); };
 });
@@ -4250,7 +4285,7 @@ $('menuDelete').onclick = async () => {
 if(window.Capacitor && window.Capacitor.Plugins.App){
   window.Capacitor.Plugins.App.addListener('backButton', () => {
     if($('diaryBg').classList.contains('open')){ flushDiary().finally(diaryLock); return; }
-    for(const id of ['hrFinBg','hrEdBg','habitEdBg','habitsBg','langStatBg','sumBg','foodGoalBg','foodEntBg','foodBg','payBg','calBg','debtBg','fxBg','moveBg','jarBg','expBg','moneyBg','finCatBg','walletBg','schedBg','weekBg','recBg','goalBg','woPickBg','examBg','vocabBg','workoutBg','resetBg','studyPartBg','tmplEditBg','tmplBg','pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg','newsBg','lockBg','studyBg']){
+    for(const id of ['pbLineBg','pbSitBg','pbBg','hrFinBg','hrEdBg','habitEdBg','habitsBg','langStatBg','sumBg','foodGoalBg','foodEntBg','foodBg','payBg','calBg','debtBg','fxBg','moveBg','jarBg','expBg','moneyBg','finCatBg','walletBg','schedBg','weekBg','recBg','goalBg','woPickBg','examBg','vocabBg','workoutBg','resetBg','studyPartBg','tmplEditBg','tmplBg','pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg','newsBg','lockBg','studyBg']){
       if($(id).classList.contains('open')){ $(id).classList.remove('open'); return; }
     }
     if(path.length){ path.pop(); render(); return; }
@@ -10889,7 +10924,8 @@ function langOfCourse(name){
 let speakLast = {text: '', at: 0};
 /* озвучка: плагин TTS в сборке → голос WebView. В браузер больше не перекидываем:
    если голоса нет — подсказка, что сделать */
-async function speakText(text, lang){
+async function speakText(text, lang, opts){
+  const pitch = opts && opts.pitch || 1;
   text = String(text || '').replace(/\s+/g, ' ').trim();
   if(!text) return;
   const slow = speakLast.text === text && Date.now() - speakLast.at < 6000;   // второе нажатие — медленно
@@ -10897,7 +10933,7 @@ async function speakText(text, lang){
   const rate = slow ? 0.6 : 0.95;
   const tts = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.TextToSpeech;
   if(tts){
-    try{ await tts.stop().catch(() => {}); await tts.speak({text, lang, rate, pitch: 1, volume: 1, category: 'playback'}); return; }
+    try{ await tts.stop().catch(() => {}); await tts.speak({text, lang, rate, pitch, volume: 1, category: 'playback'}); return; }
     catch(e){
       toast('Телефон не смог озвучить (' + lang + '). Настройки Android → Специальные возможности → Синтез речи → Google → установи голос этого языка.');
       return;
@@ -10910,8 +10946,8 @@ async function speakText(text, lang){
       try{
         window.speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance(text);
-        u.lang = lang; u.rate = rate; u.voice = v;
-        window.speechSynthesis.speak(u);
+        u.lang = lang; u.rate = rate; u.voice = v; u.pitch = pitch;
+        await new Promise(res => { u.onend = res; u.onerror = res; window.speechSynthesis.speak(u); setTimeout(res, 20000); });
         return;
       }catch(e){}
     }
@@ -13784,6 +13820,293 @@ async function maybeShowMonthSummary(){
   toast(ym.slice(5) === '01' ? 'Итоги года 🎉' : 'Итоги ' + MONTHS[Number(prev.slice(5, 7)) - 1]);
   return true;
 }
+
+/* =====================================================================
+   РАЗГОВОРНИК: ситуации → роли → диалог. Пишешь по-русски, перевод
+   подставляется сам (можно поправить), ▶ — озвучка, режим заучивания.
+   Язык ситуации хранится в ней самой — позже добавятся другие языки.
+   ===================================================================== */
+const PB_LANGS = {en: ['Английский', 'en-US', 'Английский язык']};
+const PB_PRESETS = [
+ {name: 'Фитнес-клуб: ресепшн', roles: ['Я', 'Клиент'], lines: [
+  [0, 'Здравствуйте! Чем могу помочь?', 'Hi! How can I help you?'],
+  [1, 'Здравствуйте, сколько стоит абонемент?', 'Hi, how much is a membership?'],
+  [0, 'Какой абонемент вас интересует: на месяц, на три месяца или на год?', 'Which membership are you interested in: one month, three months, or a year?'],
+  [1, 'На месяц. Что в него входит?', 'One month. What does it include?'],
+  [0, 'Тренажёрный зал, групповые занятия и сауна.', 'The gym, group classes, and the sauna.'],
+  [0, 'Хотите пробное занятие?', 'Would you like a trial session?'],
+  [1, 'Во сколько вы открываетесь и закрываетесь?', 'What time do you open and close?'],
+  [0, 'Мы работаем с семи утра до одиннадцати вечера.', 'We’re open from 7 a.m. to 11 p.m.'],
+  [1, 'Вода в кулере бесплатная или платная?', 'Is the water in the cooler free, or do I have to pay for it?'],
+  [0, 'Вода в кулере бесплатная, бутилированная вода продаётся в баре.', 'The water in the cooler is free. Bottled water is sold at the bar.'],
+  [1, 'Где раздевалка?', 'Where is the locker room?'],
+  [0, 'Прямо и направо. Вот ваш ключ от шкафчика.', 'Straight ahead and to the right. Here’s your locker key.'],
+  [0, 'Вам что-нибудь подсказать?', 'Can I help you with anything else?'],
+  [1, 'Нет, спасибо.', 'No, thank you.'],
+  [0, 'Хорошей тренировки!', 'Have a great workout!']]},
+ {name: 'Фитнес-бар', roles: ['Я', 'Клиент'], lines: [
+  [0, 'Добрый вечер! Что будете?', 'Good evening! What can I get you?'],
+  [1, 'Можно протеиновый коктейль с бананом?', 'Can I get a protein shake with banana?'],
+  [0, 'Конечно. Большой или маленький?', 'Sure. Large or small?'],
+  [1, 'Большой. На молоке или на воде?', 'Large. Is it made with milk or water?'],
+  [0, 'Как хотите — можно на молоке, на воде или на миндальном молоке.', 'With milk, water, or almond milk — whatever you like.'],
+  [1, 'Сколько в нём белка?', 'How much protein is in it?'],
+  [0, 'Около тридцати граммов.', 'About thirty grams.'],
+  [0, 'С вас тысяча пятьсот тенге. Картой или наличными?', 'That’ll be fifteen hundred tenge. Card or cash?'],
+  [1, 'Картой, пожалуйста.', 'Card, please.'],
+  [0, 'Приложите карту, пожалуйста.', 'Please tap your card.'],
+  [0, 'Ваш коктейль будет готов через пару минут.', 'Your shake will be ready in a couple of minutes.'],
+  [1, 'Спасибо!', 'Thank you!'],
+  [0, 'Пожалуйста, приходите ещё!', 'You’re welcome. Come again!']]},
+ {name: 'Магазин', roles: ['Я', 'Продавец'], lines: [
+  [1, 'Здравствуйте! Вам помочь?', 'Hi! Can I help you?'],
+  [0, 'Да, я ищу кроссовки для бега.', 'Yes, I’m looking for running shoes.'],
+  [1, 'Какой у вас размер?', 'What size are you?'],
+  [0, 'Сорок третий.', 'Size forty-three.'],
+  [0, 'Можно примерить?', 'Can I try them on?'],
+  [1, 'Конечно, примерочная там.', 'Of course. The fitting room is over there.'],
+  [0, 'Они немного маловаты. Есть на размер больше?', 'They’re a bit small. Do you have them in a size up?'],
+  [1, 'Сейчас посмотрю на складе.', 'Let me check in the back.'],
+  [0, 'Сколько они стоят?', 'How much are they?'],
+  [0, 'Есть скидка?', 'Is there a discount?'],
+  [1, 'Сегодня скидка десять процентов.', 'There’s ten percent off today.'],
+  [0, 'Хорошо, я возьму.', 'OK, I’ll take them.'],
+  [1, 'Пакет нужен?', 'Do you need a bag?'],
+  [0, 'Нет, спасибо. Можно чек?', 'No, thanks. Can I have the receipt?']]},
+ {name: 'Кафе и ресторан', roles: ['Я', 'Официант'], lines: [
+  [0, 'Столик на двоих, пожалуйста.', 'A table for two, please.'],
+  [1, 'Пожалуйста, проходите. Вот меню.', 'Please come in. Here is the menu.'],
+  [0, 'Что вы посоветуете?', 'What would you recommend?'],
+  [1, 'Сегодня у нас хороший стейк.', 'The steak is very good today.'],
+  [0, 'Мне стейк средней прожарки и салат.', 'I’ll have the steak, medium, and a salad.'],
+  [0, 'В этом блюде есть орехи?', 'Does this dish have nuts in it?'],
+  [1, 'Что будете пить?', 'What would you like to drink?'],
+  [0, 'Воду без газа, пожалуйста.', 'Still water, please.'],
+  [0, 'Извините, можно ещё салфетки?', 'Excuse me, could I have some more napkins?'],
+  [0, 'Счёт, пожалуйста.', 'Could I have the bill, please?'],
+  [0, 'Можно оплатить картой?', 'Can I pay by card?'],
+  [1, 'Конечно. Всё понравилось?', 'Of course. Did you enjoy your meal?'],
+  [0, 'Да, всё было очень вкусно, спасибо.', 'Yes, everything was delicious. Thank you.']]},
+ {name: 'Такси', roles: ['Я', 'Водитель'], lines: [
+  [1, 'Здравствуйте! Куда едем?', 'Hi! Where to?'],
+  [0, 'В аэропорт, пожалуйста.', 'To the airport, please.'],
+  [0, 'Сколько примерно ехать?', 'About how long will it take?'],
+  [1, 'Минут сорок, если не будет пробок.', 'About forty minutes if there is no traffic.'],
+  [0, 'Можно включить кондиционер?', 'Could you turn on the air conditioning?'],
+  [0, 'Остановите здесь, пожалуйста.', 'Please stop here.'],
+  [0, 'Подождите меня пять минут.', 'Please wait for me for five minutes.'],
+  [0, 'Сколько с меня?', 'How much do I owe you?'],
+  [0, 'Сдачи не надо.', 'Keep the change.']]},
+ {name: 'Аэропорт и отель', roles: ['Я', 'Сотрудник'], lines: [
+  [1, 'Ваш паспорт, пожалуйста.', 'Your passport, please.'],
+  [0, 'Вот, пожалуйста.', 'Here you are.'],
+  [1, 'Сколько у вас мест багажа?', 'How many bags are you checking in?'],
+  [0, 'Одна сумка и ручная кладь.', 'One suitcase and a carry-on.'],
+  [0, 'Можно место у окна?', 'Could I have a window seat?'],
+  [0, 'Где выход номер пять?', 'Where is gate five?'],
+  [0, 'У меня забронирован номер на имя Бектас.', 'I have a reservation under the name Bektas.'],
+  [1, 'На сколько ночей?', 'For how many nights?'],
+  [0, 'На три ночи.', 'For three nights.'],
+  [0, 'Завтрак включён?', 'Is breakfast included?'],
+  [0, 'Во сколько выезд?', 'What time is check-out?'],
+  [0, 'Какой пароль от вайфая?', 'What’s the Wi-Fi password?']]},
+ {name: 'Знакомство', roles: ['Я', 'Собеседник'], lines: [
+  [1, 'Привет! Как тебя зовут?', 'Hi! What’s your name?'],
+  [0, 'Меня зовут Бектас. А тебя?', 'My name is Bektas. And you?'],
+  [1, 'Откуда ты?', 'Where are you from?'],
+  [0, 'Я из Алматы, это в Казахстане.', 'I’m from Almaty. It’s in Kazakhstan.'],
+  [1, 'Чем ты занимаешься?', 'What do you do?'],
+  [0, 'Я работаю в фитнес-баре при спортзале.', 'I work at a fitness bar in a gym.'],
+  [0, 'А ты чем занимаешься?', 'What about you? What do you do?'],
+  [0, 'В свободное время я тренируюсь и учу языки.', 'In my free time, I work out and learn languages.'],
+  [0, 'Мой английский пока не очень хороший, говори помедленнее, пожалуйста.', 'My English isn’t very good yet. Could you speak a little slower, please?'],
+  [0, 'Приятно познакомиться!', 'Nice to meet you!'],
+  [0, 'Давай обменяемся номерами.', 'Let’s exchange numbers.']]},
+ {name: 'Аптека', roles: ['Я', 'Фармацевт'], lines: [
+  [0, 'Здравствуйте, у меня болит горло.', 'Hello, I have a sore throat.'],
+  [0, 'Что вы можете посоветовать?', 'What can you recommend?'],
+  [1, 'У вас есть температура?', 'Do you have a fever?'],
+  [0, 'Нет, только насморк и кашель.', 'No, just a runny nose and a cough.'],
+  [0, 'Нужен рецепт?', 'Do I need a prescription?'],
+  [0, 'Как это принимать?', 'How should I take this?'],
+  [1, 'По одной таблетке три раза в день после еды.', 'One tablet three times a day after meals.'],
+  [0, 'Есть что-нибудь подешевле?', 'Do you have anything cheaper?']]},
+];
+const pbData = () => settings.phrasebook = settings.phrasebook || {sits: []};
+async function savePb(){ await repo.setSetting('phrasebook', JSON.stringify(settings.phrasebook || {sits: []})); }
+const pbSit = id => pbData().sits.find(s => s.id === id);
+/* перевод: MyMemory (бесплатный), запасной — Google. Всегда можно поправить руками */
+async function translateText(text, from, to){
+  text = String(text || '').trim(); if(!text) return '';
+  try{
+    const j = JSON.parse(await httpText('https://api.mymemory.translated.net/get?langpair=' + from + '|' + to + '&q=' + encodeURIComponent(text)));
+    const t = j && j.responseData && j.responseData.translatedText;
+    if(t && Number(j.responseStatus) === 200 && !/MYMEMORY WARNING|INVALID/i.test(t)) return t.trim();
+  }catch(e){}
+  const j = JSON.parse(await httpText('https://translate.googleapis.com/translate_a/single?client=gtx&dt=t&sl=' + from + '&tl=' + to + '&q=' + encodeURIComponent(text)));
+  return (j[0] || []).map(x => x[0]).join('').trim();
+}
+let pbCur = null, pbTrain = null, pbPlaying = false;
+function openPhrasebook(){ $('serviceBg').classList.remove('open'); pbCur = null; pbTrain = null; renderPb(); $('pbBg').classList.add('open'); }
+function pbLearned(s){ const n = s.lines.length; return n ? Math.round(s.lines.filter(l => (l.box || 0) >= 3).length / n * 100) : 0; }
+function renderPb(){
+  const d = pbData();
+  if(!pbCur){
+    $('pbTitle').textContent = 'Разговорник'; $('pbSub').textContent = 'ситуации и диалоги · английский';
+    let h = '<div class="sp-note">Ситуация → кто говорит → фразы. Пиши по-русски — английский подставится сам (поправь, если нужно). ▶ — послушать, «Заучивание» — тренировка: видишь русский, говоришь вслух, проверяешь.</div>';
+    for(const s of d.sits) h += '<div class="st-ath pb-sit" data-pb="open" data-id="' + s.id + '"><div class="st-ath-h"><b>' + escHtml(s.name) + '</b><span class="st-ath-p">' + pbLearned(s) + '%</span></div>' +
+      '<span class="pl-bar"><i style="width:' + pbLearned(s) + '%"></i></span><div class="st-ath-l">' + escHtml(s.roles.join(' и ')) + ' · фраз: ' + s.lines.length + '</div></div>';
+    h += '<div class="sp-btns"><button class="go" data-pb="newsit">+ Ситуация</button><button data-pb="presets">Готовые ситуации</button></div>';
+    $('pbBody').innerHTML = h; return;
+  }
+  const s = pbSit(pbCur); if(!s){ pbCur = null; renderPb(); return; }
+  $('pbTitle').textContent = s.name; $('pbSub').textContent = s.roles.join(' и ') + ' · выучено ' + pbLearned(s) + '%';
+  let h = '<div class="wl-nav"><button data-pb="back">◀ Ситуации</button><b></b><button data-pb="editsit">✎</button></div>';
+  if(pbTrain){
+    const q = pbTrain.queue[pbTrain.i];
+    if(!q){
+      const mins = Math.max(1, Math.round((Date.now() - pbTrain.start) / 60e3));
+      h += '<div class="st-ath"><b>Круг пройден: ' + pbTrain.ok + ' из ' + pbTrain.queue.length + ' знаешь</b><div class="st-ath-l">Фразы, которые не получились, будут чаще попадаться в следующий раз. ' + mins + ' мин засчитано в английский.</div>' +
+        '<div class="sp-btns"><button class="go" data-pb="train">Ещё круг</button><button data-pb="endtrain">К диалогу</button></div></div>';
+    } else {
+      const l = s.lines.find(x => x.id === q);
+      h += '<div class="pb-train"><div class="pb-count">' + (pbTrain.i + 1) + ' из ' + pbTrain.queue.length + ' · говорит: ' + escHtml(s.roles[l.who] || '') + '</div>' +
+        '<div class="pb-ru">' + escHtml(l.ru) + '</div>' +
+        (pbTrain.shown ? '<div class="pb-tr">' + escHtml(l.tr) + ' <button class="rd-say" data-pb="say" data-id="' + l.id + '">▶</button></div><div class="sp-btns"><button data-pb="no">Ещё учу</button><button class="go" data-pb="yes">Знаю ✓</button></div>'
+          : '<div class="sp-note">Скажи вслух по-английски, потом проверь.</div><div class="sp-btns"><button class="go" data-pb="show">Показать перевод</button></div>') + '</div>';
+    }
+    $('pbBody').innerHTML = h; return;
+  }
+  h += '<div class="sp-btns"><button class="go" data-pb="playall">' + (pbPlaying ? '■ Стоп' : '▶ Прослушать диалог') + '</button><button data-pb="train"' + (s.lines.length ? '' : ' disabled') + '>Заучивание</button></div>';
+  if(!s.lines.length) h += '<div class="sp-note">Пока пусто. Добавь фразы: свои и собеседника.</div>';
+  for(const l of s.lines) h += '<div class="pb-line ' + (l.who === 0 ? 'me' : 'them') + '" data-pb="edit" data-id="' + l.id + '"><small>' + escHtml(s.roles[l.who] || '') + ((l.box || 0) >= 3 ? ' · ✓ выучено' : '') + '</small>' +
+    '<div class="pb-tr">' + escHtml(l.tr || '…') + '</div><div class="pb-ru">' + escHtml(l.ru) + '</div>' +
+    '<button class="rd-say" data-pb="say" data-id="' + l.id + '">▶</button></div>';
+  h += '<div class="sp-btns"><button data-pb="add" data-who="0">+ ' + escHtml(s.roles[0]) + '</button><button data-pb="add" data-who="1">+ ' + escHtml(s.roles[1]) + '</button></div>' +
+       '<div class="sp-btns"><button data-pb="vocab">Все фразы → в словарь</button></div>';
+  $('pbBody').innerHTML = h;
+}
+const pbLang = s => (PB_LANGS[s.lang || 'en'] || PB_LANGS.en);
+async function pbSay(s, l){ await speakText(l.tr, pbLang(s)[1], {pitch: l.who === 0 ? 1 : 0.8}); }
+function pbTrainStart(s){
+  /* сначала невыученные и «ещё учу», выученные — в конец */
+  const q = s.lines.slice().sort((a, b) => (a.box || 0) - (b.box || 0)).map(l => l.id);
+  pbTrain = {queue: q, i: 0, ok: 0, shown: false, start: Date.now()};
+}
+$('pbBody').addEventListener('click', async e => {
+  const el = e.target.closest('[data-pb]'); if(!el) return;
+  e.stopPropagation();
+  const a = el.dataset.pb, d = pbData(), s = pbCur ? pbSit(pbCur) : null;
+  if(a === 'open'){ pbCur = Number(el.dataset.id); pbTrain = null; renderPb(); }
+  else if(a === 'back'){ pbCur = null; pbTrain = null; renderPb(); }
+  else if(a === 'newsit' || a === 'editsit') openPbSit(a === 'editsit' ? s : null);
+  else if(a === 'presets'){
+    const have = new Set(d.sits.map(x => x.name)), list = PB_PRESETS.filter(p => !have.has(p.name));
+    if(!list.length){ toast('Все готовые ситуации уже добавлены'); return; }
+    const pick = prompt('Какую ситуацию добавить?\n' + list.map((p, i) => (i + 1) + '. ' + p.name + ' (' + p.lines.length + ' фраз)').join('\n') + '\n0. Все сразу\n\nВпиши номер:');
+    if(pick == null) return;
+    const add = pick.trim() === '0' ? list : [list[Number(pick) - 1]].filter(Boolean);
+    let seq = Date.now();
+    for(const p of add) d.sits.push({id: seq++, name: p.name, roles: p.roles.slice(), lang: 'en', lines: p.lines.map(([who, ru, tr]) => ({id: seq++, who, ru, tr}))});
+    await savePb(); renderPb(); if(add.length) toast('Добавлено ситуаций: ' + add.length);
+  }
+  else if(a === 'add') openPbLine(null, Number(el.dataset.who));
+  else if(a === 'edit') openPbLine(Number(el.dataset.id));
+  else if(a === 'say'){ const l = s.lines.find(x => x.id === Number(el.dataset.id)); if(l) pbSay(s, l); }
+  else if(a === 'playall'){
+    if(pbPlaying){ pbPlaying = false; renderPb(); return; }
+    pbPlaying = true; renderPb();
+    for(const l of s.lines){
+      if(!pbPlaying || pbCur !== s.id) break;
+      document.querySelectorAll('.pb-line').forEach(x => x.classList.toggle('playing', Number(x.dataset.id) === l.id));
+      await pbSay(s, l); await new Promise(r => setTimeout(r, 700));
+    }
+    pbPlaying = false; if(pbCur === s.id && !pbTrain) renderPb();
+  }
+  else if(a === 'train'){ pbPlaying = false; pbTrainStart(s); renderPb(); }
+  else if(a === 'endtrain'){ pbTrain = null; renderPb(); }
+  else if(a === 'show'){ pbTrain.shown = true; renderPb(); const l = s.lines.find(x => x.id === pbTrain.queue[pbTrain.i]); if(l) pbSay(s, l); }
+  else if(a === 'yes' || a === 'no'){
+    const l = s.lines.find(x => x.id === pbTrain.queue[pbTrain.i]);
+    if(l){ l.box = a === 'yes' ? Math.min(5, (l.box || 0) + 1) : 0; if(a === 'yes') pbTrain.ok++; }
+    pbTrain.i++; pbTrain.shown = false;
+    if(pbTrain.i >= pbTrain.queue.length){
+      const mins = Math.max(1, Math.min(30, Math.round((Date.now() - pbTrain.start) / 60e3)));
+      if(typeof addLangMinutes === 'function') await addLangMinutes('EN', mins, 'a');
+    }
+    await savePb(); renderPb();
+  }
+  else if(a === 'vocab'){
+    const n = await addVocab(s.lines.filter(l => l.tr).map(l => ({en: l.tr, ipa: '', ru: l.ru})), pbLang(s)[2], null);
+    toast(n ? 'В словарь добавлено: ' + n : 'Уже в словаре');
+  }
+});
+$('pbClose').onclick = () => { pbPlaying = false; $('pbBg').classList.remove('open'); render(); };
+$('openPhrasebook').onclick = openPhrasebook;
+/* --- ситуация --- */
+let pbSitEdit = null;
+function openPbSit(s){
+  pbSitEdit = s;
+  $('psName').value = s ? s.name : ''; $('psR1').value = s ? s.roles[0] : 'Я'; $('psR2').value = s ? s.roles[1] : '';
+  $('psDel').style.display = s ? '' : 'none';
+  $('pbSitBg').classList.add('open');
+}
+$('psSave').onclick = async () => {
+  const name = $('psName').value.trim(), r2 = $('psR2').value.trim();
+  if(!name){ toast('Как называется ситуация?'); return; }
+  const roles = [$('psR1').value.trim() || 'Я', r2 || 'Собеседник'];
+  if(pbSitEdit) Object.assign(pbSitEdit, {name, roles});
+  else { const s = {id: Date.now(), name, roles, lang: 'en', lines: []}; pbData().sits.push(s); pbCur = s.id; }
+  await savePb(); $('pbSitBg').classList.remove('open'); renderPb();
+};
+$('psDel').onclick = async () => {
+  if(!pbSitEdit || !confirm('Удалить ситуацию со всеми фразами?')) return;
+  pbData().sits = pbData().sits.filter(x => x !== pbSitEdit); pbCur = null;
+  await savePb(); $('pbSitBg').classList.remove('open'); renderPb();
+};
+$('psCancel').onclick = () => $('pbSitBg').classList.remove('open');
+/* --- фраза --- */
+let pbLineEdit = null, pbLineWho = 0, pbTrTimer = null, pbTrManual = false;
+function openPbLine(id, who){
+  const s = pbSit(pbCur);
+  pbLineEdit = id ? s.lines.find(l => l.id === id) : null;
+  pbLineWho = pbLineEdit ? pbLineEdit.who : who || 0;
+  $('plTitle').textContent = pbLineEdit ? 'Фраза' : 'Новая фраза';
+  $('plWho').innerHTML = s.roles.map((r, i) => '<option value="' + i + '">' + escHtml(r) + '</option>').join('');
+  $('plWho').value = String(pbLineWho);
+  $('plRu').value = pbLineEdit ? pbLineEdit.ru : ''; $('plTr').value = pbLineEdit ? pbLineEdit.tr : '';
+  pbTrManual = !!pbLineEdit;
+  $('plHint').textContent = 'Пиши по-русски — перевод подставится сам через пару секунд (нужен интернет). Машинный перевод иногда ошибается: если сомневаешься, пришли фразу мне в чат.';
+  $('plDel').style.display = pbLineEdit ? '' : 'none';
+  $('pbLineBg').classList.add('open');
+  setTimeout(() => $('plRu').focus(), 50);
+}
+async function pbDoTranslate(force){
+  const ru = $('plRu').value.trim();
+  if(!ru || (pbTrManual && !force)) return;
+  $('plHint').textContent = 'Перевожу…';
+  try{ const t = await translateText(ru, 'ru', 'en'); if(t && ($('plRu').value.trim() === ru)){ $('plTr').value = t; $('plHint').textContent = 'Проверь перевод и нажми ▶, чтобы послушать.'; } }
+  catch(e){ $('plHint').textContent = 'Не удалось перевести (нет интернета?). Впиши английский сам или нажми «Перевести» позже.'; }
+}
+$('plRu').oninput = () => { clearTimeout(pbTrTimer); pbTrTimer = setTimeout(() => pbDoTranslate(false), 900); };
+$('plTr').oninput = () => { pbTrManual = !!$('plTr').value.trim(); };
+$('plTrBtn').onclick = () => { pbTrManual = false; pbDoTranslate(true); };
+$('plSay').onclick = () => { const s = pbSit(pbCur); speakText($('plTr').value, pbLang(s)[1], {pitch: Number($('plWho').value) === 0 ? 1 : 0.8}); };
+$('plSave').onclick = async () => {
+  const s = pbSit(pbCur), ru = $('plRu').value.trim(), tr = $('plTr').value.trim();
+  if(!ru && !tr){ toast('Впиши фразу'); return; }
+  const l = pbLineEdit || {id: Date.now()};
+  const changed = !pbLineEdit || pbLineEdit.tr !== tr;
+  Object.assign(l, {who: Number($('plWho').value) || 0, ru, tr});
+  if(changed) l.box = 0;
+  if(!pbLineEdit) s.lines.push(l);
+  await savePb(); $('pbLineBg').classList.remove('open'); renderPb();
+};
+$('plDel').onclick = async () => {
+  const s = pbSit(pbCur); if(!pbLineEdit) return;
+  s.lines = s.lines.filter(l => l !== pbLineEdit); await savePb(); $('pbLineBg').classList.remove('open'); renderPb();
+};
+$('plCancel').onclick = () => $('pbLineBg').classList.remove('open');
 
 /* строка на главном экране */
 function walletBannerHTML(){
