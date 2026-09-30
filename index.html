@@ -349,7 +349,7 @@
   #weekBg,#schedBg,#moneyBg,#expBg,#jarBg,#moveBg,#fxBg,#debtBg,#payBg,#calBg{z-index:30}
   #walletBg,#foodBg,#habitsBg,#langStatBg,#sumBg{z-index:26}
   #habitEdBg{z-index:30}
-  #foodEntBg,#foodGoalBg{z-index:30}
+  #foodEntBg,#foodGoalBg,#hrEdBg,#hrFinBg{z-index:30}
   #finCatBg{z-index:27}
   #readerBg{z-index:27}
   #focusBg{z-index:28}
@@ -471,6 +471,11 @@
   .wo-quiet .mini{white-space:nowrap;font-size:12px;padding:4px 10px}
   .wo-quiet .mini.on{background:var(--accent);border-color:var(--accent);color:#fff}
   .wo-ex.quiet h4 small{display:block;font-size:11px;font-weight:400;color:var(--muted);margin-top:2px}
+  .hr-wrap{padding:4px 0 8px} .hr-head{display:flex;flex-direction:column;margin:4px 0 8px} .hr-head b{font-size:16px} .hr-head span{font-size:12px;color:var(--muted)}
+  .hr-q{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-top:1px dashed var(--line);font-size:14px} .hr-q span{cursor:pointer} .hr-q small{display:block;font-size:11px;color:var(--muted)}
+  .hr.today-ok{border-color:#4caf5088} .hr-why{font-size:12px;color:var(--muted);font-style:italic;margin:4px 0}
+  .hr-done summary{cursor:pointer;color:var(--muted);font-size:13px;margin:8px 0}
+  .hr-sep{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 4px;border-top:1px solid var(--line);padding-top:10px}
   .hb{padding:10px 12px} .hb.rest{opacity:.55}
   .hb-row{display:flex;align-items:center;gap:10px}
   .hb-tick{flex:none;width:40px;height:40px;border-radius:50%;border:2px solid var(--line);background:var(--surface);color:var(--text);font:inherit;font-weight:700;font-size:15px}
@@ -1932,6 +1937,28 @@
   <button class="fab" id="booksAdd">+ Добавить книгу</button>
 </div>
 
+<div class="sheet-bg" id="hrEdBg">
+  <div class="sheet">
+    <h2 id="hrTitleH">Книга «через не хочу»</h2>
+    <div class="exp-body">
+      <div class="field"><label for="hrName">Что читаешь</label><input id="hrName" placeholder="Например: Братья Карамазовы"></div>
+      <div class="field"><label for="hrAuthor">Автор</label><input id="hrAuthor" placeholder="Ф. М. Достоевский"></div>
+      <div class="field"><label for="hrWhy">Зачем мне это (честно)</label><input id="hrWhy" placeholder="Например: научиться дочитывать трудное"></div>
+      <div class="field"><label for="hrDaily">Норма в день, минут</label><input id="hrDaily" type="number" inputmode="numeric" value="20"></div>
+      <div class="field"><label for="hrFile">Файл книги (FB2, EPUB, PDF)</label><select id="hrFile"></select></div>
+      <div class="field" id="hrReflF"><label for="hrRefl">Вывод после прочтения</label><textarea id="hrRefl" rows="3"></textarea></div>
+    </div>
+    <div class="actions"><button id="hrCancel">Отмена</button><button id="hrDel">Убрать</button><button id="hrSave" class="primary">Сохранить</button></div>
+  </div>
+</div>
+<div class="sheet-bg" id="hrFinBg">
+  <div class="sheet">
+    <h2 id="hrfTitle">Прочитано!</h2>
+    <div class="hint">Запиши в 2–3 предложениях: что понял, что зацепило, что так и не понравилось. Через год будет интересно перечитать.</div>
+    <textarea id="hrfText" rows="5" style="width:100%"></textarea>
+    <div class="actions"><button id="hrfCancel">Отмена</button><button id="hrfSave" class="primary">Готово</button></div>
+  </div>
+</div>
 <div class="graph-bg" id="bookReaderBg">
   <div class="graph-top">
     <div>
@@ -2380,7 +2407,7 @@
       <button id="openReset">Сбросить настройки…</button>
     </div>
 
-    <div class="hint sv-version" id="version">Версия 109 — курсы «Политология» и «Экономика» (по 32 урока); привычки, итоги месяца и года, языки: часы по годовому плану и прогноз; курс арабского (ступень 1, с нуля: 48 уроков по 2 части, озвучка ▶ и словарь); стойка на руках у стены заменена отжиманиями с ногами на возвышении (норма в повторах); тихий режим тренировки (без скакалки, берпи и прыжков); дневник питания (блюда с КБЖУ, цена → расход, статистика день/неделя/месяц); кошелёк: долги с графиком платежей и рассрочкой, календарь выплат (мне должны / я должен, сроки, валюта, напоминания), конвертер любых валют; курсы валют Нацбанка РК онлайн + калькулятор; валюты (обмен ₸↔₽/$/€…, копилки в валюте), копилки (откладывай из зарплаты, аванса или подработки), доход с подработок; остаток аванса плюсуется к зарплате, стартовые деньги (сверка); зарплата по графику, аванс, получение зарплаты, расходы по категориям и продуктам, КБЖУ для еды; график смен из Excel; резервная копия; рекорды</div>
+    <div class="hint sv-version" id="version">Версия 110 — «Через не хочу»: книги с нормой в день, прогрессом, серией и выводом после прочтения; курсы «Политология» и «Экономика» (по 32 урока); привычки, итоги месяца и года, языки: часы по годовому плану и прогноз; курс арабского (ступень 1, с нуля: 48 уроков по 2 части, озвучка ▶ и словарь); стойка на руках у стены заменена отжиманиями с ногами на возвышении (норма в повторах); тихий режим тренировки (без скакалки, берпи и прыжков); дневник питания (блюда с КБЖУ, цена → расход, статистика день/неделя/месяц); кошелёк: долги с графиком платежей и рассрочкой, календарь выплат (мне должны / я должен, сроки, валюта, напоминания), конвертер любых валют; курсы валют Нацбанка РК онлайн + калькулятор; валюты (обмен ₸↔₽/$/€…, копилки в валюте), копилки (откладывай из зарплаты, аванса или подработки), доход с подработок; остаток аванса плюсуется к зарплате, стартовые деньги (сверка); зарплата по графику, аванс, получение зарплаты, расходы по категориям и продуктам, КБЖУ для еды; график смен из Excel; резервная копия; рекорды</div>
     <div class="actions"><button id="serviceClose">Закрыть</button></div>
   </div>
 </div>
@@ -2744,6 +2771,8 @@ async function openDatabase(){
   settings.studyToday = parseJSON(s.studyToday, null);
   settings.studyHist = parseJSON(s.studyHist, {});
   settings.habits = parseJSON(s.habits, []);
+  settings.hardReads = parseJSON(s.hardReads, []);
+  settings.readLog = parseJSON(s.readLog, {});
   settings.habitLog = parseJSON(s.habitLog, {});
   settings.langHist = parseJSON(s.langHist, {});
   settings.langPlan = parseJSON(s.langPlan, null);
@@ -3180,7 +3209,7 @@ async function render(){
         (a.plan ? ' · <b>' + fmt(a.fact) + '</b> из <b>' + fmt(a.plan) + '</b>' +
                   (unit ? ' ' + unit : '') : '');
   } else {
-    totalEl.innerHTML = studyBannerHTML() + await workoutBannerHTML().catch(() => '') + habitsBannerHTML() + langBannerHTML() + walletBannerHTML() + foodBannerHTML() + streakHTML();
+    totalEl.innerHTML = studyBannerHTML() + await workoutBannerHTML().catch(() => '') + habitsBannerHTML() + langBannerHTML() + hrBannerHTML() + walletBannerHTML() + foodBannerHTML() + streakHTML();
     const sb = $('spBanner');
     if(sb) sb.onclick = openStudy;
     const wb = $('woBanner');
@@ -3189,6 +3218,8 @@ async function render(){
     if(wo) wo.onclick = openOffPick;
     const wb2 = $('walletBanner');
     if(wb2) wb2.onclick = () => openWallet();
+    const hrb = $('hrBanner');
+    if(hrb) hrb.onclick = openBooksScreen;
     const hbn = $('habitBanner');
     if(hbn) hbn.onclick = openHabits;
     const lbn = $('langBanner');
@@ -4211,7 +4242,7 @@ $('menuDelete').onclick = async () => {
   render();
 };
 
-['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg','bookTocBg','lockBg','tmplBg','tmplEditBg','studyPartBg','resetBg','goalBg','woPickBg','weekBg','schedBg','moneyBg','expBg','jarBg','moveBg','fxBg','debtBg','payBg','calBg','foodEntBg','foodGoalBg','habitEdBg'].forEach(id => {
+['editBg','quickBg','menuBg','linkBg','pickBg','serviceBg','logBg','planBg','bookTocBg','lockBg','tmplBg','tmplEditBg','studyPartBg','resetBg','goalBg','woPickBg','weekBg','schedBg','moneyBg','expBg','jarBg','moveBg','fxBg','debtBg','payBg','calBg','foodEntBg','foodGoalBg','habitEdBg','hrEdBg','hrFinBg'].forEach(id => {
   const bg = $(id);
   bg.onclick = e => { if(e.target === bg) bg.classList.remove('open'); };
 });
@@ -4219,7 +4250,7 @@ $('menuDelete').onclick = async () => {
 if(window.Capacitor && window.Capacitor.Plugins.App){
   window.Capacitor.Plugins.App.addListener('backButton', () => {
     if($('diaryBg').classList.contains('open')){ flushDiary().finally(diaryLock); return; }
-    for(const id of ['habitEdBg','habitsBg','langStatBg','sumBg','foodGoalBg','foodEntBg','foodBg','payBg','calBg','debtBg','fxBg','moveBg','jarBg','expBg','moneyBg','finCatBg','walletBg','schedBg','weekBg','recBg','goalBg','woPickBg','examBg','vocabBg','workoutBg','resetBg','studyPartBg','tmplEditBg','tmplBg','pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg','newsBg','lockBg','studyBg']){
+    for(const id of ['hrFinBg','hrEdBg','habitEdBg','habitsBg','langStatBg','sumBg','foodGoalBg','foodEntBg','foodBg','payBg','calBg','debtBg','fxBg','moveBg','jarBg','expBg','moneyBg','finCatBg','walletBg','schedBg','weekBg','recBg','goalBg','woPickBg','examBg','vocabBg','workoutBg','resetBg','studyPartBg','tmplEditBg','tmplBg','pickBg','linkBg','logBg','editBg','quickBg','menuBg','serviceBg','planBg','graphBg','reviewBg','statsBg','quitBg','readerBg','peopleBg','personEditBg','peopleGraphBg','booksBg','bookTocBg','bookReaderBg','harmfulBg','newsBg','lockBg','studyBg']){
       if($(id).classList.contains('open')){ $(id).classList.remove('open'); return; }
     }
     if(path.length){ path.pop(); render(); return; }
@@ -7747,17 +7778,17 @@ function detectFormat(filename){
 function renderBooksList(){
   $('booksCount').textContent = BOOKS.length ? BOOKS.length + ' книг(и) загружено' : '';
   if(!BOOKS.length){
-    $('booksList').innerHTML = '<div class="empty">Пока ни одной книги не загружено.<br>Поддерживаются FB2, EPUB, PDF.</div>';
+    $('booksList').innerHTML = hardReadsHTML() + '<div class="empty">Пока ни одной книги не загружено.<br>Поддерживаются FB2, EPUB, PDF.</div>';
     return;
   }
   const sorted = BOOKS.slice().sort((a,b) => (b.addedAt||0) - (a.addedAt||0));
-  $('booksList').innerHTML = sorted.map(b => {
+  $('booksList').innerHTML = hardReadsHTML() + sorted.map(b => {
     const meta = [b.format.toUpperCase()];
     if(b.author) meta.push(b.author);
     return '<div class="row" data-id="' + b.id + '">' +
       '<div class="body">' +
         '<span class="name">' + (b.title || b.filename) + '</span>' +
-        '<span class="meta">' + meta.join(' · ') + '</span>' +
+        '<span class="meta">' + meta.join(' · ') + (b.progress ? ' · ' + Math.round(b.progress * 100) + '%' : '') + '</span>' +
       '</div>' +
       '<span class="chev">›</span>' +
     '</div>';
@@ -7797,7 +7828,8 @@ $('bookFileInput').onchange = async (ev) => {
     BOOKS.push(entry);
     await saveBooksIndex();
     renderBooksList();
-    await openBookReader(id);
+    const stay = await hrAfterUpload(entry);
+    if(!stay) await openBookReader(id);
   }catch(err){
     toast('Не получилось добавить книгу: ' + (err && err.message ? err.message : 'неизвестная ошибка'));
   }
@@ -8296,6 +8328,7 @@ async function persistCurrentPosition(){
   const entry = BOOKS.find(b => b.id === currentBook.id);
   if(!entry) return;
   entry.pos = {chapterIndex: currentBook.chapterIndex, offset: pgnCurrentTopOffset()};
+  readTick(textProgress());
   await saveBooksIndex();
 }
 
@@ -8729,6 +8762,8 @@ async function showPdfPage(){
   renderPdfHighlights(currentBook.page);
   $('bookPageInfo').textContent = currentBook.page + ' / ' + currentBook.pdfDoc.numPages;
   entry.pos = currentBook.page;
+  entry.pages = currentBook.pdfDoc.numPages;
+  readTick(currentBook.page / Math.max(1, currentBook.pdfDoc.numPages));
   await saveBooksIndex();
   updateBookmarkButtonState();
 }
@@ -8822,6 +8857,7 @@ function closeBookReader(){
   hideHlPopup();
   $('bookTocBg').classList.remove('open');
   if(currentBook && currentBook.format !== 'pdf' && pgn) persistCurrentPosition();
+  endReadSession().then(() => { if($('booksBg').classList.contains('open')) renderBooksList(); }).catch(() => {});
   $('bookReaderBg').classList.remove('open');
   $('booksBg').classList.add('open');
   currentBook = null;
@@ -8829,6 +8865,199 @@ function closeBookReader(){
   renderBooksList();
 }
 $('bookReaderClose').onclick = closeBookReader;
+
+/* =====================================================================
+   «ЧЕРЕЗ НЕ ХОЧУ»: книги, которые не нравится читать, но надо прочесть.
+   Норма минут в день, прогресс по файлу (FB2/EPUB/PDF), серия, прогноз
+   даты окончания, «зачем мне это» и вывод после прочтения.
+   ===================================================================== */
+const HR_PRESETS = {
+  'Весь Достоевский (главное)': ['Бедные люди', 'Униженные и оскорблённые', 'Записки из мёртвого дома', 'Записки из подполья', 'Игрок', 'Преступление и наказание', 'Идиот', 'Бесы', 'Подросток', 'Братья Карамазовы'].map(t => [t, 'Ф. М. Достоевский']),
+  'Толстой: главное': [['Севастопольские рассказы', 'Л. Н. Толстой'], ['Смерть Ивана Ильича', 'Л. Н. Толстой'], ['Анна Каренина', 'Л. Н. Толстой'], ['Война и мир', 'Л. Н. Толстой']],
+  'Философия для начала': [['Апология Сократа', 'Платон'], ['Размышления', 'Марк Аврелий'], ['Письма к Луцилию', 'Сенека'], ['Государь', 'Н. Макиавелли']],
+};
+let readSess = null;
+const hrList = () => settings.hardReads = settings.hardReads || [];
+async function saveHardReads(){ await repo.setSetting('hardReads', JSON.stringify(settings.hardReads || [])); }
+async function saveReadLog(){ await repo.setSetting('readLog', JSON.stringify(settings.readLog || {})); }
+const bookEntry = id => BOOKS.find(b => b.id === id);
+const bookProg = b => b ? Math.max(0, Math.min(1, Number(b.progress) || 0)) : 0;
+function readMin(bookId, from, to){
+  let m = 0;
+  for(const [d, day] of Object.entries(settings.readLog || {})) if(d >= from && d <= to){
+    if(bookId == null) for(const v of Object.values(day)) m += v.min || 0;
+    else if(day[bookId]) m += day[bookId].min || 0;
+  }
+  return m;
+}
+/* прогресс в тексте: главы + страница внутри главы (приблизительно, главы разной длины); PDF — точно по страницам */
+function textProgress(){
+  if(!currentBook || !pgn) return null;
+  const n = chapterCount() || 1;
+  return Math.min(1, (currentBook.chapterIndex + (pgn.index + 1) / Math.max(1, pgn.total)) / n);
+}
+function readTick(progress){
+  if(!currentBook) return;
+  const now = Date.now();
+  if(!readSess || readSess.bookId !== currentBook.id){
+    readSess = {bookId: currentBook.id, last: now, ms: 0, pages: 0};
+    const e0 = bookEntry(currentBook.id), t = todayISO();   // снимок «до чтения сегодня» — от него считается темп
+    if(e0){ e0.progHist = e0.progHist || {}; if(!Object.keys(e0.progHist).some(k => k < t)) e0.progHist[addDays(t, -1)] = bookProg(e0); }
+  }
+  else { readSess.ms += Math.min(now - readSess.last, 3 * 60e3); readSess.last = now; if(progress != null && progress !== readSess.lastProg) readSess.pages++; }
+  if(progress != null) readSess.lastProg = progress;
+  const e = bookEntry(currentBook.id);
+  if(e && progress != null) e.progress = Math.max(0, Math.min(1, progress));
+}
+async function endReadSession(){
+  if(!readSess) return;
+  const s = readSess; readSess = null;
+  s.ms += Math.min(Date.now() - s.last, 3 * 60e3);
+  const min = Math.round(s.ms / 60e3 * 10) / 10;
+  const e = bookEntry(s.bookId), d = todayISO();
+  if(e){ e.progHist = e.progHist || {}; e.progHist[d] = bookProg(e); await saveBooksIndex(); }
+  if(min < 0.5) return;
+  const log = settings.readLog = settings.readLog || {}, day = log[d] = log[d] || {}, r = day[s.bookId] = day[s.bookId] || {min: 0, pages: 0};
+  r.min = Math.round((r.min + min) * 10) / 10; r.pages += s.pages;
+  await saveReadLog();
+  const hr = hrList().find(x => x.bookId === s.bookId && !x.done);
+  if(hr){
+    const today = readMin(s.bookId, d, d);
+    toast('📕 ' + hr.title + ': +' + Math.round(min) + ' мин · сегодня ' + Math.round(today) + ' из ' + hr.dailyMin + ' · прочитано ' + Math.round(bookProg(e) * 100) + '%');
+  }
+}
+function hrInfo(h){
+  const e = h.bookId ? bookEntry(h.bookId) : null, today = todayISO();
+  const prog = h.done ? 1 : bookProg(e), todayMin = h.bookId ? readMin(h.bookId, today, today) : 0;
+  /* серия: дней подряд с нормой (сегодня не рвёт, пока не кончился) */
+  let st = 0, d = todayMin >= h.dailyMin ? today : addDays(today, -1);
+  while(h.bookId && d >= (h.added || today) && readMin(h.bookId, d, d) >= h.dailyMin){ st++; d = addDays(d, -1); }
+  /* темп: прирост прогресса за последние 14 дней по снимкам */
+  let eta = null, pace = null;
+  if(e && e.progHist && !h.done){
+    const keys = Object.keys(e.progHist).sort(), from = addDays(today, -14);
+    const base = keys.filter(k => k <= from).pop() || keys[0];
+    const days = base ? Math.max(1, Math.round((new Date(today) - new Date(base)) / 864e5)) : 0;
+    const gained = base ? prog - e.progHist[base] : 0;
+    if(days >= 2 && gained > 0.001){ pace = gained / days; eta = addDays(today, Math.ceil((1 - prog) / pace)); }
+  }
+  return {e, prog, todayMin, st, eta, pace, total: h.bookId ? readMin(h.bookId, '2000-01-01', today) : 0};
+}
+function hardReadsHTML(){
+  const list = hrList(), act = list.filter(h => !h.done), done = list.filter(h => h.done);
+  let h = '<div class="hr-head"><b>📕 Через не хочу</b><span>книги, которые надо прочесть, даже если не нравится</span></div>';
+  if(!list.length) h += '<div class="sp-note">Добавь книгу, которую «надо, но не хочется». Поставь норму — например 20 минут в день. Прогресс, серия и дата окончания посчитаются сами. Главное — не скорость, а каждый день понемногу.</div>';
+  for(const x of act.filter(y => y.bookId)){
+    const i = hrInfo(x), ok = i.todayMin >= x.dailyMin;
+    h += '<div class="st-ath hr' + (ok ? ' today-ok' : '') + '"><div class="st-ath-h" data-hr="edit" data-id="' + x.id + '"><b>' + escHtml(x.title) + '</b><span class="st-ath-p">' + Math.round(i.prog * 100) + '%</span></div>' +
+      (x.author ? '<div class="st-ath-l">' + escHtml(x.author) + '</div>' : '') +
+      '<span class="pl-bar"><i style="width:' + Math.round(i.prog * 100) + '%"></i></span>' +
+      (x.why ? '<div class="hr-why">Зачем: ' + escHtml(x.why) + '</div>' : '') +
+      '<div class="st-ath-l ' + (ok ? 'ok' : '') + '">Сегодня ' + Math.round(i.todayMin) + ' из ' + x.dailyMin + ' мин' + (ok ? ' ✓' : '') + ' · серия ' + i.st + ' дн. · всего ' + hh(i.total) + '</div>' +
+      (i.eta ? '<div class="st-ath-l">При таком темпе закончишь ≈ ' + studyDateLabel(i.eta) + '</div>' : '') +
+      (x.bookId ? '' : '<div class="st-ath-l far">Файл не прикреплён — найди книгу в FB2, EPUB или PDF и прикрепи.</div>') +
+      '<div class="sp-btns">' + (x.bookId ? '<button class="go" data-hr="read" data-id="' + x.id + '">Читать</button>' : '<button class="go" data-hr="attach" data-id="' + x.id + '">Прикрепить файл</button>') +
+      '<button data-hr="finish" data-id="' + x.id + '">Прочитал ✓</button></div></div>';
+  }
+  const queue = act.filter(y => !y.bookId);
+  if(queue.length) h += '<div class="st-ath hr-queue"><div class="st-ath-l">В очереди: ' + queue.length + '. Файл не прикреплён — найди книгу в FB2, EPUB или PDF и прикрепи, когда дойдёт очередь.</div>' +
+    queue.map(x => '<div class="hr-q"><span data-hr="edit" data-id="' + x.id + '">' + escHtml(x.title) + (x.author ? '<small>' + escHtml(x.author) + '</small>' : '') + '</span><button class="mini" data-hr="attach" data-id="' + x.id + '">Прикрепить файл</button></div>').join('') + '</div>';
+  h += '<div class="sp-btns"><button data-hr="add">+ Книга «через не хочу»</button>' + (Object.keys(HR_PRESETS).length ? '<button data-hr="presets">Готовые списки</button>' : '') + '</div>';
+  if(done.length) h += '<details class="hr-done"><summary>Прочитано через не хочу: ' + done.length + '</summary>' + done.sort((a, b) => (b.doneAt || '') < (a.doneAt || '') ? -1 : 1).map(x =>
+    '<div class="st-ath hr"><div class="st-ath-h" data-hr="edit" data-id="' + x.id + '"><b>✓ ' + escHtml(x.title) + '</b><span class="st-ath-p">' + (x.doneAt ? studyDateLabel(x.doneAt) : '') + '</span></div>' +
+    (x.reflection ? '<div class="hr-why">Вывод: ' + escHtml(x.reflection) + '</div>' : '') + '</div>').join('') + '</details>';
+  return '<div class="hr-wrap">' + h + '</div><div class="hr-sep">Все файлы книг</div>';
+}
+function hrBannerHTML(){
+  const act = (settings.hardReads || []).filter(h => !h.done && h.bookId);
+  if(!act.length) return '';
+  const x = act[0], i = hrInfo(x);
+  return '<button class="sp-banner" id="hrBanner">📕 ' + escHtml(x.title) + ': ' + Math.round(i.todayMin) + '/' + x.dailyMin + ' мин сегодня · ' + Math.round(i.prog * 100) + '%' + (act.length > 1 ? ' · ещё ' + (act.length - 1) : '') + '</button>';
+}
+let hrEdit = null, hrAttachFor = null;
+function openHrEdit(id, preset){
+  hrEdit = id ? hrList().find(x => x.id === id) : null;
+  const x = hrEdit || preset || {dailyMin: 20};
+  $('hrTitleH').textContent = hrEdit ? (hrEdit.done ? 'Прочитано' : 'Книга «через не хочу»') : 'Книга «через не хочу»';
+  $('hrName').value = x.title || ''; $('hrAuthor').value = x.author || ''; $('hrWhy').value = x.why || ''; $('hrDaily').value = x.dailyMin || 20;
+  $('hrFile').innerHTML = '<option value="">— без файла пока —</option>' + BOOKS.map(b => '<option value="' + b.id + '">' + escHtml((b.title || b.filename) + (b.author ? ' · ' + b.author : '')) + '</option>').join('') + '<option value="new">+ Загрузить файл…</option>';
+  $('hrFile').value = x.bookId ? String(x.bookId) : '';
+  $('hrRefl').value = x.reflection || '';
+  $('hrReflF').style.display = hrEdit && hrEdit.done ? '' : 'none';
+  $('hrDel').style.display = hrEdit ? '' : 'none';
+  $('hrEdBg').classList.add('open');
+}
+$('hrFile').onchange = () => { if($('hrFile').value === 'new'){ hrAttachFor = 'form'; $('bookFileInput').click(); } };
+$('hrSave').onclick = async () => {
+  const title = $('hrName').value.trim();
+  if(!title){ toast('Напиши название'); return; }
+  const x = hrEdit || {id: Date.now(), added: todayISO()};
+  const fid = Number($('hrFile').value) || null;
+  Object.assign(x, {title, author: $('hrAuthor').value.trim() || null, why: $('hrWhy').value.trim() || null, dailyMin: Math.max(5, Math.round(num($('hrDaily').value) || 20)), bookId: fid});
+  if(hrEdit && hrEdit.done) x.reflection = $('hrRefl').value.trim() || null;
+  if(!hrEdit) hrList().push(x);
+  await saveHardReads();
+  $('hrEdBg').classList.remove('open');
+  renderBooksList();
+};
+$('hrDel').onclick = async () => {
+  if(!hrEdit || !confirm('Убрать книгу из списка? Файл книги останется.')) return;
+  settings.hardReads = hrList().filter(x => x !== hrEdit); await saveHardReads();
+  $('hrEdBg').classList.remove('open'); renderBooksList();
+};
+$('hrCancel').onclick = () => $('hrEdBg').classList.remove('open');
+/* после прочтения — вывод: что понял, что не понравилось */
+let hrFinishing = null;
+$('hrfSave').onclick = async () => {
+  if(!hrFinishing) return;
+  Object.assign(hrFinishing, {done: true, doneAt: todayISO(), reflection: $('hrfText').value.trim() || null});
+  const e = hrFinishing.bookId ? bookEntry(hrFinishing.bookId) : null;
+  if(e){ e.progress = 1; await saveBooksIndex(); }
+  await saveHardReads();
+  $('hrFinBg').classList.remove('open');
+  toast('🏆 «' + hrFinishing.title + '» прочитано через не хочу');
+  hrFinishing = null; renderBooksList();
+};
+$('hrfCancel').onclick = () => { hrFinishing = null; $('hrFinBg').classList.remove('open'); };
+$('booksList').addEventListener('click', async ev => {
+  const el = ev.target.closest('[data-hr]'); if(!el) return;
+  ev.stopPropagation();
+  const a = el.dataset.hr, x = hrList().find(y => y.id === Number(el.dataset.id));
+  if(a === 'add') openHrEdit(null);
+  else if(a === 'edit' && x) openHrEdit(x.id);
+  else if(a === 'read' && x){ const e = bookEntry(x.bookId); if(e) openBookReader(e.id); else toast('Файл не найден — прикрепи заново'); }
+  else if(a === 'attach' && x){ hrAttachFor = x.id; $('bookFileInput').click(); }
+  else if(a === 'finish' && x){
+    const i = hrInfo(x);
+    if(i.prog < 0.9 && !confirm('По файлу прочитано ' + Math.round(i.prog * 100) + '%. Точно дочитал?')) return;
+    hrFinishing = x; $('hrfTitle').textContent = '«' + x.title + '» — прочитано!'; $('hrfText').value = x.reflection || '';
+    $('hrFinBg').classList.add('open');
+  }
+  else if(a === 'presets'){
+    const names = Object.keys(HR_PRESETS);
+    const pick = prompt('Какой список добавить?\n' + names.map((n, i) => (i + 1) + '. ' + n).join('\n') + '\n\nВпиши номер:');
+    const set = HR_PRESETS[names[Number(pick) - 1]];
+    if(!set) return;
+    let n = 0;
+    for(const [t, au] of set) if(!hrList().some(y => y.title === t)){ hrList().push({id: Date.now() + n, added: todayISO(), title: t, author: au, dailyMin: 20, why: null, bookId: null}); n++; }
+    await saveHardReads(); renderBooksList();
+    toast('Добавлено книг: ' + n + '. Прикрепляй файлы по одной и читай по порядку.');
+  }
+});
+/* после загрузки файла — привязать к книге из списка «через не хочу» */
+async function hrAfterUpload(entry){
+  if(hrAttachFor == null) return false;
+  const who = hrAttachFor; hrAttachFor = null;
+  if(who === 'form'){
+    $('hrFile').insertAdjacentHTML('beforeend', '');
+    $('hrFile').innerHTML = '<option value="">— без файла пока —</option>' + BOOKS.map(b => '<option value="' + b.id + '">' + escHtml(b.title || b.filename) + '</option>').join('') + '<option value="new">+ Загрузить файл…</option>';
+    $('hrFile').value = String(entry.id);
+    return true;
+  }
+  const x = hrList().find(y => y.id === who);
+  if(x){ x.bookId = entry.id; await saveHardReads(); toast('Файл прикреплён к «' + x.title + '»'); }
+  return false;
+}
 
 /* ===================== /КНИГИ ===================== */
 
@@ -13467,6 +13696,7 @@ function periodStats(from, to){
   out.habits = (settings.habits || []).map(h => [h, habitRate(h, from, last)]).filter(x => x[1].on > 0);
   /* словарь, экзамены */
   let words = 0; for(const [d, v] of Object.entries(settings.vocabHist || {})) if(d >= from && d <= last) words += Number(v) || 0;
+  out.read = {min: readMin(null, from, last), done: (settings.hardReads || []).filter(x => x.done && x.doneAt >= from && x.doneAt <= last).map(x => x.title)};
   out.words = words; out.exams = (settings.examLog || []).filter(r => r.date >= from && r.date <= last).length;
   return out;
 }
@@ -13482,6 +13712,8 @@ function summaryHTML(mode, anchor, compact){
   h += row('Тренировки', s.train.n, p.train.n, String);
   if(s.train.norm != null) h += row('Средняя норма', s.train.norm, p.train.norm, v => (v || 0) + '%');
   if(s.words || p.words) h += row('Слов повторено', s.words, p.words, v => money(v));
+  if(s.read.min || p.read.min) h += row('Чтение книг', s.read.min, p.read.min, hh);
+  if(s.read.done.length) h += '<div class="st-ath-l ok">📕 Прочитано через не хочу: ' + s.read.done.map(escHtml).join(', ') + '</div>';
   h += row('Потрачено', Math.round(s.money.spent), Math.round(p.money.spent), v => money(v) + ' ₸', true);
   if(s.money.income || p.money.income) h += row('Получено денег', s.money.income, p.money.income, v => money(v) + ' ₸');
   if(s.money.saved || p.money.saved) h += row('Отложено в копилки', Math.round(s.money.saved), Math.round(p.money.saved), v => money(v) + ' ₸');
