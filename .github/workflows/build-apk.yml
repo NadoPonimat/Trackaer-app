@@ -1,55 +1,39 @@
-name: Sborka APK
+name: Build APK
 
-"on":
-  workflow_dispatch: {}
-  push: {branches: [main]}
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: {node-version: '20'}
-      - uses: actions/setup-java@v4
-        with: {distribution: temurin, java-version: '21'}
-      - uses: android-actions/setup-android@v3
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
         with:
-          packages: platform-tools
-      - run: mkdir -p www && cp index.html *.js www/
-      - run: mkdir -p assets && cp icon.png assets/icon.png && cp icon-foreground.png assets/icon-foreground.png && cp icon-background.png assets/icon-background.png && cp splash.png assets/splash.png
-      - run: npm install
-      - name: Plugins (voice, notifications) matching Capacitor version
-        run: |
-          CAP=$(node -p "require('@capacitor/core/package.json').version.split('.')[0]")
-          echo "Capacitor major: $CAP"
-          case "$CAP" in 5) TTS=3;; 6) TTS=5;; 7) TTS=6;; *) TTS=8;; esac
-          npm install "@capacitor-community/text-to-speech@^$TTS"
-          if ! npm ls @capacitor/local-notifications; then npm install "@capacitor/local-notifications@^$CAP"; fi
-      - run: npx cap add android
-      - name: Android permissions (microphone) and TTS query
-        run: |
-          M=android/app/src/main/AndroidManifest.xml
-          grep -v '</manifest>' $M > m.tmp
-          echo '<uses-permission android:name="android.permission.RECORD_AUDIO" />' >> m.tmp
-          echo '<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />' >> m.tmp
-          echo '<queries><intent><action android:name="android.intent.action.TTS_SERVICE" /></intent></queries>' >> m.tmp
-          echo '</manifest>' >> m.tmp
-          mv m.tmp $M
-          cat $M
-      - run: npx @capacitor/assets generate --android --iconBackgroundColor '#000000' --iconBackgroundColorDark '#000000' --splashBackgroundColor '#000000' --splashBackgroundColorDark '#000000'
-      - run: npx cap sync android
-      - run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
-      - run: mkdir -p out && cp android/app/build/outputs/apk/debug/app-debug.apk out/tracker.apk
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build release APK
+        run: ./gradlew :app:assembleRelease --no-daemon --stacktrace
+
       - name: Publish APK to Releases
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release delete latest --repo "${{ github.repository }}" --yes --cleanup-tag || true
-          gh release create latest out/tracker.apk \
-            --repo "${{ github.repository }}" \
-            --target "${{ github.sha }}" \
-            --title "Трекер — последняя сборка" \
-            --notes "Собрано из коммита ${{ github.sha }}"
+          gh release delete latest --yes --cleanup-tag 2>/dev/null || true
+          gh release create latest \
+            app/build/outputs/apk/release/app-release.apk \
+            --title "Trackaer 2.0.0" \
+            --notes "Нативная версия (Kotlin + Jetpack Compose): 18 курсов, 841 урок, быстрая работа офлайн. Анимация входа настраивается в Настройках." \
+            --latest
