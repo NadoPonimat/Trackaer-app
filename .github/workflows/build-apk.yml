@@ -21,8 +21,13 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      # android-actions/setup-android@v3 сломан (пакет 'tools' удалён Google),
+      # поэтому ставим SDK напрямую через предустановленный sdkmanager.
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          "$SDKMANAGER" --install "platform-tools" "platforms;android-35" "build-tools;35.0.0" || true
 
       - name: Build release APK
         run: ./gradlew :app:assembleRelease --no-daemon --stacktrace
